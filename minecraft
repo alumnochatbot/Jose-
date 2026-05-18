@@ -1,0 +1,1611 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voxel Engine v13.7 - Música de Google Drive</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #a3d1ff; font-family: 'Segoe UI', sans-serif; }
+        #ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            pointer-events: none;
+            z-index: 10;
+        }
+        .stats { background: rgba(0,0,0,0.5); padding: 12px 20px; border-radius: 15px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
+        
+        #health-ui {
+            position: absolute;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 250px;
+            height: 25px;
+            background: rgba(0,0,0,0.6);
+            border: 2px solid #fff;
+            border-radius: 5px;
+            overflow: hidden;
+            z-index: 15;
+        }
+        #health-bar {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, #ff3333, #aa0000);
+            transition: width 0.2s ease;
+        }
+        .creative-health {
+            background: linear-gradient(90deg, #ffcc00, #ffaa00) !important;
+            box-shadow: 0 0 15px #ffaa00;
+        }
+
+        #crosshair {
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 16px; height: 16px;
+            border: 2px solid rgba(255,255,255,0.8);
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            border-radius: 50%;
+        }
+        #inventory {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+            background: rgba(0,0,0,0.6);
+            padding: 10px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            z-index: 10;
+        }
+        .slot {
+            width: 45px; height: 45px;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.1);
+            transition: all 0.3s ease;
+            font-size: 20px;
+            border: 2px solid transparent;
+            color: white;
+            position: relative;
+            cursor: pointer;
+        }
+        .slot.active {
+            background: rgba(255,255,255,0.3);
+            border-color: #fff;
+            transform: scale(1.15) translateY(-5px);
+        }
+        .slot.locked {
+            opacity: 0.3;
+            filter: grayscale(100%);
+        }
+        .qty {
+            position: absolute;
+            bottom: 2px;
+            right: 5px;
+            font-size: 10px;
+            font-weight: bold;
+            text-shadow: 1px 1px 0 #000;
+        }
+
+        #cycle-info {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.5);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 10px;
+            font-weight: bold;
+            text-align: right;
+        }
+        #notification {
+            position: absolute;
+            top: 60%; left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-weight: bold;
+            font-size: 24px;
+            text-shadow: 2px 2px 0 #000;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 20;
+        }
+
+        /* Menú de Crafteo */
+        #crafting-menu {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(15, 15, 20, 0.95);
+            border: 2px solid #44ffaa;
+            border-radius: 12px;
+            padding: 25px;
+            color: white;
+            display: none;
+            z-index: 50;
+            backdrop-filter: blur(10px);
+            width: 400px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+        }
+        .recipe {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 15px; padding: 10px; background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+        }
+        .recipe button {
+            background: #44ffaa; color: #000; border: none; padding: 8px 12px; 
+            border-radius: 6px; cursor: pointer; font-weight: bold; font-family: 'Segoe UI';
+            transition: 0.2s;
+        }
+        .recipe button:hover { background: #33ee99; }
+        .recipe button:disabled { background: #444; color: #888; cursor: not-allowed; }
+
+        /* Inventario Grande de 3x9 */
+        #large-inventory-menu {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(25, 25, 35, 0.95);
+            border: 2px solid #ffd700;
+            border-radius: 15px;
+            padding: 25px;
+            color: white;
+            display: none;
+            z-index: 60;
+            backdrop-filter: blur(12px);
+            width: 500px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.9);
+        }
+        .inv-grid {
+            display: grid;
+            grid-template-columns: repeat(9, 1fr);
+            gap: 8px;
+            margin-top: 15px;
+            margin-bottom: 20px;
+        }
+        .inv-item-slot {
+            width: 46px;
+            height: 46px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 2px solid #555;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s;
+        }
+        .inv-item-slot:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: #ffd700;
+            transform: scale(1.08);
+        }
+        .inv-item-slot .qty-lbl {
+            position: absolute;
+            bottom: 2px;
+            right: 4px;
+            font-size: 10px;
+            font-weight: bold;
+            text-shadow: 1px 1px 0 #000;
+        }
+        .inv-item-slot.locked-item {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        #mode-badge {
+            background: #ffcc00; color: black; padding: 2px 8px; border-radius: 4px;
+            font-size: 12px; margin-top: 5px; display: inline-block;
+        }
+
+        #damage-flash {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(255, 0, 0, 0);
+            pointer-events: none;
+            z-index: 100;
+            transition: background 0.1s;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="damage-flash"></div>
+    <div id="ui">
+        <div class="stats">
+            <b style="color: #44ffaa;">Voxel Engine v13.7</b><br>
+            • <b>H</b>: Activar/Silenciar Música Personalizada 🎵<br>
+            • <b>I</b>: Abrir Inventario Grande 🎒<br>
+            • <b>G</b>: Modo Juego | <b>E</b>: Crafteos | <b>V</b>: Vuelo (Creativo)<br>
+            • <b>Z</b>: Deshacer Bloque<br>
+            <div id="mode-display" style="font-weight: bold; margin-top: 5px;">Modo: Supervivencia</div>
+        </div>
+    </div>
+    
+    <div id="cycle-info">
+        <div id="time-text">Día - 00:00</div>
+        <div id="mode-badge" style="display:none;">INVENCIBLE</div>
+    </div>
+    
+    <div id="health-ui"><div id="health-bar"></div></div>
+    <div id="notification"></div>
+    <div id="crosshair"></div>
+    
+    <div id="inventory">
+        <div id="slot-1" class="slot active" onclick="selectSlotByClick(1)">🌿<span class="qty">∞</span></div>
+        <div id="slot-2" class="slot" onclick="selectSlotByClick(2)">🪨<span class="qty" id="qty-stone">0</span></div>
+        <div id="slot-3" class="slot" onclick="selectSlotByClick(3)">🪵<span class="qty" id="qty-wood">0</span></div>
+        <div id="slot-4" class="slot" onclick="selectSlotByClick(4)">⛓️<span class="qty" id="qty-iron">0</span></div>
+        <div id="slot-5" class="slot" onclick="selectSlotByClick(5)">📀<span class="qty" id="qty-gold">0</span></div>
+        <div id="slot-6" class="slot" onclick="selectSlotByClick(6)">💎<span class="qty" id="qty-diamond">0</span></div>
+        <div id="slot-7" class="slot locked" onclick="selectSlotByClick(7)">⛏️<span id="pick-tier" style="font-size:9px; display:block;">Ninguno</span></div>
+        <div id="slot-8" class="slot locked" onclick="selectSlotByClick(8)">⚔️<span id="sword-tier" style="font-size:9px; display:block;">Ninguno</span></div>
+        <div id="slot-9" class="slot locked" onclick="selectSlotByClick(9)">🏹<span class="qty" id="qty-arrows">0</span></div>
+    </div>
+
+    <!-- Crafteo -->
+    <div id="crafting-menu">
+        <h2 style="margin-top:0; text-align:center; color:#44ffaa;">Forja y Crafteo</h2>
+        <div id="craft-res" style="margin-bottom:20px; font-size:12px; color:#ccc; text-align:center; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 8px;">
+            Recursos: Madera (0) | Hierro (0) | Oro (0) | Diamante (0)
+        </div>
+        
+        <div class="recipe">
+            <div><b>Tablones (No usables)</b> 🟫<br><span style="font-size:11px; color:#aaa;">Costo: 1 Madera</span></div>
+            <button onclick="craft('planks')">Craftear x4</button>
+        </div>
+
+        <h3 style="color:#44ffaa; border-bottom: 1px solid #444; margin-top: 20px;">Mejoras de Equipo</h3>
+        
+        <div class="recipe">
+            <div><b id="txt-pick-upgrade">Pico de Madera</b> ⛏️<br><span id="cost-pick-upgrade" style="font-size:11px; color:#aaa;">Costo: 3 Madera</span></div>
+            <button id="btn-upgrade-pick" onclick="upgradeItem('pickaxe')">Mejorar</button>
+        </div>
+
+        <div class="recipe">
+            <div><b id="txt-sword-upgrade">Espada de Madera</b> ⚔️<br><span id="cost-sword-upgrade" style="font-size:11px; color:#aaa;">Costo: 1 Madera, 2 Piedra</span></div>
+            <button id="btn-upgrade-sword" onclick="upgradeItem('sword')">Mejorar</button>
+        </div>
+        
+        <button onclick="toggleCrafting()" style="width: 100%; background: #f44336; color: white; border: none; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px;">Cerrar Menú</button>
+    </div>
+
+    <!-- Menú de Inventario Grande (3x9) -->
+    <div id="large-inventory-menu">
+        <h2 style="margin-top:0; text-align:center; color:#ffd700;">Inventario del Jugador 🎒</h2>
+        <p style="font-size: 11px; color: #bbb; text-align: center; margin-top: -8px;">Haz clic en un objeto para asignarlo al Hotbar seleccionado.</p>
+        
+        <div class="inv-grid" id="large-inventory-grid">
+            <!-- Rellenado dinámicamente con JS -->
+        </div>
+
+        <button onclick="toggleLargeInventory()" style="width: 100%; background: #ffd700; color: #111; border: none; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer;">Cerrar Inventario</button>
+    </div>
+
+    <!-- REPRODUCTOR DE AUDIO OCULTO PARA GOOGLE DRIVE -->
+    <audio id="drive-audio-player" loop style="display:none;"></audio>
+
+    <script>
+        let scene, camera, renderer, player;
+        let worldData = new Map(); 
+        const VIEW_DISTANCE = 30; 
+        const WATER_LEVEL = 7;
+        const LAVA_LEVEL = 3;
+        let keys = {};
+        let velocity = new THREE.Vector3();
+        let selectedSlot = 1;
+        let isThirdPerson = false;
+        
+        let health = 100;
+        let gameTime = 0; 
+        let isNight = false;
+        const mobs = [];
+        let activeArrows = []; 
+        let respawnTimer = 0; 
+        
+        let pitch = 0, yaw = 0;   
+        let audioStarted = false;
+
+        // --- SISTEMAS DE PROGRESIÓN Y DESHACER ---
+        let isCreative = false; 
+        let isFlying = false;
+        let resources = { 
+            wood: 0, stone: 0, iron: 0, gold: 0, diamond: 0, 
+            planks: 0, arrows: 0, grass: Infinity, coal: 0, emerald: 0, apple: 0, meat: 0 
+        };
+        let history = []; 
+
+        let pickaxeLevel = 0; 
+        let swordLevel = 0;
+        let hasBow = false; 
+        
+        const tiers = [
+            { name: "Ninguno", cost: null },
+            { name: "Madera", cost: { wood: 3 }, power: 1 },
+            { name: "Hierro", cost: { iron: 3 }, power: 2 },
+            { name: "Oro", cost: { gold: 3 }, power: 3 },
+            { name: "Diamante", cost: { diamond: 3 }, power: 5 }
+        ];
+
+        let isCraftingOpen = false;
+        let isLargeInventoryOpen = false;
+
+        const geometry = new THREE.BoxGeometry(1, 1, 1);
+        const materialMap = new Map();
+        
+        // El hotbar mapea dinámicamente qué objeto está en cada slot
+        let slotToType = { 
+            1: "grass", 2: "stone", 3: "wood", 4: "iron", 5: "gold", 6: "diamond", 7: "pickaxe", 8: "sword", 9: "bow" 
+        };
+
+        const itemMetaData = {
+            grass: { name: "Césped", emoji: "🌿", resourceName: "grass" },
+            stone: { name: "Piedra", emoji: "🪨", resourceName: "stone" },
+            wood: { name: "Madera", emoji: "🪵", resourceName: "wood" },
+            iron: { name: "Hierro", emoji: "⛓️", resourceName: "iron" },
+            gold: { name: "Oro", emoji: "📀", resourceName: "gold" },
+            diamond: { name: "Diamante", emoji: "💎", resourceName: "diamond" },
+            pickaxe: { name: "Pico", emoji: "⛏️", resourceName: null, isTool: true },
+            sword: { name: "Espada", emoji: "⚔️", resourceName: null, isTool: true },
+            bow: { name: "Arco", emoji: "🏹", resourceName: "arrows", isTool: true },
+            planks: { name: "Tablones", emoji: "🟫", resourceName: "planks" },
+            coal: { name: "Carbón", emoji: "⚫", resourceName: "coal" },
+            emerald: { name: "Esmeralda", emoji: "💚", resourceName: "emerald" },
+            apple: { name: "Manzana", emoji: "🍎", resourceName: "apple" },
+            meat: { name: "Filete Crudo", emoji: "🥩", resourceName: "meat" }
+        };
+
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        let musicActive = false;
+        let isUsingSynthesizer = false;
+
+        function showNotification(text, color = "#44ffaa") {
+            const el = document.getElementById("notification");
+            el.innerText = text;
+            el.style.color = color;
+            el.style.opacity = 1;
+            setTimeout(() => el.style.opacity = 0, 1500);
+        }
+
+        function playExplosionSound() {
+            if (!audioStarted) return;
+            const bufferSize = audioContext.sampleRate * 0.5;
+            const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+            const noise = audioContext.createBufferSource();
+            noise.buffer = buffer;
+            const filter = audioContext.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.value = 800;
+            const gain = audioContext.createGain();
+            gain.gain.setValueAtTime(1, audioContext.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+            noise.connect(filter);
+            filter.connect(gain);
+            gain.connect(audioContext.destination);
+            noise.start();
+        }
+
+        function playBlockSound(isBreaking) {
+            if (!audioStarted) return;
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            oscillator.type = isBreaking ? 'sine' : 'triangle';
+            oscillator.frequency.setValueAtTime(isBreaking ? 120 : 180, audioContext.currentTime);
+            oscillator.frequency.exponentialRampToValueAtTime(10, audioContext.currentTime + 0.1);
+            gainNode.gain.setValueAtTime(0.05, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.1);
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            oscillator.start();
+            oscillator.stop(audioContext.currentTime + 0.1);
+        }
+
+        function playBowSound() {
+            if (!audioStarted) return;
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(350, audioContext.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(80, audioContext.currentTime + 0.15);
+            gain.gain.setValueAtTime(0.08, audioContext.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.15);
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+            osc.start();
+            osc.stop(audioContext.currentTime + 0.15);
+        }
+
+        function playNote(freq, startTime, duration, volume = 0.08) {
+            if (!musicActive || !isUsingSynthesizer) return;
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            
+            osc.type = 'sine'; 
+            osc.frequency.setValueAtTime(freq, startTime);
+            gain.gain.setValueAtTime(0, startTime);
+            gain.gain.linearRampToValueAtTime(volume, startTime + 0.1);
+            gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+            
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+            osc.start(startTime);
+            osc.stop(startTime + duration);
+        }
+
+        function startSwedenMusic() {
+            const melody = [
+                {f: 392.00, d: 3}, {f: 329.63, d: 3}, {f: 261.63, d: 6}, {f: 293.66, d: 3},
+                {f: 349.23, d: 3}, {f: 329.63, d: 6}, {f: 261.63, d: 3}, {f: 196.00, d: 9},
+                {f: 392.00, d: 3}, {f: 440.00, d: 3}, {f: 523.25, d: 6}, {f: 493.88, d: 3},
+                {f: 392.00, d: 3}, {f: 329.63, d: 6}, {f: 293.66, d: 3}, {f: 261.63, d: 9}
+            ];
+            
+            function loopSweden() {
+                if (!musicActive || !isUsingSynthesizer) return;
+                let currentTime = audioContext.currentTime;
+                let offset = 0;
+                melody.forEach(note => {
+                    playNote(note.f, currentTime + offset, note.d, 0.06);
+                    offset += note.d * 0.9; 
+                });
+                setTimeout(loopSweden, offset * 1000 + 5000);
+            }
+            loopSweden();
+        }
+
+        // --- MANEJO DE LA MÚSICA EN LA PLAYBACK ---
+        function toggleGameMusic() {
+            const audioEl = document.getElementById('drive-audio-player');
+            musicActive = !musicActive;
+            
+            if (musicActive) {
+                // Configurar origen de descarga directa de Google Drive
+                audioEl.src = "https://docs.google.com/uc?export=download&id=1MNNdhMFMchgv0OepJOZ82XaO5puNO2KL";
+                audioEl.volume = 0.45;
+                
+                audioEl.play().then(() => {
+                    isUsingSynthesizer = false;
+                    showNotification("Música de fondo: Reproduciendo 🎵", "#55ffaa");
+                }).catch((err) => {
+                    // Fallback automático en caso de bloqueos por CORS o límite de descargas de Drive
+                    isUsingSynthesizer = true;
+                    startSwedenMusic();
+                    showNotification("Iniciando melodía de respaldo 🎹", "#ffffaa");
+                });
+            } else {
+                audioEl.pause();
+                isUsingSynthesizer = false;
+                showNotification("Música Silenciada 🔇", "#ffaa55");
+            }
+        }
+
+        function updateInventoryUI() {
+            const setSafeText = (id, text) => {
+                const el = document.getElementById(id);
+                if (el) el.innerText = text;
+            };
+
+            setSafeText('qty-stone', isCreative ? "∞" : resources.stone);
+            setSafeText('qty-wood', isCreative ? "∞" : resources.wood);
+            setSafeText('qty-iron', isCreative ? "∞" : resources.iron);
+            setSafeText('qty-gold', isCreative ? "∞" : resources.gold);
+            setSafeText('qty-diamond', isCreative ? "∞" : resources.diamond);
+            setSafeText('qty-planks', isCreative ? "∞" : resources.planks);
+            setSafeText('qty-arrows', isCreative ? "∞" : resources.arrows);
+            
+            const pickTier = document.getElementById('pick-tier');
+            if (pickTier) pickTier.innerText = tiers[pickaxeLevel].name;
+
+            const swordTier = document.getElementById('sword-tier');
+            if (swordTier) swordTier.innerText = tiers[swordLevel].name;
+
+            const slot7 = document.getElementById('slot-7');
+            if (slot7) {
+                if (isCreative || pickaxeLevel > 0) slot7.classList.remove('locked');
+                else slot7.classList.add('locked');
+            }
+            
+            const slot8 = document.getElementById('slot-8');
+            if (slot8) {
+                if (isCreative || swordLevel > 0) slot8.classList.remove('locked');
+                else slot8.classList.add('locked');
+            }
+
+            const slot9 = document.getElementById('slot-9');
+            if (slot9) {
+                if (isCreative || hasBow) slot9.classList.remove('locked');
+                else slot9.classList.add('locked');
+            }
+        }
+
+        function renderLargeInventory() {
+            const grid = document.getElementById('large-inventory-grid');
+            grid.innerHTML = ''; 
+
+            const allItems = [
+                'grass', 'stone', 'wood', 'coal', 'iron', 'gold', 'diamond', 'emerald', 'planks',
+                'pickaxe', 'sword', 'bow', 'apple', 'meat'
+            ];
+
+            for (let i = 0; i < 27; i++) {
+                const itemType = allItems[i % allItems.length];
+                const meta = itemMetaData[itemType];
+                
+                const slotDiv = document.createElement('div');
+                slotDiv.className = 'inv-item-slot';
+
+                if (meta) {
+                    let count = "";
+                    let isLocked = false;
+
+                    if (meta.isTool) {
+                        if (itemType === "pickaxe") isLocked = !isCreative && pickaxeLevel === 0;
+                        else if (itemType === "sword") isLocked = !isCreative && swordLevel === 0;
+                        else if (itemType === "bow") isLocked = !isCreative && !hasBow;
+                    } else {
+                        count = isCreative ? "∞" : resources[meta.resourceName];
+                    }
+
+                    if (isLocked) {
+                        slotDiv.classList.add('locked-item');
+                        slotDiv.title = `${meta.name} (No desbloqueado)`;
+                    } else {
+                        slotDiv.title = `Haz clic para equipar ${meta.name} en la ranura activa del Hotbar`;
+                        slotDiv.onclick = () => {
+                            slotToType[selectedSlot] = itemType;
+                            showNotification(`Equipado: ${meta.name} en ranura ${selectedSlot}`, "#ffd700");
+                            playBlockSound(false);
+                            updateInventoryUI();
+                            renderLargeInventory();
+                        };
+                    }
+
+                    slotDiv.innerHTML = `${meta.emoji}${count !== "" ? `<span class="qty-lbl">${count}</span>` : ''}`;
+                }
+
+                grid.appendChild(slotDiv);
+            }
+        }
+
+        function toggleLargeInventory() {
+            if (isCraftingOpen) toggleCrafting(); 
+            isLargeInventoryOpen = !isLargeInventoryOpen;
+            const menu = document.getElementById('large-inventory-menu');
+            if (isLargeInventoryOpen) {
+                document.exitPointerLock();
+                menu.style.display = 'block';
+                renderLargeInventory();
+            } else {
+                renderer.domElement.requestPointerLock();
+                menu.style.none = 'none';
+                menu.style.display = 'none';
+            }
+        }
+
+        function updateCraftingUI() {
+            document.getElementById('craft-res').innerText = `Recursos: Madera (${resources.wood}) | Hierro (${resources.iron}) | Oro (${resources.gold}) | Diamante (${resources.diamond})`;
+            
+            if (pickaxeLevel < 4) {
+                const next = tiers[pickaxeLevel + 1];
+                const resName = Object.keys(next.cost)[0];
+                const amount = next.cost[resName];
+                document.getElementById('txt-pick-upgrade').innerText = `Pico de ${next.name}`;
+                document.getElementById('cost-pick-upgrade').innerText = `Costo: ${amount} de ${resName}`;
+                document.getElementById('btn-upgrade-pick').disabled = (resources[resName] < amount && !isCreative);
+            } else {
+                document.getElementById('txt-pick-upgrade').innerText = "Pico Máximo";
+                document.getElementById('btn-upgrade-pick').disabled = true;
+            }
+
+            if (swordLevel < 4) {
+                const next = tiers[swordLevel + 1];
+                const resName = Object.keys(next.cost)[0];
+                const amount = next.cost[resName];
+                document.getElementById('txt-sword-upgrade').innerText = `Espada de ${next.name}`;
+                document.getElementById('cost-sword-upgrade').innerText = `Costo: ${amount} de ${resName}`;
+                document.getElementById('btn-upgrade-sword').disabled = (resources[resName] < amount && !isCreative);
+            } else {
+                document.getElementById('txt-sword-upgrade').innerText = "Espada Máxima";
+                document.getElementById('btn-upgrade-sword').disabled = true;
+            }
+        }
+
+        function upgradeItem(type) {
+            if (type === 'pickaxe' && pickaxeLevel < 4) {
+                const next = tiers[pickaxeLevel + 1];
+                const resName = Object.keys(next.cost)[0];
+                const amount = next.cost[resName];
+                if (resources[resName] >= amount || isCreative) {
+                    if (!isCreative) resources[resName] -= amount;
+                    pickaxeLevel++;
+                    showNotification(`¡Pico mejorado a ${next.name}!`, "#44ffaa");
+                    playBlockSound(false);
+                }
+            } else if (type === 'sword' && swordLevel < 4) {
+                const next = tiers[swordLevel + 1];
+                const resName = Object.keys(next.cost)[0];
+                const amount = next.cost[resName];
+                if (resources[resName] >= amount || isCreative) {
+                    if (!isCreative) resources[resName] -= amount;
+                    swordLevel++;
+                    showNotification(`¡Espada mejorada a ${next.name}!`, "#44ffaa");
+                    playBlockSound(false);
+                }
+            }
+            updateCraftingUI();
+            updateInventoryUI();
+        }
+
+        function craft(item) {
+            if (item === 'planks' && (resources.wood >= 1 || isCreative)) {
+                if(!isCreative) resources.wood -= 1;
+                resources.planks += 4;
+                showNotification("+4 Tablones", "#ffffaa");
+                playBlockSound(false);
+            }
+            updateCraftingUI();
+            updateInventoryUI();
+        }
+
+        function toggleGameMode() {
+            isCreative = !isCreative;
+            isFlying = isCreative; 
+            const modeDisplay = document.getElementById('mode-display');
+            const healthBar = document.getElementById('health-bar');
+            const badge = document.getElementById('mode-badge');
+
+            if (isCreative) {
+                modeDisplay.innerText = "Modo: Creativo";
+                modeDisplay.style.color = "#ffcc00";
+                healthBar.classList.add('creative-health');
+                badge.style.display = 'block';
+                health = 100;
+                showNotification("¡Modo Creativo!", "#ffcc00");
+            } else {
+                modeDisplay.innerText = "Modo: Supervivencia";
+                modeDisplay.style.color = "#44ffaa";
+                healthBar.classList.remove('creative-health');
+                badge.style.none = 'none';
+                badge.style.display = 'none';
+                showNotification("Modo Supervivencia", "#44ffaa");
+            }
+            updateInventoryUI();
+        }
+
+        function toggleCrafting() {
+            if (isLargeInventoryOpen) toggleLargeInventory(); 
+            isCraftingOpen = !isCraftingOpen;
+            const menu = document.getElementById('crafting-menu');
+            if (isCraftingOpen) {
+                document.exitPointerLock();
+                menu.style.display = 'block';
+                updateCraftingUI();
+            } else {
+                renderer.domElement.requestPointerLock();
+                menu.style.display = 'none';
+            }
+        }
+
+        function undoAction() {
+            if (history.length === 0) {
+                showNotification("Nada que deshacer", "orange");
+                return;
+            }
+            const last = history.pop();
+            const posKey = `${last.x},${last.y},${last.z}`;
+            
+            if (last.action === "place") {
+                const voxel = worldData.get(posKey);
+                if (voxel && voxel.mesh) {
+                    scene.remove(voxel.mesh);
+                }
+                worldData.delete(posKey);
+                showNotification("Deshecho: Bloque eliminado", "#ffaa55");
+            } else if (last.action === "break") {
+                worldData.set(posKey, { type: last.type, mesh: null });
+                renderWorld();
+                showNotification("Deshecho: Bloque restaurado", "#55aaff");
+            }
+        }
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xa3d1ff);
+            scene.fog = new THREE.Fog(0xa3d1ff, 25, 70);
+
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ antialias: true }); 
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            document.body.appendChild(renderer.domElement);
+
+            scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+            scene.sun = new THREE.DirectionalLight(0xffffff, 0.5);
+            scene.sun.position.set(50, 100, 50);
+            scene.add(scene.sun);
+
+            createCharacter();
+
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+
+            document.addEventListener('keydown', (e) => { 
+                if (e.code === 'KeyE') { toggleCrafting(); return; }
+                if (e.code === 'KeyI') { toggleLargeInventory(); return; } 
+                if (e.code === 'KeyG') { toggleGameMode(); return; }
+                if (e.code === 'KeyZ') { undoAction(); return; }
+                if (e.code === 'KeyV' && isCreative) {
+                    isFlying = !isFlying;
+                    showNotification(isFlying ? "Vuelo: Activado" : "Vuelo: Desactivado", "#ffcc00");
+                    return;
+                }
+                if (e.code === 'KeyH') {
+                    toggleGameMusic();
+                }
+                keys[e.code] = true; 
+                if(e.code === 'KeyC') isThirdPerson = !isThirdPerson;
+                if(e.code.startsWith('Digit')) handleSlotChange(e.code);
+            });
+            document.addEventListener('keyup', (e) => { keys[e.code] = false; });
+            
+            document.body.addEventListener('click', (e) => {
+                if (e.target.tagName === 'BUTTON' || isCraftingOpen || isLargeInventoryOpen) return; 
+                renderer.domElement.requestPointerLock();
+                if (audioContext.state === 'suspended') audioContext.resume();
+                audioStarted = true;
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (document.pointerLockElement) {
+                    yaw -= e.movementX * 0.002;
+                    pitch -= e.movementY * 0.002;
+                    pitch = Math.max(-Math.PI/2 + 0.1, Math.min(Math.PI/2 - 0.1, pitch));
+                    player.rotation.y = yaw;
+                }
+            });
+
+            document.addEventListener('mousedown', handleAction);
+            document.addEventListener('contextmenu', e => e.preventDefault());
+        }
+
+        function createCharacter() {
+            player = new THREE.Group();
+            const skinMat = new THREE.MeshLambertMaterial({ color: 0xFFDBAC });
+            const head = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.4, 0.4), skinMat);
+            head.position.y = 1.6;
+            player.add(head);
+
+            const body = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.7, 0.3), new THREE.MeshLambertMaterial({ color: 0x3366ff }));
+            body.position.y = 1.0;
+            player.add(body);
+
+            const rightArm = new THREE.Group();
+            const armMesh = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.7, 0.2), skinMat);
+            armMesh.position.y = -0.3;
+            rightArm.add(armMesh);
+
+            player.toolVisuals = {
+                pick: new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.7, 0.1), new THREE.MeshLambertMaterial({ color: 0x888888 })),
+                sword: new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.9, 0.2), new THREE.MeshLambertMaterial({ color: 0xdddddd })),
+                bow: new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.8, 0.15), new THREE.MeshLambertMaterial({ color: 0x8B4513 })) 
+            };
+            player.toolVisuals.pick.position.set(0, -0.6, 0.2);
+            player.toolVisuals.pick.rotation.x = Math.PI/2;
+            player.toolVisuals.pick.visible = false;
+            
+            player.toolVisuals.sword.position.set(0, -0.6, 0.3);
+            player.toolVisuals.sword.rotation.x = Math.PI/2;
+            player.toolVisuals.sword.visible = false;
+
+            player.toolVisuals.bow.position.set(0, -0.5, 0.2);
+            player.toolVisuals.bow.visible = false;
+
+            rightArm.add(player.toolVisuals.pick);
+            rightArm.add(player.toolVisuals.sword);
+            rightArm.add(player.toolVisuals.bow);
+
+            rightArm.position.set(0.35, 1.3, 0);
+            player.add(rightArm);
+            player.arm = rightArm;
+
+            player.position.set(0, 30, 0);
+            scene.add(player);
+            player.bodyParts = player.children;
+        }
+
+        function spawnTree(x, y, z) {
+            const height = 4 + Math.floor(Math.random() * 3);
+            for(let i=0; i<height; i++) worldData.set(`${x},${y+i},${z}`, { type: "wood", mesh: null });
+            for(let lx=-2; lx<=2; lx++) {
+                for(let ly=-2; ly<=2; ly++) {
+                    for(let lz=-2; lz<=2; lz++) {
+                        if(lx*lx + ly*ly + lz*lz < 5) {
+                            const leafPos = `${x+lx},${y+height+ly},${z+lz}`;
+                            if(!worldData.has(leafPos)) worldData.set(leafPos, { type: "leaves", mesh: null });
+                        }
+                    }
+                }
+            }
+        }
+
+        function spawnSkeleton(x, y, z) {
+            const skel = new THREE.Group();
+            const mat = new THREE.MeshLambertMaterial({ color: 0xeeeeee });
+            const body = new THREE.Mesh(new THREE.BoxGeometry(0.3, 1.4, 0.2), mat);
+            body.position.y = 0.7;
+            const head = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.4, 0.4), mat);
+            head.position.y = 1.5;
+            
+            const bowMesh = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.6, 0.12), new THREE.MeshLambertMaterial({ color: 0x8B4513 }));
+            bowMesh.position.set(-0.25, 0.6, 0.2);
+            
+            skel.add(body);
+            skel.add(head);
+            skel.add(bowMesh);
+            skel.position.set(x, y, z);
+            
+            skel.userData = { health: 4, velocity: new THREE.Vector3(), type: 'skeleton', shootCooldown: Math.random() * 1.5 };
+            scene.add(skel);
+            mobs.push(skel);
+        }
+
+        function spawnCreeper(x, y, z) {
+            const creeper = new THREE.Group();
+            const mat = new THREE.MeshLambertMaterial({ color: 0x22cc22 });
+            const body = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.8, 0.3), mat);
+            body.position.y = 0.4;
+            creeper.add(body);
+            const head = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.4, 0.4), mat);
+            head.position.y = 1.0;
+            
+            const faceMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
+            const eyeL = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 0.05), faceMat); eyeL.position.set(0.08, 0.05, 0.21);
+            const eyeR = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 0.05), faceMat); eyeR.position.set(-0.08, 0.05, 0.21);
+            const mouth = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, 0.05), faceMat); mouth.position.set(0, -0.08, 0.21);
+            head.add(eyeL, eyeR, mouth);
+            
+            creeper.add(head);
+            creeper.position.set(x, y, z);
+            creeper.userData = { health: 3, velocity: new THREE.Vector3(), type: 'creeper', fuse: 0, isFusing: false, mat: mat };
+            scene.add(creeper);
+            mobs.push(creeper);
+        }
+
+        function spawnPig(x, y, z) {
+            const pig = new THREE.Group();
+            const mat = new THREE.MeshLambertMaterial({ color: 0xffb6c1 }); 
+            const body = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.8), mat);
+            body.position.y = 0.4;
+            const head = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.35, 0.35), mat);
+            head.position.set(0, 0.6, -0.35);
+
+            const blackMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
+            const eyeL = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, 0.05), blackMat); eyeL.position.set(0.12, 0.65, -0.53);
+            const eyeR = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, 0.05), blackMat); eyeR.position.set(-0.12, 0.65, -0.53);
+            const snoutMat = new THREE.MeshLambertMaterial({ color: 0xffa0b4 });
+            const snout = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.1, 0.1), snoutMat); snout.position.set(0, 0.53, -0.55);
+
+            const legGeo = new THREE.BoxGeometry(0.12, 0.3, 0.12);
+            const legFL = new THREE.Mesh(legGeo, mat); legFL.position.set(0.18, 0.15, -0.25);
+            const legFR = new THREE.Mesh(legGeo, mat); legFR.position.set(-0.18, 0.15, -0.25);
+            const legBL = new THREE.Mesh(legGeo, mat); legBL.position.set(0.18, 0.15, 0.25);
+            const legBR = new THREE.Mesh(legGeo, mat); legBR.position.set(-0.18, 0.15, 0.25);
+
+            pig.add(body, head, eyeL, eyeR, snout, legFL, legFR, legBL, legBR);
+            pig.position.set(x, y, z);
+            
+            pig.userData = { 
+                health: 3, 
+                velocity: new THREE.Vector3(), 
+                type: 'pig', 
+                wanderTimer: 0, 
+                wanderDir: new THREE.Vector3(),
+                panicTimer: 0 
+            };
+            scene.add(pig);
+            mobs.push(pig);
+        }
+
+        function spawnArrow(startPos, direction, owner) {
+            const arrowGeo = new THREE.BoxGeometry(0.06, 0.06, 0.4);
+            const arrowMat = new THREE.MeshBasicMaterial({ color: owner === 'player' ? 0xffffff : 0xaaaaaa });
+            const arrowMesh = new THREE.Mesh(arrowGeo, arrowMat);
+            arrowMesh.position.copy(startPos);
+            
+            const mx = new THREE.Matrix4().lookAt(startPos, startPos.clone().add(direction), new THREE.Vector3(0, 1, 0));
+            arrowMesh.quaternion.setFromRotationMatrix(mx);
+
+            scene.add(arrowMesh);
+            activeArrows.push({
+                mesh: arrowMesh,
+                dir: direction.clone().normalize(),
+                speed: 0.8,
+                life: 180, 
+                owner: owner
+            });
+        }
+
+        function detonateCreeper(creeper) {
+            scene.remove(creeper);
+            playExplosionSound();
+            const pos = creeper.position;
+            const radius = 3;
+
+            if (!isCreative && player.position.distanceTo(pos) < 5) {
+                health -= 35; 
+                showNotification("¡BOOM!", "red");
+                triggerDamageFlash();
+            }
+
+            const cx = Math.round(pos.x), cy = Math.round(pos.y), cz = Math.round(pos.z);
+            for (let x = -radius; x <= radius; x++) {
+                for (let y = -radius; y <= radius; y++) {
+                    for (let z = -radius; z <= radius; z++) {
+                        if (x*x + y*y + z*z <= radius*radius) {
+                            const key = `${cx+x},${cy+y},${cz+z}`;
+                            const v = worldData.get(key);
+                            if (v && v.mesh && v.type !== "water" && v.type !== "lava") {
+                                scene.remove(v.mesh);
+                                worldData.delete(key);
+                            }
+                        }
+                    }
+                }
+            }
+
+            const boomMat = new THREE.MeshBasicMaterial({ color: 0xff4400, transparent: true, opacity: 0.8 });
+            const boomMesh = new THREE.Mesh(new THREE.SphereGeometry(radius, 8, 8), boomMat);
+            boomMesh.position.copy(pos);
+            scene.add(boomMesh);
+            let scale = 1;
+            const expand = () => {
+                scale += 0.2; boomMesh.scale.set(scale, scale, scale); boomMat.opacity -= 0.05;
+                if (boomMat.opacity > 0) requestAnimationFrame(expand); else scene.remove(boomMesh);
+            };
+            expand();
+        }
+
+        function generateWorld() {
+            for (let x = -VIEW_DISTANCE; x < VIEW_DISTANCE; x++) {
+                for (let z = -VIEW_DISTANCE; z < VIEW_DISTANCE; z++) {
+                    const h = Math.floor(Math.sin(x * 0.06) * Math.cos(z * 0.06) * 4 + 10);
+                    for (let y = 0; y < 16; y++) {
+                        let type = "stone";
+                        
+                        if (y < h) {
+                            if (y === h - 1) {
+                                type = (h <= WATER_LEVEL + 1) ? "dirt" : "grass";
+                                if (h > WATER_LEVEL + 1 && Math.random() < 0.005) spawnTree(x, h, z);
+                            }
+                            else if (y > h - 4) {
+                                type = "dirt";
+                            }
+                            else {
+                                const rand = Math.random();
+                                if (y < LAVA_LEVEL && rand < 0.06) {
+                                    type = "lava"; 
+                                } else if (rand < 0.003) {
+                                    type = "diamond";
+                                } else if (rand < 0.006) {
+                                    type = "emerald"; 
+                                } else if (rand < 0.012) {
+                                    type = "gold";
+                                } else if (rand < 0.024) {
+                                    type = "iron";
+                                }
+                            }
+                        } else if (y <= WATER_LEVEL) {
+                            type = "water";
+                        } else {
+                            continue;
+                        }
+                        worldData.set(`${x},${y},${z}`, { type, mesh: null });
+                    }
+                }
+            }
+            renderWorld();
+        }
+
+        function renderWorld() {
+            worldData.forEach((voxel, key) => {
+                if (voxel.mesh) return;
+                const [x, y, z] = key.split(',').map(Number);
+                const mesh = new THREE.Mesh(geometry, getMaterial(voxel.type));
+                mesh.position.set(x, y, z);
+                mesh.userData = { x, y, z, type: voxel.type };
+                scene.add(mesh);
+                voxel.mesh = mesh;
+            });
+        }
+
+        function getMaterial(type) {
+            let color = 0x888888;
+            let isTransparent = false;
+            let opacity = 1.0;
+            let emissive = 0x000000;
+            let emissiveIntensity = 0;
+
+            if (type === "grass") {
+                const colors = [0x7eb356, 0x6e9c4c, 0x8fc266, 0x5a8f3d];
+                color = colors[Math.abs(Math.floor(Math.random() * colors.length))];
+            }
+            else if (type === "dirt") color = 0x8B4513;
+            else if (type === "wood") color = 0x5D4037;
+            else if (type === "planks") color = 0xcda05f;
+            else if (type === "leaves") color = 0x2E7D32;
+            else if (type === "iron") color = 0xdadada;
+            else if (type === "gold") color = 0xFFD700;
+            else if (type === "diamond") color = 0x33eaff;
+            else if (type === "emerald") {
+                color = 0x10b981; 
+                emissive = 0x047857;
+                emissiveIntensity = 0.2;
+            }
+            else if (type === "water") {
+                color = 0x3366ff;
+                isTransparent = true;
+                opacity = 0.6;
+            }
+            else if (type === "lava") {
+                color = 0xff4400;
+                emissive = 0xff2200;
+                emissiveIntensity = 0.8;
+            }
+            
+            const matKey = `${color}_${isTransparent}_${opacity}_${emissive}`;
+            if (!materialMap.has(matKey)) {
+                materialMap.set(matKey, new THREE.MeshLambertMaterial({ 
+                    color, 
+                    transparent: isTransparent, 
+                    opacity, 
+                    emissive, 
+                    emissiveIntensity 
+                }));
+            }
+            return materialMap.get(matKey);
+        }
+
+        function updateCycle() {
+            gameTime += 0.016;
+            const cycleDuration = 120;
+            const current = gameTime % cycleDuration;
+            
+            if (current > 60 && !isNight) {
+                isNight = true;
+                scene.background = new THREE.Color(0x0a0a1a);
+                scene.fog.color.set(0x050510);
+                scene.sun.intensity = 0.05;
+                
+                for(let i=0; i<3; i++) spawnSkeleton(player.position.x + (Math.random()-0.5)*30, 20, player.position.z + (Math.random()-0.5)*30);
+                for(let i=0; i<2; i++) spawnCreeper(player.position.x + (Math.random()-0.5)*30, 20, player.position.z + (Math.random()-0.5)*30);
+            } else if (current <= 60 && isNight) {
+                isNight = false;
+                scene.background = new THREE.Color(0xa3d1ff);
+                scene.fog.color.set(0xa3d1ff);
+                scene.sun.intensity = 0.5;
+                mobs.forEach(m => {
+                    if (m.userData.type === 'skeleton' || m.userData.type === 'creeper') {
+                        scene.remove(m);
+                    }
+                });
+                for (let i = mobs.length - 1; i >= 0; i--) {
+                    if (mobs[i].userData.type === 'skeleton' || mobs[i].userData.type === 'creeper') {
+                        mobs.splice(i, 1);
+                    }
+                }
+                
+                for(let i=0; i<3; i++) spawnPig(player.position.x + (Math.random()-0.5)*40, 20, player.position.z + (Math.random()-0.5)*40);
+            }
+
+            respawnTimer += 0.016;
+            if (respawnTimer >= 4.0) { 
+                respawnTimer = 0;
+                
+                const hostileCount = mobs.filter(m => m.userData.type === 'skeleton' || m.userData.type === 'creeper').length;
+                const peacefulCount = mobs.filter(m => m.userData.type === 'pig').length;
+                
+                if (isNight) {
+                    if (hostileCount < 6) {
+                        const rx = player.position.x + (Math.random() - 0.5) * 45;
+                        const rz = player.position.z + (Math.random() - 0.5) * 45;
+                        if (Math.random() < 0.5) {
+                            spawnSkeleton(rx, 22, rz);
+                        } else {
+                            spawnCreeper(rx, 22, rz);
+                        }
+                    }
+                } else {
+                    if (peacefulCount < 6) {
+                        const rx = player.position.x + (Math.random() - 0.5) * 45;
+                        const rz = player.position.z + (Math.random() - 0.5) * 45;
+                        spawnPig(rx, 22, rz);
+                    }
+                }
+            }
+
+            const state = isNight ? "Noche" : "Día";
+            const sec = Math.floor(current % 60);
+            document.getElementById('time-text').innerText = `${state} - 00:${sec.toString().padStart(2, '0')}`;
+        }
+
+        function isBlockAt(x, y, z) {
+            const voxel = worldData.get(`${Math.round(x)},${Math.round(y)},${Math.round(z)}`);
+            return (voxel && voxel.type !== "water" && voxel.type !== "lava");
+        }
+
+        function triggerDamageFlash() {
+            const flash = document.getElementById('damage-flash');
+            flash.style.background = "rgba(255, 0, 0, 0.4)";
+            setTimeout(() => {
+                flash.style.background = "transparent";
+            }, 150);
+        }
+
+        function updatePlayer() {
+            if(player.position.y < -20) {
+                player.position.set(0, 30, 0);
+                velocity.set(0,0,0);
+                health = 100;
+            }
+
+            const px = Math.round(player.position.x);
+            const py = Math.round(player.position.y);
+            const pz = Math.round(player.position.z);
+            const blockAtFeet = worldData.get(`${px},${py},${pz}`)?.type;
+
+            const inWater = blockAtFeet === "water";
+            const inLava = blockAtFeet === "lava";
+
+            if (inLava && !isCreative) {
+                health -= 1.0;
+                triggerDamageFlash();
+            }
+
+            const moveSpeed = inWater ? 0.06 : (inLava ? 0.03 : (isCreative ? 0.3 : 0.15));
+            const gravity = inWater ? 0.005 : (inLava ? 0.003 : 0.012);
+
+            const dir = new THREE.Vector3(0, 0, -1).applyQuaternion(player.quaternion);
+            const side = new THREE.Vector3(1, 0, 0).applyQuaternion(player.quaternion);
+            let moveVec = new THREE.Vector3();
+            if (keys['KeyW']) moveVec.add(dir);
+            if (keys['KeyS']) moveVec.add(dir.clone().negate());
+            if (keys['KeyA']) moveVec.add(side.clone().negate());
+            if (keys['KeyD']) moveVec.add(side);
+            
+            if(moveVec.length() > 0) {
+                moveVec.normalize().multiplyScalar(moveSpeed);
+                if (!isBlockAt(player.position.x + moveVec.x, player.position.y + 0.5, player.position.z)) player.position.x += moveVec.x;
+                if (!isBlockAt(player.position.x, player.position.y + 0.5, player.position.z + moveVec.z)) player.position.z += moveVec.z;
+            }
+
+            if (isCreative && isFlying) {
+                velocity.y = 0;
+                if (keys['Space'] || keys['ArrowUp']) player.position.y += 0.2; 
+                if (keys['ShiftLeft'] || keys['ArrowDown']) player.position.y -= 0.2; 
+            } else {
+                velocity.y -= gravity; 
+                player.position.y += velocity.y;
+                const groundY = Math.round(player.position.y - 0.5); 
+                const blockUnder = worldData.get(`${px},${groundY},${pz}`)?.type;
+                
+                if (blockUnder && blockUnder !== "water" && blockUnder !== "lava" && player.position.y <= groundY + 0.5) {
+                    player.position.y = groundY + 0.5; 
+                    velocity.y = 0;
+                    if (keys['Space']) velocity.y = 0.25; 
+                }
+
+                if ((inWater || inLava) && keys['Space']) {
+                    velocity.y = 0.08;
+                }
+            }
+
+            if (isThirdPerson) {
+                camera.position.lerp(player.position.clone().add(new THREE.Vector3(0, 3, 5).applyQuaternion(player.quaternion)), 0.15);
+                camera.lookAt(player.position.clone().add(new THREE.Vector3(0, 1, 0)));
+                player.bodyParts.forEach(p => p.visible = true);
+            } else {
+                camera.position.copy(player.position).add(new THREE.Vector3(0, 1.6, 0)); 
+                camera.rotation.set(pitch, yaw + Math.PI, 0, 'YXZ');
+                player.bodyParts.forEach(p => p.visible = false);
+            }
+
+            document.getElementById('health-bar').style.width = Math.max(0, health) + "%";
+            if(health <= 0) {
+                health = 100;
+                player.position.set(0, 30, 0);
+                showNotification("¡HAS MUERTO!", "red");
+            }
+        }
+
+        function updateEntities() {
+            for (let i = mobs.length - 1; i >= 0; i--) {
+                let m = mobs[i];
+                const dist = m.position.distanceTo(player.position);
+                
+                if (m.userData.type === 'creeper') {
+                    if (m.userData.isFusing) {
+                        m.userData.fuse += 0.016;
+                        m.userData.mat.emissive.setHex((Math.floor(m.userData.fuse * 10) % 2 === 0) ? 0xffffff : 0x000000);
+                        if (m.userData.fuse >= 1.5) {
+                            detonateCreeper(m);
+                            mobs.splice(i, 1);
+                            continue;
+                        }
+                    } else if (dist < 15) {
+                        if (dist < 2.5 && !isCreative) {
+                            m.userData.isFusing = true;
+                        } else {
+                            const chaseDir = player.position.clone().sub(m.position).normalize();
+                            m.position.x += chaseDir.x * 0.04;
+                            m.position.z += chaseDir.z * 0.04;
+                            m.lookAt(player.position.x, m.position.y, player.position.z);
+                        }
+                    }
+                } else if (m.userData.type === 'skeleton') {
+                    if (dist < 15) {
+                        m.lookAt(player.position.x, m.position.y, player.position.z);
+                        
+                        const dir = player.position.clone().sub(m.position);
+                        dir.y = 0; 
+                        const currentDist = dir.length();
+                        dir.normalize();
+
+                        if (currentDist > 8) {
+                            m.position.add(dir.multiplyScalar(0.04));
+                        } else if (currentDist < 5) {
+                            m.position.add(dir.multiplyScalar(-0.03));
+                        }
+
+                        m.userData.shootCooldown -= 0.016;
+                        if (m.userData.shootCooldown <= 0 && !isCreative) {
+                            const targetVec = player.position.clone().add(new THREE.Vector3(0, 1.0, 0)).sub(m.position).normalize();
+                            spawnArrow(m.position.clone().add(new THREE.Vector3(0, 1.2, 0)), targetVec, 'skeleton');
+                            m.userData.shootCooldown = 2.0 + Math.random() * 1.5; 
+                        }
+                    }
+                } else if (m.userData.type === 'pig') {
+                    m.userData.wanderTimer -= 0.016;
+                    if (m.userData.panicTimer > 0) {
+                        m.userData.panicTimer -= 0.016;
+                        
+                        const escapeDir = m.position.clone().sub(player.position);
+                        escapeDir.y = 0;
+                        escapeDir.normalize();
+                        
+                        m.position.x += escapeDir.x * 0.1; 
+                        m.position.z += escapeDir.z * 0.1;
+                        m.lookAt(m.position.clone().add(escapeDir));
+                    } else if (m.userData.wanderTimer <= 0) {
+                        m.userData.wanderDir.set(Math.random() - 0.5, 0, Math.random() - 0.5).normalize();
+                        m.userData.wanderTimer = 2.0 + Math.random() * 3.0; 
+                    } else {
+                        m.position.x += m.userData.wanderDir.x * 0.02;
+                        m.position.z += m.userData.wanderDir.z * 0.02;
+                        if (m.userData.wanderDir.lengthSq() > 0.01) {
+                            m.lookAt(m.position.clone().add(m.userData.wanderDir));
+                        }
+                    }
+                }
+
+                m.userData.velocity.y -= 0.01;
+                m.position.y += m.userData.velocity.y;
+                let ePy = Math.round(m.position.y - 0.5);
+                const blockUnderMob = worldData.get(`${Math.round(m.position.x)},${ePy},${Math.round(m.position.z)}`)?.type;
+                if(blockUnderMob && blockUnderMob !== "water" && blockUnderMob !== "lava" && m.position.y <= ePy + 0.5) {
+                    m.position.y = ePy + 0.5;
+                    m.userData.velocity.y = 0;
+                }
+            }
+
+            for (let i = activeArrows.length - 1; i >= 0; i--) {
+                let arrow = activeArrows[i];
+                arrow.mesh.position.add(arrow.dir.clone().multiplyScalar(arrow.speed));
+                arrow.life--;
+
+                let hitRegistered = false;
+
+                if (arrow.owner === 'skeleton' && !isCreative) {
+                    const playerCenter = player.position.clone().add(new THREE.Vector3(0, 1.0, 0));
+                    if (arrow.mesh.position.distanceTo(playerCenter) < 1.0) {
+                        health -= 12; 
+                        triggerDamageFlash();
+                        showNotification("¡Recibiste un flechazo! 🏹", "red");
+                        hitRegistered = true;
+                    }
+                } 
+                else if (arrow.owner === 'player') {
+                    for (let j = mobs.length - 1; j >= 0; j--) {
+                        let m = mobs[j];
+                        const mobCenter = m.position.clone().add(new THREE.Vector3(0, 0.8, 0));
+                        if (arrow.mesh.position.distanceTo(mobCenter) < 1.0) {
+                            m.userData.health -= 2; 
+                            hitRegistered = true;
+                            
+                            if (m.userData.health <= 0) {
+                                scene.remove(m);
+                                mobs.splice(j, 1);
+                                
+                                if (m.userData.type === 'skeleton') {
+                                    hasBow = true;
+                                    resources.arrows += 10;
+                                    showNotification("¡Esqueleto derrotado! +1 Arco, +10 Flechas 🏹", "#ffff55");
+                                    updateInventoryUI();
+                                    if(isLargeInventoryOpen) renderLargeInventory();
+                                } else if (m.userData.type === 'pig') {
+                                    resources.meat += 2;
+                                    showNotification("¡Cerdo derrotado! +2 Filetes Crudos 🥩", "#ffaacc");
+                                    updateInventoryUI();
+                                    if(isLargeInventoryOpen) renderLargeInventory();
+                                } else {
+                                    showNotification("¡Monstruo derrotado!", "#55ff55");
+                                }
+                            } else {
+                                if (m.userData.type === 'pig') {
+                                    m.userData.panicTimer = 3.0; 
+                                    showNotification("¡El cerdo corre asustado! 🐷💥", "#ff88a3");
+                                }
+                            }
+                            break;
+                        }
+                    }
+                }
+
+                const bx = Math.round(arrow.mesh.position.x);
+                const by = Math.round(arrow.mesh.position.y);
+                const bz = Math.round(arrow.mesh.position.z);
+                if (isBlockAt(bx, by, bz)) {
+                    hitRegistered = true;
+                }
+
+                if (hitRegistered || arrow.life <= 0) {
+                    scene.remove(arrow.mesh);
+                    activeArrows.splice(i, 1);
+                }
+            }
+        }
+
+        function handleSlotChange(code) {
+            let nextSlot = parseInt(code.replace('Digit', ''));
+            if (nextSlot < 1 || nextSlot > 9) return;
+            
+            const type = slotToType[nextSlot];
+            if (!isCreative && type === "bow" && !hasBow) {
+                showNotification("¡Derrota a un esqueleto para obtener un arco!", "orange");
+                return;
+            }
+
+            selectedSlot = nextSlot;
+            updateInventoryUI();
+            
+            if (player && player.toolVisuals) {
+                player.toolVisuals.pick.visible = (type === "pickaxe" && (isCreative || pickaxeLevel > 0));
+                player.toolVisuals.sword.visible = (type === "sword" && (isCreative || swordLevel > 0));
+                player.toolVisuals.bow.visible = (type === "bow" && (isCreative || hasBow));
+                
+                const toolColor = [0x8B4513, 0x8B4513, 0xdadada, 0xFFD700, 0x33eaff][type === "pickaxe" ? pickaxeLevel : swordLevel] || 0xffffff;
+                if (type === "pickaxe") player.toolVisuals.pick.material.color.setHex(toolColor);
+                if (type === "sword") player.toolVisuals.sword.material.color.setHex(toolColor);
+            }
+        }
+
+        function selectSlotByClick(slotNumber) {
+            if (isLargeInventoryOpen || isCraftingOpen) {
+                const type = slotToType[slotNumber];
+                if (!isCreative && type === "bow" && !hasBow) return;
+                selectedSlot = slotNumber;
+                updateInventoryUI();
+                showNotification(`Ranura ${slotNumber} seleccionada como destino`, "#ffd700");
+            }
+        }
+
+        function handleAction(e) {
+            if (!document.pointerLockElement) return;
+            player.arm.rotation.x = -1;
+            setTimeout(() => player.arm.rotation.x = 0, 100);
+
+            const ray = new THREE.Raycaster();
+            ray.setFromCamera(new THREE.Vector2(0,0), camera);
+            
+            const type = slotToType[selectedSlot];
+
+            if(e.button === 0) { // Romper / Atacar / Disparar
+                if (type === "bow") {
+                    if (resources.arrows > 0 || isCreative) {
+                        if (!isCreative) resources.arrows--;
+                        const targetDir = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion).normalize();
+                        const spawnPos = camera.position.clone().add(targetDir.clone().multiplyScalar(0.5));
+                        spawnArrow(spawnPos, targetDir, 'player');
+                        playBowSound();
+                        updateInventoryUI();
+                    } else {
+                        showNotification("Sin flechas", "red");
+                    }
+                    return;
+                }
+
+                // Ataque cuerpo a cuerpo
+                const hits = ray.intersectObjects(mobs, true);
+                if(hits.length > 0 && hits[0].distance < 4) {
+                    let entity = hits[0].object;
+                    while(entity.parent && !entity.userData.velocity) entity = entity.parent;
+                    const damage = (type === "sword") ? (swordLevel + 1) * 3 : 1;
+                    if (entity.userData.health) entity.userData.health -= damage;
+                    
+                    if(!entity.userData.health || entity.userData.health <= 0) {
+                        scene.remove(entity);
+                        const idx = mobs.indexOf(entity);
+                        if(idx > -1) mobs.splice(idx, 1);
+                        
+                        if (entity.userData.type === 'skeleton') {
+                            hasBow = true;
+                            resources.arrows += 10;
+                            showNotification("¡Esqueleto derrotado! +1 Arco, +10 Flechas 🏹", "#ffff55");
+                            updateInventoryUI();
+                        } else if (entity.userData.type === 'pig') {
+                            resources.meat += 2;
+                            showNotification("¡Cerdo derrotado! +2 Filetes Crudos 🥩", "#ffaacc");
+                            updateInventoryUI();
+                            if(isLargeInventoryOpen) renderLargeInventory();
+                        } else {
+                            showNotification("¡Creeper derrotado!", "#55ff55");
+                        }
+                    } else {
+                        if (entity.userData.type === 'pig') {
+                            entity.userData.panicTimer = 3.0; 
+                            showNotification("¡El cerdo huye asustado! 🐷💨", "#ff88a3");
+                        }
+                    }
+                    return;
+                }
+
+                // Picar bloque
+                const blockHits = ray.intersectObjects(scene.children.filter(c => c.userData.type));
+                if (blockHits.length > 0 && blockHits[0].distance < 6) {
+                    const obj = blockHits[0].object;
+                    const blockType = obj.userData.type;
+                    
+                    if (blockType === "water" || blockType === "lava") return;
+
+                    const isHard = ["stone", "iron", "gold", "diamond", "emerald"].includes(blockType);
+                    if (!isCreative) {
+                        if (isHard && type !== "pickaxe") {
+                            showNotification("¡Necesitas usar el Pico!", "orange");
+                            return;
+                        }
+                        if (type === "sword" && blockType !== "leaves") {
+                            showNotification("¡La espada es para combatir!", "#ff5555");
+                            return;
+                        }
+                    }
+
+                    scene.remove(obj);
+                    worldData.delete(`${obj.userData.x},${obj.userData.y},${obj.userData.z}`);
+                    playBlockSound(true);
+
+                    history.push({ action: 'break', x: obj.userData.x, y: obj.userData.y, z: obj.userData.z, type: blockType });
+                    
+                    if (!isCreative) {
+                        if (blockType === "wood") {
+                            resources.wood++;
+                        } else if (blockType === "stone") {
+                            resources.stone++;
+                            if (Math.random() < 0.15) {
+                                resources.coal += 1 + Math.floor(Math.random() * 2);
+                                showNotification("+Carbón ⚫", "#bbb");
+                            }
+                        } else if (blockType === "iron") {
+                            resources.iron++;
+                        } else if (blockType === "gold") {
+                            resources.gold++;
+                        } else if (blockType === "diamond") {
+                            resources.diamond++;
+                        } else if (blockType === "emerald") {
+                            resources.emerald++;
+                        } else if (blockType === "leaves") {
+                            if (Math.random() < 0.25) {
+                                resources.apple++;
+                                showNotification("¡Encontraste una manzana! 🍎", "#ff5555");
+                            }
+                        }
+                        updateInventoryUI();
+                    }
+                }
+            } else if (e.button === 2) { // Colocar bloque o Consumir alimento
+                if (type === "apple" || type === "meat") {
+                    if (!isCreative) {
+                        if (resources[type] > 0) {
+                            resources[type]--;
+                            health = Math.min(100, health + (type === "apple" ? 15 : 30));
+                            showNotification(type === "apple" ? "¡Comiste una Manzana! 🍎 (+15 Vida)" : "¡Comiste un Filete! 🥩 (+30 Vida)", "#55ff55");
+                            playBlockSound(false); 
+                            updateInventoryUI();
+                            if(isLargeInventoryOpen) renderLargeInventory();
+                        } else {
+                            showNotification("No tienes suficiente alimento", "red");
+                        }
+                    } else {
+                        health = 100;
+                        showNotification("¡Alimento consumido! (Modo Creativo)", "#55ff55");
+                    }
+                    return;
+                }
+
+                const blockHits = ray.intersectObjects(scene.children.filter(c => c.userData.type));
+                if (blockHits.length > 0 && blockHits[0].distance < 6) {
+                    if (type === "pickaxe" || type === "sword" || type === "bow" || type === "apple" || type === "coal" || type === "meat") return;
+                    
+                    if (!isCreative) {
+                        const meta = itemMetaData[type];
+                        if (meta && meta.resourceName) {
+                            const resName = meta.resourceName;
+                            if (resources[resName] <= 0) {
+                                showNotification(`Sin bloques de ${meta.name}`, "red");
+                                return;
+                            }
+                            resources[resName]--;
+                        } else {
+                            return;
+                        }
+                        updateInventoryUI();
+                    }
+                    
+                    const pos = blockHits[0].object.position.clone().add(blockHits[0].face.normal);
+                    const roundedPos = { x: Math.round(pos.x), y: Math.round(pos.y), z: Math.round(pos.z) };
+                    const posKey = `${roundedPos.x},${roundedPos.y},${roundedPos.z}`;
+                    
+                    worldData.set(posKey, { type, mesh: null });
+                    renderWorld();
+                    playBlockSound(false);
+
+                    history.push({ action: 'place', x: roundedPos.x, y: roundedPos.y, z: roundedPos.z, type: type });
+                }
+            }
+        }
+
+        function hitFaceNormal(hit) {
+            return hit.face.normal;
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if (document.pointerLockElement) {
+                updateCycle();
+                updatePlayer();
+                updateEntities();
+            }
+            renderer.render(scene, camera);
+        }
+
+        window.onload = () => {
+            init();
+            generateWorld();
+            
+            for(let i=0; i<6; i++) {
+                const sx = (Math.random() - 0.5) * VIEW_DISTANCE * 1.5;
+                const sz = (Math.random() - 0.5) * VIEW_DISTANCE * 1.5;
+                spawnPig(sx, 18, sz);
+            }
+
+            animate();
+            updateInventoryUI();
+        };
+    </script>
+</body>
+</html>
