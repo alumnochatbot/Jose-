@@ -218,6 +218,21 @@
             z-index: 100;
             transition: background 0.1s;
         }
+
+        /* Indicador de tumba/cofre activo */
+        #grave-hud {
+            position: absolute;
+            top: 100px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            color: #ff3333;
+            border: 1px dashed #ff3333;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 13px;
+            display: none;
+            z-index: 10;
+        }
     </style>
 </head>
 <body>
@@ -226,6 +241,7 @@
     <div id="ui">
         <div class="stats">
             <b style="color: #44ffaa;">Voxel Engine v13.7</b><br>
+            • <b>Teclas del 1 al 9</b>: Seleccionar objeto del Hotbar 📱<br>
             • <b>H</b>: Activar/Silenciar Música Personalizada 🎵<br>
             • <b>I</b>: Abrir Inventario Grande 🎒<br>
             • <b>G</b>: Modo Juego | <b>E</b>: Crafteos | <b>V</b>: Vuelo (Creativo)<br>
@@ -237,6 +253,12 @@
     <div id="cycle-info">
         <div id="time-text">Día - 00:00</div>
         <div id="mode-badge" style="display:none;">INVENCIBLE</div>
+    </div>
+
+    <!-- Indicador de recuperación de tumba -->
+    <div id="grave-hud">
+        ⏳ Tumba activa: <span id="grave-timer">60s</span> restante<br>
+        <span style="font-size: 10px; color: #ccc;">Regresa rápido a donde moriste.</span>
     </div>
     
     <div id="health-ui"><div id="health-bar"></div></div>
@@ -341,6 +363,15 @@
 
         let isCraftingOpen = false;
         let isLargeInventoryOpen = false;
+
+        // --- SISTEMA DE TUMBA AL MORIR ---
+        let deathChest = {
+            active: false,
+            mesh: null,
+            timer: 0,         // Tiempo de vida restante en segundos
+            resources: null,  // Guarda copia de los recursos perdidos
+            position: new THREE.Vector3()
+        };
 
         const geometry = new THREE.BoxGeometry(1, 1, 1);
         const materialMap = new Map();
@@ -529,6 +560,18 @@
             if (slot9) {
                 if (isCreative || hasBow) slot9.classList.remove('locked');
                 else slot9.classList.add('locked');
+            }
+
+            // Actualizar clase 'active' en el Hotbar inferior
+            for (let i = 1; i <= 9; i++) {
+                const slotEl = document.getElementById(`slot-${i}`);
+                if (slotEl) {
+                    if (i === selectedSlot) {
+                        slotEl.classList.add('active');
+                    } else {
+                        slotEl.classList.remove('active');
+                    }
+                }
             }
         }
 
@@ -758,10 +801,24 @@
                 }
                 if (e.code === 'KeyH') {
                     toggleGameMusic();
+                    return;
                 }
+                
+                // DETECTOR DE NÚMEROS MEJORADO (Teclado Alfanumérico y Numérico)
+                let numMatched = null;
+                if (e.code && e.code.startsWith('Digit')) {
+                    numMatched = parseInt(e.code.replace('Digit', ''));
+                } else if (e.key >= '1' && e.key <= '9') {
+                    numMatched = parseInt(e.key);
+                }
+
+                if (numMatched !== null && numMatched >= 1 && numMatched <= 9) {
+                    handleSlotChange(numMatched);
+                    return;
+                }
+
                 keys[e.code] = true; 
                 if(e.code === 'KeyC') isThirdPerson = !isThirdPerson;
-                if(e.code.startsWith('Digit')) handleSlotChange(e.code);
             });
             document.addEventListener('keyup', (e) => { keys[e.code] = false; });
             
@@ -888,6 +945,44 @@
             mobs.push(creeper);
         }
 
+        // --- SISTEMA DE INVOCACIÓN DE ZOMBIES ---
+        function spawnZombie(x, y, z) {
+            const zombie = new THREE.Group();
+            const skinMat = new THREE.MeshLambertMaterial({ color: 0x145a32 }); // Piel verde oscura
+            const clothesMat = new THREE.MeshLambertMaterial({ color: 0x008080 }); // Camiseta azul celeste/verde azulado
+            const pantsMat = new THREE.MeshLambertMaterial({ color: 0x0000ff }); // Pantalón azul
+            
+            const head = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.4, 0.4), skinMat);
+            head.position.y = 1.5;
+            
+            const body = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.7, 0.3), clothesMat);
+            body.position.y = 1.0;
+            
+            // Brazos estirados al frente (Pose clásica de Zombie)
+            const leftArm = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.6, 0.15), skinMat);
+            leftArm.position.set(0.3, 1.1, 0.2);
+            leftArm.rotation.x = -Math.PI / 2.2;
+            
+            const rightArm = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.6, 0.15), skinMat);
+            rightArm.position.set(-0.3, 1.1, 0.2);
+            rightArm.rotation.x = -Math.PI / 2.2;
+
+            const legs = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.6, 0.25), pantsMat);
+            legs.position.y = 0.35;
+            
+            zombie.add(head, body, leftArm, rightArm, legs);
+            zombie.position.set(x, y, z);
+            
+            zombie.userData = { 
+                health: 6, // Un poco más resistente que los esqueletos y creepers
+                velocity: new THREE.Vector3(), 
+                type: 'zombie',
+                attackCooldown: 0 
+            };
+            scene.add(zombie);
+            mobs.push(zombie);
+        }
+
         function spawnPig(x, y, z) {
             const pig = new THREE.Group();
             const mat = new THREE.MeshLambertMaterial({ color: 0xffb6c1 }); 
@@ -921,6 +1016,72 @@
             };
             scene.add(pig);
             mobs.push(pig);
+        }
+
+        // --- SISTEMA PARA CREAR LA tumba AL MORIR ---
+        function spawnDeathChest(pos, droppedResources) {
+            // Eliminar tumba anterior si existía para evitar duplicidad infinita de objetos abandonados
+            removeDeathChest();
+
+            // Guardar copia profunda de los recursos actuales para recuperarlos después
+            deathChest.resources = Object.assign({}, droppedResources);
+            deathChest.active = true;
+            deathChest.timer = 60.0; // 1 minuto de vida
+            deathChest.position.copy(pos);
+
+            // Ajustar posición vertical de la tumba para que no flote excesivamente o se entierre
+            deathChest.position.y = Math.floor(pos.y) + 0.5;
+
+            // Grupo contenedor de la tumba
+            const chestGroup = new THREE.Group();
+
+            // Cofre de madera simulado por cajas 3D de colores
+            const woodMat = new THREE.MeshLambertMaterial({ color: 0x8B4513 }); // Café Madera
+            const metalMat = new THREE.MeshLambertMaterial({ color: 0xC0C0C0 }); // Plateado
+            
+            // Cuerpo del cofre
+            const base = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.4, 0.5), woodMat);
+            base.position.y = 0.2;
+            chestGroup.add(base);
+
+            // Tapa del cofre
+            const lid = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.15, 0.5), woodMat);
+            lid.position.y = 0.47;
+            chestGroup.add(lid);
+
+            // Pestillo plateado
+            const lock = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.12, 0.08), metalMat);
+            lock.position.set(0, 0.3, 0.26);
+            chestGroup.add(lock);
+
+            // Halo luminoso de color dorado flotando debajo del cofre
+            const ringGeo = new THREE.RingGeometry(0.3, 0.4, 8);
+            const ringMat = new THREE.MeshBasicMaterial({ color: 0xffaa00, side: THREE.DoubleSide, transparent: true, opacity: 0.6 });
+            const ring = new THREE.Mesh(ringGeo, ringMat);
+            ring.rotation.x = Math.PI / 2;
+            ring.position.y = 0.01;
+            chestGroup.add(ring);
+
+            chestGroup.position.copy(deathChest.position);
+            scene.add(chestGroup);
+            deathChest.mesh = chestGroup;
+
+            // Mostrar indicador UI de la tumba activa
+            document.getElementById('grave-hud').style.display = 'block';
+            document.getElementById('grave-timer').innerText = "60s";
+            
+            showNotification("¡Has muerto! Tu equipamiento quedó en tus coordenadas 📦", "#ff5555");
+        }
+
+        // --- SISTEMA PARA ELIMINAR LA tumba ---
+        function removeDeathChest() {
+            if (deathChest.mesh) {
+                scene.remove(deathChest.mesh);
+                deathChest.mesh = null;
+            }
+            deathChest.active = false;
+            deathChest.resources = null;
+            document.getElementById('grave-hud').style.display = 'none';
         }
 
         function spawnArrow(startPos, direction, owner) {
@@ -1093,20 +1254,24 @@
                 scene.fog.color.set(0x050510);
                 scene.sun.intensity = 0.05;
                 
+                // Invocaciones al caer la noche
                 for(let i=0; i<3; i++) spawnSkeleton(player.position.x + (Math.random()-0.5)*30, 20, player.position.z + (Math.random()-0.5)*30);
                 for(let i=0; i<2; i++) spawnCreeper(player.position.x + (Math.random()-0.5)*30, 20, player.position.z + (Math.random()-0.5)*30);
+                for(let i=0; i<3; i++) spawnZombie(player.position.x + (Math.random()-0.5)*30, 20, player.position.z + (Math.random()-0.5)*30);
             } else if (current <= 60 && isNight) {
                 isNight = false;
                 scene.background = new THREE.Color(0xa3d1ff);
                 scene.fog.color.set(0xa3d1ff);
                 scene.sun.intensity = 0.5;
+                
+                // Despawn de monstruos al amanecer (Incluye Zombies)
                 mobs.forEach(m => {
-                    if (m.userData.type === 'skeleton' || m.userData.type === 'creeper') {
+                    if (m.userData.type === 'skeleton' || m.userData.type === 'creeper' || m.userData.type === 'zombie') {
                         scene.remove(m);
                     }
                 });
                 for (let i = mobs.length - 1; i >= 0; i--) {
-                    if (mobs[i].userData.type === 'skeleton' || mobs[i].userData.type === 'creeper') {
+                    if (mobs[i].userData.type === 'skeleton' || mobs[i].userData.type === 'creeper' || mobs[i].userData.type === 'zombie') {
                         mobs.splice(i, 1);
                     }
                 }
@@ -1118,17 +1283,20 @@
             if (respawnTimer >= 4.0) { 
                 respawnTimer = 0;
                 
-                const hostileCount = mobs.filter(m => m.userData.type === 'skeleton' || m.userData.type === 'creeper').length;
+                const hostileCount = mobs.filter(m => m.userData.type === 'skeleton' || m.userData.type === 'creeper' || m.userData.type === 'zombie').length;
                 const peacefulCount = mobs.filter(m => m.userData.type === 'pig').length;
                 
                 if (isNight) {
-                    if (hostileCount < 6) {
+                    if (hostileCount < 8) {
                         const rx = player.position.x + (Math.random() - 0.5) * 45;
                         const rz = player.position.z + (Math.random() - 0.5) * 45;
-                        if (Math.random() < 0.5) {
+                        const rand = Math.random();
+                        if (rand < 0.33) {
                             spawnSkeleton(rx, 22, rz);
-                        } else {
+                        } else if (rand < 0.66) {
                             spawnCreeper(rx, 22, rz);
+                        } else {
+                            spawnZombie(rx, 22, rz);
                         }
                     }
                 } else {
@@ -1160,9 +1328,13 @@
 
         function updatePlayer() {
             if(player.position.y < -20) {
-                player.position.set(0, 30, 0);
-                velocity.set(0,0,0);
-                health = 100;
+                // Caída al vacío: Se activa muerte y tumba si no es modo creativo
+                if (!isCreative) {
+                    handleDeath();
+                } else {
+                    player.position.set(0, 30, 0);
+                    velocity.set(0,0,0);
+                }
             }
 
             const px = Math.round(player.position.x);
@@ -1228,13 +1400,115 @@
 
             document.getElementById('health-bar').style.width = Math.max(0, health) + "%";
             if(health <= 0) {
-                health = 100;
-                player.position.set(0, 30, 0);
-                showNotification("¡HAS MUERTO!", "red");
+                handleDeath();
+            }
+        }
+
+        // --- MANEJADOR DE MUERTE DEL JUGADOR ---
+        function handleDeath() {
+            health = 100;
+            const deathPosition = player.position.clone();
+            
+            if (!isCreative) {
+                // Verificar si hay algún objeto en el inventario para soltar
+                let hasItems = false;
+                const droppedResources = {};
+
+                // Analizar todos los recursos que no tengan valor infinito
+                for (let key in resources) {
+                    if (resources[key] > 0 && resources[key] !== Infinity) {
+                        droppedResources[key] = resources[key];
+                        resources[key] = 0; // Vaciamos inventario del jugador
+                        hasItems = true;
+                    }
+                }
+
+                if (hasItems) {
+                    // Invocar tumba física con los recursos guardados
+                    spawnDeathChest(deathPosition, droppedResources);
+                } else {
+                    showNotification("¡HAS MUERTO! (Tu inventario estaba vacío)", "red");
+                }
+            } else {
+                showNotification("¡HAS MUERTO! (Modo Creativo - No pierdes objetos)", "red");
+            }
+
+            // Reaparecer al jugador en un lugar seguro elevado
+            player.position.set(0, 30, 0);
+            velocity.set(0, 0, 0);
+            updateInventoryUI();
+            if (isLargeInventoryOpen) renderLargeInventory();
+        }
+
+        // --- SISTEMA DE FÍSICAS Y DETECCIÓN DE COLISIONES PARA MOBS ---
+        function moveMobSafely(m, dx, dz) {
+            let mobY = m.position.y;
+            
+            // Comprobación de colisión en el eje X (independiente)
+            let nextX = m.position.x + dx;
+            // Evaluamos con un ligero offset vertical de seguridad (+0.1) sobre el nivel del suelo actual
+            let collisionX = isBlockAt(nextX, mobY + 0.1, m.position.z) || isBlockAt(nextX, mobY + 1.1, m.position.z);
+            
+            if (!collisionX) {
+                m.position.x = nextX;
+            } else {
+                // Inteligencia artificial: si encuentra un obstáculo de un bloque de altura y hay espacio libre encima, ¡SALTA!
+                let canJumpX = !isBlockAt(nextX, mobY + 1.1, m.position.z) && !isBlockAt(nextX, mobY + 2.1, m.position.z);
+                if (canJumpX && m.userData.velocity.y <= 0) {
+                    m.userData.velocity.y = 0.22; // Impulso de salto
+                }
+            }
+
+            // Comprobación de colisión en el eje Z (independiente)
+            let nextZ = m.position.z + dz;
+            let collisionZ = isBlockAt(m.position.x, mobY + 0.1, nextZ) || isBlockAt(m.position.x, mobY + 1.1, nextZ);
+            
+            if (!collisionZ) {
+                m.position.z = nextZ;
+            } else {
+                // Inteligencia artificial de salto en eje Z
+                let canJumpZ = !isBlockAt(m.position.x, mobY + 1.1, nextZ) && !isBlockAt(m.position.x, mobY + 2.1, nextZ);
+                if (canJumpZ && m.userData.velocity.y <= 0) {
+                    m.userData.velocity.y = 0.22; // Impulso de salto
+                }
             }
         }
 
         function updateEntities() {
+            // Actualizar lógica del cofre de muerte flotante y temporizador
+            if (deathChest.active && deathChest.mesh) {
+                // Rotación leve clásica del cofre de recompensa
+                deathChest.mesh.rotation.y += 0.02;
+                
+                // Efecto flotante usando onda seno
+                deathChest.mesh.position.y = deathChest.position.y + Math.sin(Date.now() * 0.003) * 0.12;
+
+                // Reducir temporizador (corriendo a ~60 FPS)
+                deathChest.timer -= 0.016;
+                
+                const secondsLeft = Math.max(0, Math.ceil(deathChest.timer));
+                document.getElementById('grave-timer').innerText = `${secondsLeft}s`;
+
+                // Verificar colisión/proximidad del jugador para recolectar sus cosas
+                const distToPlayer = player.position.distanceTo(deathChest.mesh.position);
+                if (distToPlayer < 2.0) {
+                    // ¡Recuperación exitosa de recursos!
+                    for (let key in deathChest.resources) {
+                        resources[key] += deathChest.resources[key];
+                    }
+                    showNotification("¡Recuperaste tu equipamiento de la tumba! 🎒✨", "#ffd700");
+                    playBlockSound(false);
+                    removeDeathChest();
+                    updateInventoryUI();
+                    if (isLargeInventoryOpen) renderLargeInventory();
+                } 
+                // Si el temporizador de la tumba llega a 0, se desintegra
+                else if (deathChest.timer <= 0) {
+                    removeDeathChest();
+                    showNotification("La tumba se ha desintegrado. Perdiste tus cosas 😢", "#ff5555");
+                }
+            }
+
             for (let i = mobs.length - 1; i >= 0; i--) {
                 let m = mobs[i];
                 const dist = m.position.distanceTo(player.position);
@@ -1253,8 +1527,9 @@
                             m.userData.isFusing = true;
                         } else {
                             const chaseDir = player.position.clone().sub(m.position).normalize();
-                            m.position.x += chaseDir.x * 0.04;
-                            m.position.z += chaseDir.z * 0.04;
+                            let dx = chaseDir.x * 0.04;
+                            let dz = chaseDir.z * 0.04;
+                            moveMobSafely(m, dx, dz);
                             m.lookAt(player.position.x, m.position.y, player.position.z);
                         }
                     }
@@ -1267,10 +1542,17 @@
                         const currentDist = dir.length();
                         dir.normalize();
 
+                        let dx = 0, dz = 0;
                         if (currentDist > 8) {
-                            m.position.add(dir.multiplyScalar(0.04));
+                            dx = dir.x * 0.04;
+                            dz = dir.z * 0.04;
                         } else if (currentDist < 5) {
-                            m.position.add(dir.multiplyScalar(-0.03));
+                            dx = -dir.x * 0.03;
+                            dz = -dir.z * 0.03;
+                        }
+
+                        if (dx !== 0 || dz !== 0) {
+                            moveMobSafely(m, dx, dz);
                         }
 
                         m.userData.shootCooldown -= 0.016;
@@ -1278,6 +1560,32 @@
                             const targetVec = player.position.clone().add(new THREE.Vector3(0, 1.0, 0)).sub(m.position).normalize();
                             spawnArrow(m.position.clone().add(new THREE.Vector3(0, 1.2, 0)), targetVec, 'skeleton');
                             m.userData.shootCooldown = 2.0 + Math.random() * 1.5; 
+                        }
+                    }
+                } else if (m.userData.type === 'zombie') {
+                    // COMPORTAMIENTO INTELIGENTE DEL ZOMBIE
+                    if (dist < 20) {
+                        m.lookAt(player.position.x, m.position.y, player.position.z);
+                        
+                        const dir = player.position.clone().sub(m.position);
+                        dir.y = 0; 
+                        dir.normalize();
+
+                        // Persecución directa y veloz evitando atravesar bloques
+                        let dx = dir.x * 0.042;
+                        let dz = dir.z * 0.042;
+                        moveMobSafely(m, dx, dz);
+
+                        if (m.userData.attackCooldown > 0) {
+                            m.userData.attackCooldown -= 0.016;
+                        }
+
+                        // Ataque cuerpo a cuerpo al jugador
+                        if (dist < 1.3 && !isCreative && m.userData.attackCooldown <= 0) {
+                            health -= 15; // Quita 15 de vida por morder
+                            triggerDamageFlash();
+                            showNotification("¡Te ha mordido un Zombie! 🧟", "red");
+                            m.userData.attackCooldown = 1.2; // Cooldown de ataque
                         }
                     }
                 } else if (m.userData.type === 'pig') {
@@ -1289,21 +1597,24 @@
                         escapeDir.y = 0;
                         escapeDir.normalize();
                         
-                        m.position.x += escapeDir.x * 0.1; 
-                        m.position.z += escapeDir.z * 0.1;
+                        let dx = escapeDir.x * 0.1;
+                        let dz = escapeDir.z * 0.1;
+                        moveMobSafely(m, dx, dz);
                         m.lookAt(m.position.clone().add(escapeDir));
                     } else if (m.userData.wanderTimer <= 0) {
                         m.userData.wanderDir.set(Math.random() - 0.5, 0, Math.random() - 0.5).normalize();
                         m.userData.wanderTimer = 2.0 + Math.random() * 3.0; 
                     } else {
-                        m.position.x += m.userData.wanderDir.x * 0.02;
-                        m.position.z += m.userData.wanderDir.z * 0.02;
+                        let dx = m.userData.wanderDir.x * 0.02;
+                        let dz = m.userData.wanderDir.z * 0.02;
+                        moveMobSafely(m, dx, dz);
                         if (m.userData.wanderDir.lengthSq() > 0.01) {
                             m.lookAt(m.position.clone().add(m.userData.wanderDir));
                         }
                     }
                 }
 
+                // Aplicar gravedad al mob
                 m.userData.velocity.y -= 0.01;
                 m.position.y += m.userData.velocity.y;
                 let ePy = Math.round(m.position.y - 0.5);
@@ -1348,6 +1659,11 @@
                                     showNotification("¡Esqueleto derrotado! +1 Arco, +10 Flechas 🏹", "#ffff55");
                                     updateInventoryUI();
                                     if(isLargeInventoryOpen) renderLargeInventory();
+                                } else if (m.userData.type === 'zombie') {
+                                    resources.meat += 2;
+                                    showNotification("¡Zombie derrotado! +2 Carne de Zombie 🥩", "#55ff55");
+                                    updateInventoryUI();
+                                    if(isLargeInventoryOpen) renderLargeInventory();
                                 } else if (m.userData.type === 'pig') {
                                     resources.meat += 2;
                                     showNotification("¡Cerdo derrotado! +2 Filetes Crudos 🥩", "#ffaacc");
@@ -1381,13 +1697,13 @@
             }
         }
 
-        function handleSlotChange(code) {
-            let nextSlot = parseInt(code.replace('Digit', ''));
+        // --- MANEJADOR DE CAMBIO DE HOTBAR (CORREGIDO Y OPTIMIZADO) ---
+        function handleSlotChange(nextSlot) {
             if (nextSlot < 1 || nextSlot > 9) return;
             
             const type = slotToType[nextSlot];
             if (!isCreative && type === "bow" && !hasBow) {
-                showNotification("¡Derrota a un esqueleto para obtener un arco!", "orange");
+                showNotification("¡Derrota a un esqueleto para obtener un arco! 🏹", "orange");
                 return;
             }
 
@@ -1412,6 +1728,8 @@
                 selectedSlot = slotNumber;
                 updateInventoryUI();
                 showNotification(`Ranura ${slotNumber} seleccionada como destino`, "#ffd700");
+            } else {
+                handleSlotChange(slotNumber);
             }
         }
 
@@ -1435,7 +1753,7 @@
                         playBowSound();
                         updateInventoryUI();
                     } else {
-                        showNotification("Sin flechas", "red");
+                        showNotification("Sin flechas 🏹", "red");
                     }
                     return;
                 }
@@ -1458,6 +1776,11 @@
                             resources.arrows += 10;
                             showNotification("¡Esqueleto derrotado! +1 Arco, +10 Flechas 🏹", "#ffff55");
                             updateInventoryUI();
+                        } else if (entity.userData.type === 'zombie') {
+                            resources.meat += 2;
+                            showNotification("¡Zombie derrotado! +2 Carne de Zombie 🥩", "#55ff55");
+                            updateInventoryUI();
+                            if(isLargeInventoryOpen) renderLargeInventory();
                         } else if (entity.userData.type === 'pig') {
                             resources.meat += 2;
                             showNotification("¡Cerdo derrotado! +2 Filetes Crudos 🥩", "#ffaacc");
@@ -1538,7 +1861,7 @@
                             updateInventoryUI();
                             if(isLargeInventoryOpen) renderLargeInventory();
                         } else {
-                            showNotification("No tienes suficiente alimento", "red");
+                            showNotification("No tienes suficiente alimento 🍎🥩", "red");
                         }
                     } else {
                         health = 100;
