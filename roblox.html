@@ -1,0 +1,1296 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Roblox Obby Simulator 3D - Barry's Escape & Tower of Hell</title>
+    <!-- Tailwind CSS para UI premium -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome para Iconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Three.js para renderizado 3D -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        #game-canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        /* Estilo para los botones táctiles */
+        .touch-button {
+            touch-action: none;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-white">
+
+    <!-- HUD principal del juego -->
+    <div id="hud" class="absolute top-0 left-0 w-full p-4 pointer-events-none z-10 flex justify-between items-start hidden">
+        <!-- Panel Izquierdo: Estado del Jugador -->
+        <div class="flex flex-col gap-2 bg-black/60 backdrop-blur-md p-3 rounded-xl border border-white/10 pointer-events-auto">
+            <div class="flex items-center gap-2">
+                <div class="w-4 h-4 bg-red-500 rounded-full animate-pulse"></div>
+                <span class="font-bold tracking-wider text-sm uppercase" id="game-mode-text">Modo: Barry's Escape</span>
+            </div>
+            <div class="text-xs text-slate-300">
+                <i class="fa-solid fa-skull text-red-400"></i> Muertes: <span id="death-counter" class="font-bold text-white">0</span>
+            </div>
+            <div class="text-xs text-slate-300">
+                <i class="fa-solid fa-flag-checkered text-green-400"></i> Checkpoint: <span id="checkpoint-text" class="font-bold text-white">Salida</span>
+            </div>
+        </div>
+
+        <!-- Panel Central: Temporizador -->
+        <div class="bg-black/60 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 pointer-events-auto flex items-center gap-2 text-xl font-mono tracking-widest">
+            <i class="fa-solid fa-stopwatch text-yellow-400 animate-spin-slow"></i>
+            <span id="timer">00:00.0</span>
+        </div>
+
+        <!-- Panel Derecho: Controles de Configuración -->
+        <div class="flex flex-col gap-2 pointer-events-auto">
+            <button id="btn-camera" class="bg-slate-800/80 hover:bg-slate-700/80 text-white p-3 rounded-xl backdrop-blur-md border border-white/10 shadow-lg transition-all active:scale-95" title="Cambiar Vista de Cámara">
+                <i class="fa-solid fa-camera text-lg"></i>
+            </button>
+            <button id="btn-restart" class="bg-red-950/80 hover:bg-red-900/80 text-white p-3 rounded-xl backdrop-blur-md border border-red-500/20 shadow-lg transition-all active:scale-95" title="Reiniciar Nivel">
+                <i class="fa-solid fa-rotate-right text-lg"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Menú de Selección de Modos de Juego -->
+    <div id="main-menu" class="absolute inset-0 bg-slate-950/90 z-20 flex flex-col justify-center items-center p-6 text-center">
+        <div class="max-w-xl flex flex-col items-center">
+            <!-- Logo estilo Roblox -->
+            <div class="flex items-center gap-3 bg-red-600 px-6 py-3 rounded-lg rotate-[-2deg] shadow-2xl mb-6">
+                <span class="font-black tracking-tighter text-4xl uppercase italic text-white select-none">ROB-LOX</span>
+                <span class="text-xs bg-black/30 px-2 py-0.5 rounded uppercase font-bold tracking-widest text-yellow-300">2026 PRO</span>
+            </div>
+            <h1 class="text-3xl font-extrabold tracking-tight mb-2">Simulador de Obby 3D</h1>
+            <p class="text-slate-400 text-sm mb-8 leading-relaxed">
+                Experimenta la evolución del género Obby en Roblox. Diseñado con físicas de rebote optimizadas, un guardia enemigo inteligente y generación aleatoria.
+            </p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
+                <!-- Tarjeta Barry's Escape -->
+                <button id="mode-barry" class="bg-gradient-to-b from-blue-900/40 to-slate-900 border border-blue-500/30 hover:border-blue-400 p-5 rounded-2xl flex flex-col items-center text-center transition-all hover:scale-[1.02] shadow-lg group">
+                    <div class="w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center mb-4 text-blue-400 group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-shield-halved text-2xl"></i>
+                    </div>
+                    <span class="font-bold text-lg mb-1">Barry's Prison Escape</span>
+                    <span class="text-xs text-slate-400 leading-snug">
+                        Escapa de los 25 obstáculos de la prisión vigilado de cerca por el guardia Barry. ¡Puntos de control incluidos!
+                    </span>
+                    <div class="mt-4 px-3 py-1 bg-blue-500/10 text-blue-300 rounded-full text-[10px] font-bold tracking-widest uppercase">
+                        Modo Narrativo / Checkpoints
+                    </div>
+                </button>
+
+                <!-- Tarjeta Tower of Hell -->
+                <button id="mode-tower" class="bg-gradient-to-b from-red-900/40 to-slate-900 border border-red-500/30 hover:border-red-400 p-5 rounded-2xl flex flex-col items-center text-center transition-all hover:scale-[1.02] shadow-lg group">
+                    <div class="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mb-4 text-red-400 group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-fire text-2xl"></i>
+                    </div>
+                    <span class="font-bold text-lg mb-1">Tower of Hell Challenge</span>
+                    <span class="text-xs text-slate-400 leading-snug">
+                        Torre generada procedimentalmente sin checkpoints. Un solo toque a un láser te devuelve al infierno inicial.
+                    </span>
+                    <div class="mt-4 px-3 py-1 bg-red-500/10 text-red-300 rounded-full text-[10px] font-bold tracking-widest uppercase">
+                        Modo Infierno / Procedimental
+                    </div>
+                </button>
+            </div>
+
+            <!-- Panel de Controles / Instrucciones -->
+            <div class="mt-8 bg-slate-900/50 border border-white/5 p-4 rounded-xl text-left w-full">
+                <span class="font-bold text-xs text-yellow-500 uppercase tracking-widest block mb-2"><i class="fa-solid fa-gamepad"></i> Controles del juego</span>
+                <div class="grid grid-cols-2 text-xs text-slate-300 gap-y-1">
+                    <div><b class="text-white">Moverse:</b> WASD o Flechas</div>
+                    <div><b class="text-white">Rotar Cámara:</b> Arrastrar Mouse</div>
+                    <div><b class="text-white">Saltar:</b> Barra Espaciadora</div>
+                    <div><b class="text-white">Celulares:</b> Joystick táctil + Botón Saltar</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Interfaz de Fin del Juego (Derrota o Victoria) -->
+    <div id="game-over-screen" class="absolute inset-0 bg-black/80 backdrop-blur-md z-30 flex flex-col justify-center items-center p-6 text-center hidden">
+        <div id="over-card" class="bg-slate-900 border border-red-500/20 p-8 rounded-3xl max-w-sm w-full flex flex-col items-center shadow-2xl">
+            <div id="over-icon-box" class="w-20 h-20 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mb-4 text-3xl">
+                <i class="fa-solid fa-skull-crossbones"></i>
+            </div>
+            <h2 id="over-title" class="text-2xl font-black mb-2 uppercase">¡Has Muerto!</h2>
+            <p id="over-desc" class="text-slate-400 text-sm mb-6">El guardia Barry te ha atrapado o tocaste un haz de láser de alta potencia.</p>
+            <button id="btn-over-action" class="w-full bg-red-600 hover:bg-red-500 text-white font-bold py-3 px-6 rounded-xl transition-all active:scale-95 shadow-lg shadow-red-500/20">
+                Intentar de nuevo
+            </button>
+        </div>
+    </div>
+
+    <!-- Pantalla de Victoria -->
+    <div id="victory-screen" class="absolute inset-0 bg-slate-950/90 z-30 flex flex-col justify-center items-center p-6 text-center hidden">
+        <div class="bg-gradient-to-b from-yellow-950/30 to-slate-900 border border-yellow-500/30 p-8 rounded-3xl max-w-md w-full flex flex-col items-center shadow-2xl animate-fade-in">
+            <div class="w-24 h-24 bg-yellow-500/20 text-yellow-400 rounded-full flex items-center justify-center mb-6 text-5xl animate-bounce">
+                <i class="fa-solid fa-trophy"></i>
+            </div>
+            <h2 class="text-3xl font-black text-yellow-400 mb-1 uppercase tracking-tight">¡Victoria Magistral!</h2>
+            <p class="text-slate-300 text-sm mb-6">Has superado todos los obstáculos y completado el Obby con maestría técnica.</p>
+            
+            <div class="bg-black/40 border border-white/5 p-4 rounded-2xl w-full mb-6 text-left flex flex-col gap-2 font-mono">
+                <div class="text-xs text-slate-400 flex justify-between">
+                    <span>Modo de Juego:</span>
+                    <span id="stat-mode" class="text-white font-bold">Barry's Escape</span>
+                </div>
+                <div class="text-xs text-slate-400 flex justify-between">
+                    <span>Tiempo de Speedrun:</span>
+                    <span id="stat-time" class="text-yellow-400 font-bold">00:00.0</span>
+                </div>
+                <div class="text-xs text-slate-400 flex justify-between">
+                    <span>Muertes Totales:</span>
+                    <span id="stat-deaths" class="text-red-400 font-bold">0</span>
+                </div>
+            </div>
+
+            <div class="flex gap-3 w-full">
+                <button id="btn-win-menu" class="flex-1 bg-slate-800 hover:bg-slate-700 text-white font-bold py-3 px-4 rounded-xl transition-all active:scale-95">
+                    Menú Principal
+                </button>
+                <button id="btn-win-retry" class="flex-1 bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-black py-3 px-4 rounded-xl transition-all active:scale-95 shadow-lg shadow-yellow-500/20">
+                    Jugar de Nuevo
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Controles Táctiles para Móviles (Sólamente visibles en touch devices) -->
+    <div id="mobile-controls" class="absolute bottom-0 left-0 w-full p-6 pointer-events-none z-10 flex justify-between items-end hidden">
+        <!-- Joystick Virtual Izquierdo -->
+        <div id="joystick-container" class="w-32 h-32 bg-white/10 rounded-full backdrop-blur-sm border border-white/20 relative flex items-center justify-center pointer-events-auto touch-button shadow-lg">
+            <div id="joystick-nub" class="w-12 h-12 bg-white/40 border border-white/80 rounded-full shadow-md absolute pointer-events-none transition-all duration-75"></div>
+        </div>
+
+        <!-- Botón de Salto Derecho -->
+        <button id="mobile-jump" class="w-20 h-20 bg-blue-600/60 active:bg-blue-500/80 border border-white/20 rounded-full flex items-center justify-center text-white text-3xl pointer-events-auto touch-button shadow-2xl transition-all active:scale-90 select-none">
+            <i class="fa-solid fa-chevron-up"></i>
+        </button>
+    </div>
+
+    <!-- Canvas de Renderizado 3D -->
+    <canvas id="game-canvas"></canvas>
+
+    <!-- Script del Juego -->
+    <script>
+        // --- Web Audio API: Generación de SFX Sintetizados ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            const now = audioCtx.currentTime;
+            
+            if (type === 'jump') {
+                // SFX de salto (Frecuencia ascendente rápida)
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(150, now);
+                osc.frequency.exponentialRampToValueAtTime(400, now + 0.15);
+                gainNode.gain.setValueAtTime(0.15, now);
+                gainNode.gain.linearRampToValueAtTime(0, now + 0.15);
+                osc.start(now);
+                osc.stop(now + 0.15);
+            } else if (type === 'death') {
+                // SFX Roblox "Oof!" legendario
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(330, now);
+                osc.frequency.exponentialRampToValueAtTime(110, now + 0.12);
+                gainNode.gain.setValueAtTime(0.4, now);
+                gainNode.gain.linearRampToValueAtTime(0, now + 0.15);
+                osc.start(now);
+                osc.stop(now + 0.15);
+            } else if (type === 'checkpoint') {
+                // SFX de Checkpoint (Arpegio rápido ascendente)
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(523.25, now); // C5
+                osc.frequency.setValueAtTime(659.25, now + 0.08); // E5
+                osc.frequency.setValueAtTime(783.99, now + 0.16); // G5
+                osc.frequency.setValueAtTime(1046.50, now + 0.24); // C6
+                gainNode.gain.setValueAtTime(0.1, now);
+                gainNode.gain.linearRampToValueAtTime(0, now + 0.35);
+                osc.start(now);
+                osc.stop(now + 0.4);
+            } else if (type === 'win') {
+                // Fanfarria chiptune triunfal
+                const notes = [523, 659, 784, 1046, 784, 1046, 1318];
+                notes.forEach((freq, idx) => {
+                    const oscNote = audioCtx.createOscillator();
+                    const gainNote = audioCtx.createGain();
+                    oscNote.connect(gainNote);
+                    gainNote.connect(audioCtx.destination);
+                    
+                    oscNote.type = 'square';
+                    oscNote.frequency.value = freq;
+                    
+                    gainNote.gain.setValueAtTime(0.08, now + idx * 0.12);
+                    gainNote.gain.linearRampToValueAtTime(0, now + idx * 0.12 + 0.15);
+                    
+                    oscNote.start(now + idx * 0.12);
+                    oscNote.stop(now + idx * 0.12 + 0.15);
+                });
+            }
+        }
+
+        // --- Configuración e Inicialización Global del Motor 3D ---
+        const canvas = document.getElementById('game-canvas');
+        const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color('#0a0f1d');
+        scene.fog = new THREE.FogExp2('#0a0f1d', 0.012);
+
+        // Luces
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(20, 40, 20);
+        dirLight.castShadow = true;
+        dirLight.shadow.mapSize.width = 1024;
+        dirLight.shadow.mapSize.height = 1024;
+        dirLight.shadow.camera.near = 0.5;
+        dirLight.shadow.camera.far = 150;
+        const d = 40;
+        dirLight.shadow.camera.left = -d;
+        dirLight.shadow.camera.right = d;
+        dirLight.shadow.camera.top = d;
+        dirLight.shadow.camera.bottom = -d;
+        scene.add(dirLight);
+
+        // Cámara de juego
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+
+        // --- Estado del Juego ---
+        const gameState = {
+            mode: 'barry', // 'barry' o 'tower'
+            deaths: 0,
+            activeCheckpoint: null,
+            timerStart: 0,
+            timerElapsed: 0,
+            isPlaying: false,
+            cameraMode: 'third', // 'third' o 'first'
+            lastTime: 0
+        };
+
+        // --- Modelos Estilo Roblox (Creación Procedimental de Mallas) ---
+        
+        // Textura dinámica para caras (Estilo Blocky de Roblox)
+        function createFaceTexture(colorEyes, smiles) {
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = 128;
+            tempCanvas.height = 128;
+            const ctx = tempCanvas.getContext('2d');
+            
+            // Fondo de la piel (amarillo Roblox)
+            ctx.fillStyle = '#ffdb58';
+            ctx.fillRect(0, 0, 128, 128);
+            
+            // Ojos
+            ctx.fillStyle = colorEyes || '#000000';
+            ctx.fillRect(30, 40, 15, 25);
+            ctx.fillRect(83, 40, 15, 25);
+            
+            // Sonrisa
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = 8;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            if (smiles) {
+                ctx.arc(64, 75, 25, 0, Math.PI, false); // Sonriente
+            } else {
+                ctx.arc(64, 95, 20, Math.PI, 0, false); // Enojado / Asustado
+            }
+            ctx.stroke();
+            
+            return new THREE.CanvasTexture(tempCanvas);
+        }
+
+        // Personaje Jugador (Blocky Roblox Player)
+        function createPlayerMesh() {
+            const group = new THREE.Group();
+            
+            // Materiales de Roblox
+            const headMaterial = new THREE.MeshLambertMaterial({ map: createFaceTexture('#000000', true) });
+            const torsoMaterial = new THREE.MeshLambertMaterial({ color: '#0055ff' }); // Torso azul clásico
+            const limbMaterial = new THREE.MeshLambertMaterial({ color: '#ffdb58' }); // Miembros amarillos
+            const legMaterial = new THREE.MeshLambertMaterial({ color: '#00a123' }); // Pantalones verdes
+
+            // Cabeza (Bloque)
+            const head = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.2, 1.2), [
+                limbMaterial, limbMaterial, limbMaterial, limbMaterial, headMaterial, limbMaterial
+            ]);
+            head.position.y = 1.9;
+            head.castShadow = true;
+            group.add(head);
+
+            // Torso (Bloque rectangular)
+            const torso = new THREE.Mesh(new THREE.BoxGeometry(1.8, 1.8, 0.9), torsoMaterial);
+            torso.position.y = 0.4;
+            torso.castShadow = true;
+            torso.receiveShadow = true;
+            group.add(torso);
+
+            // Brazos (Izquierdo y Derecho)
+            const armGeo = new THREE.BoxGeometry(0.5, 1.6, 0.5);
+            const armLeft = new THREE.Mesh(armGeo, limbMaterial);
+            armLeft.position.set(-1.15, 0.5, 0);
+            armLeft.castShadow = true;
+            group.add(armLeft);
+
+            const armRight = new THREE.Mesh(armGeo, limbMaterial);
+            armRight.position.set(1.15, 0.5, 0);
+            armRight.castShadow = true;
+            group.add(armRight);
+
+            // Piernas (Izquierda y Derecha)
+            const legGeo = new THREE.BoxGeometry(0.7, 1.6, 0.7);
+            const legLeft = new THREE.Mesh(legGeo, legMaterial);
+            legLeft.position.set(-0.45, -1.3, 0);
+            legLeft.castShadow = true;
+            group.add(legLeft);
+
+            const legRight = new THREE.Mesh(legGeo, legMaterial);
+            legRight.position.set(0.45, -1.3, 0);
+            legRight.castShadow = true;
+            group.add(legRight);
+
+            // Ajustar altura del grupo
+            group.position.y = 2.1;
+            scene.add(group);
+            return {
+                mesh: group,
+                head,
+                armLeft,
+                armRight,
+                legLeft,
+                legRight,
+                radius: 1.1,
+                height: 4.2
+            };
+        }
+
+        // Barry el Guardia Gigante (NPC Asesino)
+        function createBarryMesh() {
+            const group = new THREE.Group();
+            
+            // Barry es más robusto y tiene mirada de enfado
+            const faceTex = createFaceTexture('#990000', false);
+            const headMaterial = new THREE.MeshLambertMaterial({ map: faceTex });
+            const uniformMaterial = new THREE.MeshLambertMaterial({ color: '#2c3e50' }); // Azul militar
+            const accentMaterial = new THREE.MeshLambertMaterial({ color: '#f39c12' }); // Insignias doradas
+            const skinMaterial = new THREE.MeshLambertMaterial({ color: '#ffb97b' }); // Piel tostada
+
+            // Cabeza de Barry
+            const head = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.6, 1.6), [
+                skinMaterial, skinMaterial, skinMaterial, skinMaterial, headMaterial, skinMaterial
+            ]);
+            head.position.y = 2.5;
+            group.add(head);
+
+            // Sombrero de policía de Barry
+            const hatBase = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.3, 2.0), uniformMaterial);
+            hatBase.position.y = 3.4;
+            group.add(hatBase);
+            const hatGold = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.2, 2.1), accentMaterial);
+            hatGold.position.set(0, 3.4, 0.1);
+            group.add(hatGold);
+
+            // Torso Gigante
+            const torso = new THREE.Mesh(new THREE.BoxGeometry(2.6, 2.5, 1.4), uniformMaterial);
+            torso.position.y = 0.5;
+            group.add(torso);
+
+            // Brazos
+            const armGeo = new THREE.BoxGeometry(0.8, 2.2, 0.8);
+            const armLeft = new THREE.Mesh(armGeo, skinMaterial);
+            armLeft.position.set(-1.7, 0.6, 0);
+            group.add(armLeft);
+
+            const armRight = new THREE.Mesh(armGeo, skinMaterial);
+            armRight.position.set(1.7, 0.6, 0);
+            group.add(armRight);
+
+            // Piernas
+            const legGeo = new THREE.BoxGeometry(1.0, 2.2, 1.0);
+            const legLeft = new THREE.Mesh(legGeo, uniformMaterial);
+            legLeft.position.set(-0.7, -1.8, 0);
+            group.add(legLeft);
+
+            const legRight = new THREE.Mesh(legGeo, uniformMaterial);
+            legRight.position.set(0.7, -1.8, 0);
+            group.add(legRight);
+
+            // Escala grande intimidante
+            group.scale.set(1.5, 1.5, 1.5);
+            scene.add(group);
+            return {
+                mesh: group,
+                patrolPointA: new THREE.Vector3(),
+                patrolPointB: new THREE.Vector3(),
+                state: 'patrol', // 'patrol' o 'chase'
+                speed: 8.5
+            };
+        }
+
+        const player = createPlayerMesh();
+        let barryNPC = null;
+
+        // --- Entidades del Escenario (Físicas de Colisiones) ---
+        const platforms = []; // Plataformas sólidas sobre las que pararse
+        const hazards = [];   // Objetos letales al tacto (Lásers, etc.)
+        const checkpoints = []; // Puntos de control (Pads magnéticos)
+        let goalPad = null;     // Meta final del obby
+
+        // Clase de Plataforma Física
+        class Platform {
+            constructor(width, height, depth, position, color, type = 'normal') {
+                this.type = type; // 'normal', 'moving', 'disappearing'
+                this.initialPos = position.clone();
+                this.speed = 2.5;
+                this.range = 8;
+                this.direction = 1;
+                this.active = true;
+                this.timer = 0;
+                
+                let material;
+                if (type === 'disappearing') {
+                    material = new THREE.MeshLambertMaterial({ color: '#ff2d55', transparent: true, opacity: 1 });
+                } else if (type === 'checkpoint') {
+                    material = new THREE.MeshLambertMaterial({ color: '#4cd964' });
+                } else if (type === 'goal') {
+                    material = new THREE.MeshLambertMaterial({ color: '#ffcc00' });
+                } else {
+                    material = new THREE.MeshLambertMaterial({ color: color || '#1f2937' });
+                }
+
+                this.mesh = new THREE.Mesh(new THREE.BoxGeometry(width, height, depth), material);
+                this.mesh.position.copy(position);
+                this.mesh.castShadow = true;
+                this.mesh.receiveShadow = true;
+                scene.add(this.mesh);
+
+                this.width = width;
+                this.height = height;
+                this.depth = depth;
+
+                platforms.push(this);
+            }
+
+            update(timeStep, elapsed) {
+                if (this.type === 'moving') {
+                    // Mueve la plataforma horizontalmente en el eje X
+                    this.mesh.position.x += this.speed * timeStep * this.direction;
+                    if (Math.abs(this.mesh.position.x - this.initialPos.x) > this.range) {
+                        this.direction *= -1;
+                    }
+                } else if (this.type === 'disappearing') {
+                    // Parpadeo y desaparición cíclica
+                    this.timer += timeStep;
+                    const cycle = this.timer % 4; // Ciclo de 4 segundos
+                    if (cycle < 2) {
+                        // Activa y visible
+                        this.mesh.material.opacity = 1;
+                        this.mesh.material.color.set('#ff2d55');
+                        this.active = true;
+                    } else if (cycle < 2.8) {
+                        // Parpadeo preventivo
+                        const blink = Math.floor(elapsed * 10) % 2 === 0;
+                        this.mesh.material.opacity = blink ? 0.8 : 0.2;
+                        this.mesh.material.color.set('#e67e22');
+                        this.active = true;
+                    } else {
+                        // Desaparecida
+                        this.mesh.material.opacity = 0;
+                        this.active = false;
+                    }
+                }
+            }
+
+            getBounds() {
+                if (!this.active) return null;
+                const pos = this.mesh.position;
+                return {
+                    minX: pos.x - this.width/2,
+                    maxX: pos.x + this.width/2,
+                    minY: pos.y - this.height/2,
+                    maxY: pos.y + this.height/2,
+                    minZ: pos.z - this.depth/2,
+                    maxZ: pos.z + this.depth/2
+                };
+            }
+        }
+
+        // Clase de Obstáculo Letal (Haz de Láser)
+        class Hazard {
+            constructor(geometry, position, color, type = 'static') {
+                this.type = type; // 'static', 'rotating'
+                this.angle = 0;
+                this.speed = 2.0;
+
+                const material = new THREE.MeshBasicMaterial({ color: color || '#ff3b30' });
+                this.mesh = new THREE.Mesh(geometry, material);
+                this.mesh.position.copy(position);
+                scene.add(this.mesh);
+
+                hazards.push(this);
+            }
+
+            update(timeStep) {
+                if (this.type === 'rotating') {
+                    this.angle += this.speed * timeStep;
+                    this.mesh.rotation.y = this.angle;
+                }
+            }
+
+            checkCollision(playerPos, playerRadius, playerHeight) {
+                // Cálculo de colisión simplificado contra las mallas de peligro
+                const hazardPos = this.mesh.position;
+                
+                if (this.type === 'rotating') {
+                    // Colisión con aspas giratorias
+                    const distToCenter = new THREE.Vector2(playerPos.x - hazardPos.x, playerPos.z - hazardPos.z).length();
+                    // Si el jugador está sobre el cilindro giratorio a la altura correcta
+                    if (distToCenter < 12 && Math.abs(playerPos.y - hazardPos.y) < 1.5) {
+                        // Obtiene el ángulo relativo del jugador
+                        const relAngle = Math.atan2(playerPos.z - hazardPos.z, playerPos.x - hazardPos.x);
+                        // Compara el ángulo del jugador con el ángulo del aspa giratoria
+                        const diffAngle1 = Math.abs((relAngle - this.angle) % Math.PI);
+                        const diffAngle2 = Math.abs((relAngle - (this.angle + Math.PI/2)) % Math.PI);
+                        if (diffAngle1 < 0.25 || diffAngle2 < 0.25 || diffAngle1 > Math.PI - 0.25 || diffAngle2 > Math.PI - 0.25) {
+                            return true;
+                        }
+                    }
+                } else {
+                    // Colisión estática de caja para barreras láser
+                    const dist = playerPos.distanceTo(hazardPos);
+                    if (dist < playerRadius + 1.2) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+        }
+
+        // --- Generación de Mapas ---
+
+        function clearMap() {
+            platforms.forEach(p => scene.remove(p.mesh));
+            hazards.forEach(h => scene.remove(h.mesh));
+            checkpoints.forEach(c => scene.remove(c.mesh));
+            if (barryNPC) {
+                scene.remove(barryNPC.mesh);
+                barryNPC = null;
+            }
+            if (goalPad) scene.remove(goalPad.mesh);
+            
+            platforms.length = 0;
+            hazards.length = 0;
+            checkpoints.length = 0;
+            goalPad = null;
+        }
+
+        // Genera el Mapa de Barry's Escape
+        function generateBarrysEscapeMap() {
+            clearMap();
+            scene.fog.color.set('#0a0f1d');
+            scene.fog.density = 0.012;
+            scene.background.set('#0a0f1d');
+
+            // 1. Zona de Salida
+            new Platform(12, 1, 12, new THREE.Vector3(0, 0, 0), '#2ecc71');
+
+            // 2. Jumps Básicos (Secuencia)
+            for (let i = 1; i <= 4; i++) {
+                new Platform(3, 0.8, 3, new THREE.Vector3(0, 0, -6 * i), '#34495e');
+            }
+
+            // 3. Primer Checkpoint (Safe Zone)
+            const check1Pos = new THREE.Vector3(0, 0, -30);
+            const cp1 = new Platform(8, 0.8, 8, check1Pos, '#3498db', 'checkpoint');
+            cp1.checkpointId = "Prisión Central";
+            checkpoints.push(cp1);
+
+            // 4. Lásers Rotatorios (Haz de alta potencia)
+            const laserHubPos = new THREE.Vector3(0, 1.2, -45);
+            new Platform(4, 2, 4, new THREE.Vector3(0, 0.5, -45), '#1f2937'); // Base del láser
+            const laserBladeGeo = new THREE.BoxGeometry(24, 0.2, 0.8);
+            new Hazard(laserBladeGeo, laserHubPos, '#ff3b30', 'rotating');
+
+            // Destino seguro tras los lásers
+            const check2Pos = new THREE.Vector3(0, 0, -60);
+            const cp2 = new Platform(8, 0.8, 8, check2Pos, '#3498db', 'checkpoint');
+            cp2.checkpointId = "Salida de Emergencia";
+            checkpoints.push(cp2);
+
+            // 5. Zona de Persecución del Guardia Barry (El NPC agresor)
+            // Una plataforma enorme patrullada por Barry
+            const barryZone = new Platform(16, 1, 40, new THREE.Vector3(0, 0, -90), '#16a085');
+            
+            // Instanciar Barry NPC
+            barryNPC = createBarryMesh();
+            barryNPC.mesh.position.set(0, 3.4, -95);
+            barryNPC.patrolPointA.set(0, 3.4, -105);
+            barryNPC.patrolPointB.set(0, 3.4, -75);
+            barryNPC.state = 'patrol';
+
+            // 6. Plataformas de salto desaparecedoras hacia la libertad
+            for (let i = 0; i < 3; i++) {
+                new Platform(3.5, 0.5, 3.5, new THREE.Vector3(0, 0 + i * 1.5, -118 - (i * 6)), null, 'disappearing');
+            }
+
+            // 7. Zona Final (Meta)
+            const finalPos = new THREE.Vector3(0, 4, -145);
+            goalPad = new Platform(10, 0.5, 10, finalPos, '#f1c40f', 'goal');
+        }
+
+        // Genera el Mapa de Tower of Hell
+        function generateTowerOfHellMap() {
+            clearMap();
+            scene.fog.color.set('#1b0826');
+            scene.fog.density = 0.02;
+            scene.background.set('#1b0826');
+
+            // 1. Plataforma Base (Única zona segura)
+            new Platform(16, 1, 16, new THREE.Vector3(0, 0, 0), '#8e44ad');
+
+            // 2. Escalera procedimental vertical extremadamente difícil
+            let currentPos = new THREE.Vector3(0, 0.5, 0);
+            const segments = 12;
+            const colors = ['#e74c3c', '#e67e22', '#f1c40f', '#2ecc71', '#3498db', '#9b59b6'];
+
+            for (let i = 1; i <= segments; i++) {
+                const angle = (i * Math.PI * 0.45); // Espiral
+                const radius = 6.5;
+                const nextX = Math.cos(angle) * radius;
+                const nextZ = Math.sin(angle) * radius;
+                const nextY = i * 3.2;
+
+                const color = colors[i % colors.length];
+                const platType = (i % 4 === 0) ? 'moving' : 'normal';
+
+                const plat = new Platform(3.0, 0.6, 3.0, new THREE.Vector3(nextX, nextY, nextZ), color, platType);
+                if (platType === 'moving') {
+                    plat.range = 3;
+                    plat.speed = 4.0;
+                }
+
+                // Generar barrera de láser mortífero en medio de ciertos saltos
+                if (i % 3 === 1) {
+                    const laserHeight = nextY + 1.5;
+                    const laserGeo = new THREE.BoxGeometry(2.5, 0.2, 0.2);
+                    new Hazard(laserGeo, new THREE.Vector3(nextX * 0.8, laserHeight, nextZ * 0.8), '#ff3b30');
+                }
+            }
+
+            // 3. Plataforma Final de Victoria (Cúpula del Infierno)
+            const finalY = segments * 3.2 + 3.5;
+            goalPad = new Platform(8, 0.5, 8, new THREE.Vector3(0, finalY, 0), '#f1c40f', 'goal');
+        }
+
+        // --- Controles de Teclado y Mobile ---
+        const keys = { w: false, a: false, s: false, d: false, space: false };
+        let mouseX = 0, mouseY = 0;
+        let isMouseDown = false;
+        
+        // Parámetros de Cámara Orbital
+        let cameraPhi = 1.3, cameraTheta = -Math.PI / 2;
+        const cameraRadius = 13;
+
+        // Joystick táctil móvil
+        const joystickContainer = document.getElementById('joystick-container');
+        const joystickNub = document.getElementById('joystick-nub');
+        let joystickActive = false;
+        let joystickStart = { x: 0, y: 0 };
+        let joystickMove = { x: 0, y: 0 };
+
+        // Detección de dispositivos táctiles
+        function detectTouch() {
+            const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+            if (hasTouch) {
+                document.getElementById('mobile-controls').classList.remove('hidden');
+            }
+        }
+
+        // Listeners del Teclado
+        window.addEventListener('keydown', (e) => {
+            const key = e.key.toLowerCase();
+            if (key === 'w' || e.key === 'ArrowUp') keys.w = true;
+            if (key === 'a' || e.key === 'ArrowLeft') keys.a = true;
+            if (key === 's' || e.key === 'ArrowDown') keys.s = true;
+            if (key === 'd' || e.key === 'ArrowRight') keys.d = true;
+            if (e.key === ' ' || key === 'spacebar') keys.space = true;
+        });
+
+        window.addEventListener('keyup', (e) => {
+            const key = e.key.toLowerCase();
+            if (key === 'w' || e.key === 'ArrowUp') keys.w = false;
+            if (key === 'a' || e.key === 'ArrowLeft') keys.a = false;
+            if (key === 's' || e.key === 'ArrowDown') keys.s = false;
+            if (key === 'd' || e.key === 'ArrowRight') keys.d = false;
+            if (e.key === ' ' || key === 'spacebar') keys.space = false;
+        });
+
+        // Eventos de Mouse para rotar Cámara
+        window.addEventListener('mousedown', (e) => {
+            if (e.target.closest('#hud') || e.target.closest('#main-menu') || e.target.closest('#game-over-screen') || e.target.closest('#victory-screen')) return;
+            isMouseDown = true;
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!isMouseDown) return;
+            const deltaX = e.clientX - mouseX;
+            const deltaY = e.clientY - mouseY;
+            
+            cameraTheta -= deltaX * 0.005;
+            cameraPhi -= deltaY * 0.005;
+            cameraPhi = Math.max(0.1, Math.min(Math.PI / 2 - 0.05, cameraPhi)); // Evita inversión de cámara
+            
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+        });
+
+        window.addEventListener('mouseup', () => isMouseDown = false);
+
+        // Soporte táctil para rotar cámara
+        window.addEventListener('touchstart', (e) => {
+            const touch = e.touches[0];
+            if (e.target.closest('#mobile-controls') || e.target.closest('#hud') || e.target.closest('#main-menu')) return;
+            isMouseDown = true;
+            mouseX = touch.clientX;
+            mouseY = touch.clientY;
+        }, { passive: true });
+
+        window.addEventListener('touchmove', (e) => {
+            if (!isMouseDown) return;
+            const touch = e.touches[0];
+            const deltaX = touch.clientX - mouseX;
+            const deltaY = touch.clientY - mouseY;
+            
+            cameraTheta -= deltaX * 0.008;
+            cameraPhi -= deltaY * 0.008;
+            cameraPhi = Math.max(0.1, Math.min(Math.PI / 2 - 0.05, cameraPhi));
+            
+            mouseX = touch.clientX;
+            mouseY = touch.clientY;
+        }, { passive: true });
+
+        window.addEventListener('touchend', () => isMouseDown = false);
+
+        // Lógica del Joystick Virtual
+        joystickContainer.addEventListener('touchstart', (e) => {
+            joystickActive = true;
+            const rect = joystickContainer.getBoundingClientRect();
+            joystickStart = {
+                x: rect.left + rect.width / 2,
+                y: rect.top + rect.height / 2
+            };
+        }, { passive: true });
+
+        joystickContainer.addEventListener('touchmove', (e) => {
+            if (!joystickActive) return;
+            const touch = e.touches[0];
+            const dx = touch.clientX - joystickStart.x;
+            const dy = touch.clientY - joystickStart.y;
+            const distance = Math.min(Math.sqrt(dx * dx + dy * dy), 50); // Límite de desplazamiento físico
+            const angle = Math.atan2(dy, dx);
+            
+            joystickMove = {
+                x: Math.cos(angle) * (distance / 50),
+                y: Math.sin(angle) * (distance / 50)
+            };
+
+            // Mueve la perilla del joystick visualmente
+            joystickNub.style.transform = `translate(${Math.cos(angle) * distance}px, ${Math.sin(angle) * distance}px)`;
+            
+            // Simular entradas de teclado para el bucle de actualización
+            keys.w = joystickMove.y < -0.3;
+            keys.s = joystickMove.y > 0.3;
+            keys.a = joystickMove.x < -0.3;
+            keys.d = joystickMove.x > 0.3;
+        }, { passive: true });
+
+        joystickContainer.addEventListener('touchend', () => {
+            joystickActive = false;
+            joystickNub.style.transform = `translate(0px, 0px)`;
+            keys.w = false;
+            keys.s = false;
+            keys.a = false;
+            keys.d = false;
+        });
+
+        // Botón de salto móvil
+        const btnMobileJump = document.getElementById('mobile-jump');
+        btnMobileJump.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            keys.space = true;
+        });
+        btnMobileJump.addEventListener('touchend', () => {
+            keys.space = false;
+        });
+
+        // --- Motores Físicos del Jugador (Físicas Personalizadas) ---
+        const velocity = new THREE.Vector3();
+        const gravity = -38;    // Gravedad ligeramente ajustada para controlar la caída del salto
+        const jumpForce = 18;  // Aumentado de 14 a 18 para saltar significativamente más alto
+        const moveSpeed = 12;
+        let isGrounded = false;
+
+        // Función de utilidad para comprobar solapamiento tridimensional AABB
+        function checkOverlaps(p, b, ignoreStep = false) {
+            const pMinX = p.x - 0.8;
+            const pMaxX = p.x + 0.8;
+            const pMinY = p.y - 2.1;
+            const pMaxY = p.y + 2.5;
+            const pMinZ = p.z - 0.6;
+            const pMaxZ = p.z + 0.6;
+
+            // Si ignoreStep es verdadero, evitamos bloquear al jugador con obstáculos 
+            // horizontales cuyo borde superior está casi bajo sus pies (step height tolerable)
+            if (ignoreStep) {
+                const stepHeight = 0.6;
+                if (b.maxY - pMinY < stepHeight) {
+                    return false;
+                }
+            }
+
+            return (pMinX < b.maxX && pMaxX > b.minX) &&
+                   (pMinY < b.maxY && pMaxY > b.minY) &&
+                   (pMinZ < b.maxZ && pMaxZ > b.minZ);
+        }
+
+        function updatePhysics(timeStep) {
+            if (!gameState.isPlaying) return;
+
+            // --- Dirección del Movimiento basado en Ángulo de Cámara ---
+            const moveDirection = new THREE.Vector3();
+            
+            // Dirección frontal de la cámara en plano horizontal
+            const camForward = new THREE.Vector3(0, 0, -1).applyAxisAngle(new THREE.Vector3(0, 1, 0), cameraTheta).normalize();
+            const camRight = new THREE.Vector3(1, 0, 0).applyAxisAngle(new THREE.Vector3(0, 1, 0), cameraTheta).normalize();
+
+            if (keys.w) moveDirection.add(camForward);
+            if (keys.s) moveDirection.add(camForward.clone().negate());
+            if (keys.a) moveDirection.add(camRight.clone().negate());
+            if (keys.d) moveDirection.add(camRight);
+
+            moveDirection.y = 0;
+            if (moveDirection.lengthSq() > 0) {
+                moveDirection.normalize();
+                // Animación de balanceo de miembros al moverse
+                const animTime = gameState.timerElapsed * 15;
+                player.armLeft.rotation.x = Math.sin(animTime) * 0.8;
+                player.armRight.rotation.x = -Math.sin(animTime) * 0.8;
+                player.legLeft.rotation.x = -Math.sin(animTime) * 0.8;
+                player.legRight.rotation.x = Math.sin(animTime) * 0.8;
+
+                // Rotar el cuerpo hacia la dirección de avance
+                const targetRotation = Math.atan2(moveDirection.x, moveDirection.z);
+                player.mesh.rotation.y = targetRotation;
+            } else {
+                // Restablecer posición idle
+                player.armLeft.rotation.x = 0;
+                player.armRight.rotation.x = 0;
+                player.legLeft.rotation.x = 0;
+                player.legRight.rotation.x = 0;
+            }
+
+            // Aplicar velocidad lateral y gravedad
+            velocity.x = moveDirection.x * moveSpeed;
+            velocity.z = moveDirection.z * moveSpeed;
+            velocity.y += gravity * timeStep;
+
+            // Salto
+            if (keys.space && isGrounded) {
+                velocity.y = jumpForce;
+                isGrounded = false;
+                playSound('jump');
+            }
+
+            // --- RESOLUCIÓN DE COLISIONES SÓLIDAS EJE POR EJE (Evita atravesar bloques) ---
+            const pos = player.mesh.position;
+
+            // 1. Movimiento y colisión en eje X (ignorando pequeñas diferencias tipo escalón)
+            pos.x += velocity.x * timeStep;
+            for (let platform of platforms) {
+                const bounds = platform.getBounds();
+                if (!bounds) continue;
+                
+                if (checkOverlaps(pos, bounds, true)) {
+                    // Colisión detectada en X: empujar hacia afuera y anular velocidad en X
+                    if (velocity.x > 0) {
+                        pos.x = bounds.minX - 0.8;
+                    } else if (velocity.x < 0) {
+                        pos.x = bounds.maxX + 0.8;
+                    }
+                    velocity.x = 0;
+                }
+            }
+
+            // 2. Movimiento y colisión en eje Z (ignorando pequeñas diferencias tipo escalón)
+            pos.z += velocity.z * timeStep;
+            for (let platform of platforms) {
+                const bounds = platform.getBounds();
+                if (!bounds) continue;
+                
+                if (checkOverlaps(pos, bounds, true)) {
+                    // Colisión detectada en Z: empujar hacia afuera y anular velocidad en Z
+                    if (velocity.z > 0) {
+                        pos.z = bounds.minZ - 0.6;
+                    } else if (velocity.z < 0) {
+                        pos.z = bounds.maxZ + 0.6;
+                    }
+                    velocity.z = 0;
+                }
+            }
+
+            // 3. Movimiento y colisión en eje Y (Suelo e Intersección de techos)
+            pos.y += velocity.y * timeStep;
+            let onGround = false;
+
+            for (let platform of platforms) {
+                const bounds = platform.getBounds();
+                if (!bounds) continue;
+                
+                if (checkOverlaps(pos, bounds, false)) {
+                    // Colisión detectada en Y
+                    if (velocity.y < 0) { 
+                        // Caída: el jugador aterriza sólidamente sobre la plataforma
+                        pos.y = bounds.maxY + 2.1;
+                        velocity.y = 0;
+                        onGround = true;
+                    } else if (velocity.y > 0) { 
+                        // Ascenso: el jugador choca contra la parte inferior (techo) de un bloque
+                        pos.y = bounds.minY - 2.5;
+                        velocity.y = -2; // Rebota levemente hacia abajo
+                    }
+                }
+            }
+            isGrounded = onGround;
+
+            // --- Límite de caída libre (Muerte por vacío) ---
+            if (pos.y < -15) {
+                killPlayer();
+            }
+        }
+
+        // --- Comportamiento IA del Guardia Barry (Magnitude) ---
+        function updateBarryAI(timeStep) {
+            if (!barryNPC || !gameState.isPlaying) return;
+
+            const bPos = barryNPC.mesh.position;
+            const pPos = player.mesh.position;
+            
+            // Cálculo de Distancia mediante Magnitud de Vectores
+            const distance = bPos.distanceTo(pPos);
+
+            if (gameState.mode === 'barry') {
+                // Rango de Detección (Agresión) de Barry
+                const AGGRO_RANGE = 28;
+                const KILL_RANGE = 3.5;
+
+                if (distance < AGGRO_RANGE) {
+                    barryNPC.state = 'chase';
+                    
+                    // Rotar a Barry hacia el jugador
+                    const dir = new THREE.Vector3().subVectors(pPos, bPos);
+                    const targetAngle = Math.atan2(dir.x, dir.z);
+                    barryNPC.mesh.rotation.y = targetAngle;
+
+                    // Movimiento adaptativo hacia el jugador en eje horizontal (MoveTo)
+                    const moveDir = new THREE.Vector3(dir.x, 0, dir.z).normalize();
+                    bPos.add(moveDir.multiplyScalar(barryNPC.speed * timeStep));
+
+                    // Letalidad inmediata si Barry alcanza al jugador
+                    if (distance <= KILL_RANGE) {
+                        killPlayer();
+                    }
+                } else {
+                    // Modo patrulla estándar de ida y vuelta
+                    if (barryNPC.state === 'chase') {
+                        barryNPC.state = 'patrol';
+                        barryNPC.targetPatrol = barryNPC.patrolPointA;
+                    }
+
+                    if (!barryNPC.targetPatrol) {
+                        barryNPC.targetPatrol = barryNPC.patrolPointA;
+                    }
+
+                    const dirPatrol = new THREE.Vector3().subVectors(barryNPC.targetPatrol, bPos);
+                    if (dirPatrol.length() < 1) {
+                        // Cambia de destino de patrulla al llegar
+                        barryNPC.targetPatrol = (barryNPC.targetPatrol === barryNPC.patrolPointA) ? barryNPC.patrolPointB : barryNPC.patrolPointA;
+                    } else {
+                        const moveDir = dirPatrol.normalize();
+                        barryNPC.mesh.rotation.y = Math.atan2(moveDir.x, moveDir.z);
+                        bPos.add(moveDir.multiplyScalar((barryNPC.speed * 0.5) * timeStep));
+                    }
+                }
+            }
+        }
+
+        // --- Verificación de Daño y Checkpoints ---
+        function checkCollisionsAndMilestones() {
+            if (!gameState.isPlaying) return;
+
+            const pPos = player.mesh.position;
+
+            // 1. Detección de colisiones con obstáculos letales
+            for (let hazard of hazards) {
+                if (hazard.checkCollision(pPos, player.radius, player.height)) {
+                    killPlayer();
+                    return;
+                }
+            }
+
+            // 2. Detección de Checkpoints (Solo en modo Barry's Escape)
+            if (gameState.mode === 'barry') {
+                for (let cp of checkpoints) {
+                    const bounds = cp.getBounds();
+                    if (bounds && pPos.x > bounds.minX && pPos.x < bounds.maxX &&
+                        pPos.z > bounds.minZ && pPos.z < bounds.maxZ &&
+                        Math.abs(pPos.y - bounds.maxY) < 1.0) {
+                        
+                        if (gameState.activeCheckpoint !== cp) {
+                            gameState.activeCheckpoint = cp;
+                            document.getElementById('checkpoint-text').textContent = cp.checkpointId;
+                            playSound('checkpoint');
+                            
+                            // Visual: Cambia el color del checkpoint activado a verde fosforescente
+                            cp.mesh.material.color.set('#2ecc71');
+                        }
+                    }
+                }
+            }
+
+            // 3. Condición de Victoria
+            if (goalPad) {
+                const gBounds = goalPad.getBounds();
+                if (gBounds && pPos.x > gBounds.minX && pPos.x < gBounds.maxX &&
+                    pPos.z > gBounds.minZ && pPos.z < gBounds.maxZ &&
+                    Math.abs(pPos.y - gBounds.maxY) < 1.0) {
+                    triggerVictory();
+                }
+            }
+        }
+
+        // Muerte del Jugador
+        function killPlayer() {
+            gameState.deaths++;
+            document.getElementById('death-counter').textContent = gameState.deaths;
+            playSound('death');
+            
+            gameState.isPlaying = false;
+            
+            // Mostrar pantalla de Game Over Roblox clásica
+            document.getElementById('game-over-screen').classList.remove('hidden');
+        }
+
+        // Resucitar al jugador
+        function respawnPlayer() {
+            document.getElementById('game-over-screen').classList.add('hidden');
+            
+            if (gameState.mode === 'barry' && gameState.activeCheckpoint) {
+                // Volver al último punto de control guardado (Spawn seguro a +3.0 de altura)
+                const cpPos = gameState.activeCheckpoint.mesh.position;
+                player.mesh.position.set(cpPos.x, cpPos.y + 3.0, cpPos.z);
+            } else {
+                // Al inicio absoluto
+                player.mesh.position.set(0, 3.0, 0);
+            }
+            
+            velocity.set(0, 0, 0);
+            isGrounded = false;
+            gameState.isPlaying = true;
+        }
+
+        // Activación de Victoria
+        function triggerVictory() {
+            gameState.isPlaying = false;
+            playSound('win');
+
+            // Actualizar datos de victoria
+            document.getElementById('stat-mode').textContent = gameState.mode === 'barry' ? "Barry's Prison Escape" : "Tower of Hell Challenge";
+            document.getElementById('stat-time').textContent = formatTime(gameState.timerElapsed);
+            document.getElementById('stat-deaths').textContent = gameState.deaths;
+
+            document.getElementById('victory-screen').classList.remove('hidden');
+        }
+
+        // --- Manejo de la Interfaz UI & Flujo ---
+
+        function startGame(mode) {
+            gameState.mode = mode;
+            gameState.deaths = 0;
+            gameState.activeCheckpoint = null;
+            gameState.timerElapsed = 0;
+            document.getElementById('death-counter').textContent = "0";
+            document.getElementById('checkpoint-text').textContent = "Salida";
+            document.getElementById('game-mode-text').textContent = mode === 'barry' ? "Modo: Barry's Escape" : "Modo: Tower of Hell";
+
+            if (mode === 'barry') {
+                generateBarrysEscapeMap();
+            } else {
+                generateTowerOfHellMap();
+            }
+
+            // Ocultar menú e iniciar
+            document.getElementById('main-menu').classList.add('hidden');
+            document.getElementById('hud').classList.remove('hidden');
+            
+            // Posicionar jugador en un spawn seguro a +3.0 de altura
+            player.mesh.position.set(0, 3.0, 0);
+            velocity.set(0, 0, 0);
+
+            // Restablecer cámara detrás del jugador
+            cameraTheta = -Math.PI / 2;
+            cameraPhi = 1.2;
+
+            detectTouch();
+            gameState.isPlaying = true;
+        }
+
+        // Formato del Cronómetro
+        function formatTime(secs) {
+            const m = Math.floor(secs / 60);
+            const s = Math.floor(secs % 60);
+            const ms = Math.floor((secs % 1) * 10);
+            return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}.${ms}`;
+        }
+
+        // --- Cámara de Seguimiento (Roblox Camera View) ---
+        function updateCamera() {
+            if (gameState.cameraMode === 'third') {
+                // Seguimiento de tercera persona dinámico orbital
+                const target = player.mesh.position;
+                
+                const x = target.x + cameraRadius * Math.sin(cameraPhi) * Math.sin(cameraTheta);
+                const y = target.y + cameraRadius * Math.cos(cameraPhi) + 1.5;
+                const z = target.z + cameraRadius * Math.sin(cameraPhi) * Math.cos(cameraTheta);
+
+                camera.position.set(x, y, z);
+                camera.lookAt(target.x, target.y + 0.8, target.z);
+            } else {
+                // Primera persona inmersiva para aumentar tensión (Barry's prison style)
+                const headPos = new THREE.Vector3();
+                player.head.getWorldPosition(headPos);
+                camera.position.copy(headPos);
+                
+                // Mirar hacia adelante según el ángulo orbital del mouse
+                const lookTarget = new THREE.Vector3(
+                    camera.position.x + Math.sin(cameraTheta),
+                    camera.position.y - Math.tan(cameraPhi - Math.PI/2),
+                    camera.position.z + Math.cos(cameraTheta)
+                );
+                camera.lookAt(lookTarget);
+            }
+        }
+
+        // --- Bucle de Animación y Simulación Principal ---
+        function animate(timestamp) {
+            requestAnimationFrame(animate);
+
+            if (!gameState.lastTime) gameState.lastTime = timestamp;
+            let timeStep = (timestamp - gameState.lastTime) / 1000;
+            gameState.lastTime = timestamp;
+
+            // Salvaguarda para cambios de pestaña
+            if (timeStep > 0.1) timeStep = 0.1;
+
+            if (gameState.isPlaying) {
+                // Actualizar cronómetro
+                gameState.timerElapsed += timeStep;
+                document.getElementById('timer').textContent = formatTime(gameState.timerElapsed);
+
+                // Actualizar físicas y colisiones
+                updatePhysics(timeStep);
+                updateBarryAI(timeStep);
+                
+                // Actualizar plataformas con comportamiento activo (móviles y desvanecedoras)
+                platforms.forEach(p => p.update(timeStep, gameState.timerElapsed));
+                hazards.forEach(h => h.update(timeStep));
+
+                checkCollisionsAndMilestones();
+            }
+
+            // Actualizar cámara
+            updateCamera();
+
+            renderer.render(scene, camera);
+        }
+
+        // Listeners de la Interfaz
+        document.getElementById('mode-barry').addEventListener('click', () => startGame('barry'));
+        document.getElementById('mode-tower').addEventListener('click', () => startGame('tower'));
+        
+        document.getElementById('btn-over-action').addEventListener('click', () => {
+            respawnPlayer();
+        });
+
+        document.getElementById('btn-restart').addEventListener('click', () => {
+            killPlayer();
+        });
+
+        // Alternar modo de cámara (Primera / Tercera persona)
+        document.getElementById('btn-camera').addEventListener('click', () => {
+            gameState.cameraMode = gameState.cameraMode === 'third' ? 'first' : 'third';
+            // Hacer transparente la cabeza del jugador en primera persona
+            player.head.material.transparent = gameState.cameraMode === 'first';
+            player.head.material.opacity = gameState.cameraMode === 'first' ? 0 : 1;
+        });
+
+        // Botones de pantalla de victoria
+        document.getElementById('btn-win-menu').addEventListener('click', () => {
+            document.getElementById('victory-screen').classList.add('hidden');
+            document.getElementById('hud').classList.add('hidden');
+            document.getElementById('main-menu').classList.remove('hidden');
+        });
+
+        document.getElementById('btn-win-retry').addEventListener('click', () => {
+            document.getElementById('victory-screen').classList.add('hidden');
+            startGame(gameState.mode);
+        });
+
+        // Ajustar tamaño del Canvas al redimensionar ventana
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Inicialización de simulación
+        window.onload = function () {
+            requestAnimationFrame(animate);
+        };
+    </script>
+</body>
+</html>
