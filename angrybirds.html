@@ -3,201 +3,424 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Angry Birds Clone - HTML5</title>
-    <!-- Importar Matter.js desde CDN -->
+    <title>Angry Birds Clone - Ultra Edition</title>
+    <!-- Importar Matter.js para simulación física -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+    <!-- Importar Tailwind CSS para el diseño de la interfaz de usuario -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Importar FontAwesome para iconos de la interfaz -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <style>
         body {
             margin: 0;
             padding: 0;
             overflow: hidden;
-            background: linear-gradient(to bottom, #87CEEB 0%, #E0F6FF 100%);
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(to bottom, #110724 0%, #280f3b 50%, #4c1a4b 100%);
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
             touch-action: none;
+            user-select: none;
         }
-        canvas { display: block; }
-        #ui-layer {
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            pointer-events: none;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            padding: 20px;
-            box-sizing: border-box;
+        canvas {
+            display: block;
+            image-rendering: pixelated;
         }
-        .header { display: flex; justify-content: space-between; align-items: center; width: 100%; }
-        .controls-group {
-            display: flex;
-            gap: 10px;
-            pointer-events: auto;
-            align-items: center;
+        /* Barra de desplazamiento personalizada para el selector de niveles */
+        select::-webkit-scrollbar {
+            width: 8px;
         }
-        #score-board {
-            font-size: 20px; font-weight: bold; color: #333;
-            background: rgba(255,255,255,0.85);
-            padding: 10px 15px; border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        select::-webkit-scrollbar-thumb {
+            background-color: #6e256b;
+            border-radius: 4px;
         }
-        #level-select {
-            padding: 10px; font-size: 16px; font-weight: bold;
-            border-radius: 10px; border: 2px solid #ff4757;
-            background: white; color: #333; cursor: pointer;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-        #btn-restart {
-            pointer-events: auto;
-            padding: 10px 15px; font-size: 16px; font-weight: bold;
-            color: white; background-color: #ff4757;
-            border: none; border-radius: 10px; cursor: pointer;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
-            transition: transform 0.1s, background-color 0.2s;
-        }
-        #btn-restart:hover { background-color: #ff6b81; transform: scale(1.05); }
-        #btn-restart:active { transform: scale(0.95); }
-        
-        /* Contenedor del Mensaje de Estado */
-        #message-container {
-            position: absolute; top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            display: none; text-align: center;
-            pointer-events: auto;
-            background: rgba(0, 0, 0, 0.85);
-            padding: 30px 40px;
-            border-radius: 20px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.4);
-            border: 3px solid #fff;
-            max-width: 90%;
-            box-sizing: border-box;
-        }
-        #message-title {
-            font-size: 40px; font-weight: bold; color: #fff;
-            margin-bottom: 20px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.6);
-        }
-        #btn-next-level {
-            padding: 12px 25px; font-size: 18px; font-weight: bold;
-            color: white; background-color: #2ed573;
-            border: none; border-radius: 10px; cursor: pointer;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
-            transition: transform 0.1s, background-color 0.2s;
-        }
-        #btn-next-level:hover { background-color: #26af5f; transform: scale(1.05); }
-        #btn-next-level:active { transform: scale(0.95); }
     </style>
 </head>
-<body>
-    <div id="ui-layer">
-        <div class="header">
-            <div id="score-board">Nivel <span id="current-level-num">1</span> | Puntuación: <span id="score">0</span></div>
-            <div class="controls-group">
-                <select id="level-select" onchange="selectLevel(this.value)">
-                    <option value="1">Nivel 1: El Fuerte del Bosque</option>
-                    <option value="2">Nivel 2: Torres Gemelas de Piedra</option>
-                    <option value="3">Nivel 3: El Castillo de TNT del Rey</option>
+<body class="relative w-screen h-screen overflow-hidden">
+
+    <!-- Capa de Interfaz de Usuario HUD -->
+    <div id="hud-layer" class="absolute inset-0 pointer-events-none z-10 p-4 flex flex-col justify-between box-border">
+        
+        <!-- Cabecera de controles e información -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 w-full pointer-events-auto">
+            
+            <!-- Panel de Puntuación y Nivel -->
+            <div class="bg-slate-900/90 text-white border border-purple-500/30 rounded-2xl px-5 py-3 shadow-2xl backdrop-blur-md flex items-center gap-4">
+                <div class="flex flex-col">
+                    <span class="text-xs text-purple-400 font-bold uppercase tracking-wider">Progreso</span>
+                    <span class="text-lg font-black text-yellow-300">Nivel <span id="current-level-num">1</span> / 20</span>
+                </div>
+                <div class="h-8 w-[1px] bg-purple-500/30"></div>
+                <div class="flex flex-col">
+                    <span class="text-xs text-purple-400 font-bold uppercase tracking-wider">Puntuación</span>
+                    <span class="text-xl font-black text-white tracking-widest" id="score">0</span>
+                </div>
+            </div>
+
+            <!-- Controles de Nivel y Reinicio -->
+            <div class="flex items-center gap-2">
+                <select id="level-select" onchange="selectLevel(this.value)" class="bg-slate-900/95 text-white border-2 border-purple-600 rounded-xl px-4 py-2.5 font-bold text-sm shadow-xl focus:outline-none focus:ring-2 focus:ring-purple-400 cursor-pointer">
+                    <!-- Los niveles serán cargados dinámicamente -->
                 </select>
-                <button id="btn-restart" onclick="initGame()">🔄 Reiniciar</button>
+                <button id="btn-restart" onclick="initGame()" class="bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white font-extrabold px-5 py-2.5 rounded-xl shadow-lg shadow-red-500/20 active:scale-95 transition-all flex items-center gap-2 text-sm border border-red-400/20">
+                    <i class="fa-solid fa-rotate-right"></i> Reiniciar
+                </button>
             </div>
         </div>
-        
-        <div id="message-container">
-            <div id="message-title">¡Nivel Completado!</div>
-            <button id="btn-next-level" onclick="nextLevel()">Siguiente Nivel ➡️</button>
+
+        <!-- Banner de recompensa activa -->
+        <div id="reward-banner" class="self-center mb-2 bg-gradient-to-r from-yellow-500/95 via-amber-500/95 to-orange-500/95 text-slate-950 font-black px-6 py-2.5 rounded-full shadow-2xl border-2 border-yellow-300 pointer-events-auto transform translate-y-12 opacity-0 transition-all duration-500 flex items-center gap-2.5 text-xs md:text-sm uppercase tracking-wider">
+            <i class="fa-solid fa-gift text-lg animate-bounce"></i>
+            <span>Premio Activo: <span id="active-reward-text">Ninguno</span></span>
+        </div>
+
+        <!-- Barra inferior indicadora de controles móviles -->
+        <div class="w-full flex justify-between items-end">
+            <div class="bg-black/40 backdrop-blur-sm rounded-xl px-4 py-2 text-xs text-slate-300 font-medium">
+                Pájaros de reserva a la izquierda de la honda
+            </div>
+            <div class="bg-black/40 backdrop-blur-sm rounded-xl px-4 py-2 text-xs text-slate-300 font-medium flex items-center gap-2 pointer-events-auto cursor-pointer" onclick="toggleHelpModal()">
+                <i class="fa-solid fa-circle-question text-purple-400"></i> Ayuda
+            </div>
         </div>
     </div>
-    <canvas id="game-canvas"></canvas>
+
+    <!-- Contenedor del Mensaje de Estado / Victoria / Derrota / Recompensa -->
+    <div id="message-container" class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm z-30 hidden flex items-center justify-center p-4">
+        <div class="bg-gradient-to-b from-slate-900 to-purple-950 text-white rounded-3xl p-8 max-w-md w-full border-4 border-purple-500 text-center shadow-2xl shadow-purple-500/20 transform scale-95 transition-all duration-300">
+            
+            <div id="modal-icon-container" class="text-6xl mb-4 text-yellow-400">
+                <i class="fa-solid fa-trophy animate-pulse"></i>
+            </div>
+            
+            <h2 id="message-title" class="text-4xl font-black mb-2 tracking-wide uppercase">¡Nivel Completado!</h2>
+            <p id="message-subtitle" class="text-purple-300 text-sm mb-6 font-semibold">Has destruido a todos los cerdos invasores.</p>
+            
+            <!-- Tarjeta de Recompensa Unlocked -->
+            <div id="reward-card" class="bg-slate-950/80 rounded-2xl p-5 border border-yellow-500/30 mb-8 flex flex-col items-center">
+                <span class="text-[10px] uppercase font-extrabold text-yellow-400 tracking-widest mb-1.5"><i class="fa-solid fa-circle-check"></i> Premio Desbloqueado para el Siguiente Nivel</span>
+                <div class="text-3xl text-yellow-300 mb-2"><i class="fa-solid fa-box-open"></i></div>
+                <h3 id="reward-name" class="text-lg font-black text-white">Cargamento de Triple Bomba</h3>
+                <p id="reward-desc" class="text-xs text-slate-400 mt-1">El próximo nivel comenzará con 3 pájaros bomba negros para devastación máxima.</p>
+            </div>
+
+            <!-- Botones del Modal -->
+            <div class="flex flex-col gap-3">
+                <button id="btn-next-level" onclick="nextLevel()" class="w-full bg-gradient-to-r from-yellow-400 via-amber-500 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-slate-950 font-black py-4 px-6 rounded-2xl shadow-lg shadow-orange-500/20 active:scale-95 transition-all text-lg flex items-center justify-center gap-2">
+                    Siguiente Nivel <i class="fa-solid fa-arrow-right"></i>
+                </button>
+                <button onclick="initGame(); document.getElementById('message-container').classList.add('hidden');" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-3 px-6 rounded-2xl active:scale-95 transition-all text-sm">
+                    Reintentar este nivel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Ayuda / Instrucciones -->
+    <div id="help-modal" class="absolute inset-0 bg-slate-950/85 backdrop-blur-md z-40 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border-2 border-purple-500 rounded-3xl p-6 max-w-md w-full text-white shadow-2xl relative">
+            <button onclick="toggleHelpModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-xl">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <h3 class="text-2xl font-black text-purple-400 mb-4 flex items-center gap-2">
+                <i class="fa-solid fa-circle-info"></i> Cómo Jugar
+            </h3>
+            <ul class="space-y-4 text-sm text-slate-300">
+                <li class="flex gap-3">
+                    <span class="text-yellow-400 font-bold text-lg">1.</span>
+                    <p>Arrastra al **pájaro activo** desde la honda hacia atrás para apuntar, y suéltalo para disparar.</p>
+                </li>
+                <li class="flex gap-3">
+                    <span class="text-yellow-400 font-bold text-lg">2.</span>
+                    <p><strong class="text-white">Pájaro Amarillo:</strong> Haz clic o pulsa la pantalla en el aire para activar su **Super Velocidad**.</p>
+                </li>
+                <li class="flex gap-3">
+                    <span class="text-yellow-400 font-bold text-lg">3.</span>
+                    <p><strong class="text-white">Pájaro Negro (Bomba):</strong> Al golpear una estructura iniciará un fusible de 2s parpadeando en rojo antes de estallar. También puedes hacer clic en el aire para **detonarlo manualmente**.</p>
+                </li>
+                <li class="flex gap-3">
+                    <span class="text-yellow-400 font-bold text-lg">4.</span>
+                    <p><strong class="text-yellow-300">Recompensas de Victoria:</strong> ¡Ganar te da superpoderes para el siguiente nivel! Puedes ganar pájaros extra, superexplosiones o velocidad mejorada.</p>
+                </li>
+                <li class="flex gap-3 text-red-400">
+                    <span class="font-bold text-lg"><i class="fa-solid fa-shield-halved"></i></span>
+                    <p><strong class="text-red-300">Anti-Trampas:</strong> No se puede arrastrar ni interactuar con los cerdos, bloques o dinamitas directamente. ¡Debes destruirlos usando las físicas del juego!</p>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Canvas del Juego -->
+    <canvas id="game-canvas" class="w-full h-full"></canvas>
+
     <script>
-        const Engine = Matter.Engine, Render = Matter.Render, Runner = Matter.Runner,
-              World = Matter.World, Bodies = Matter.Bodies, Body = Matter.Body,
-              Constraint = Matter.Constraint, Mouse = Matter.Mouse,
-              MouseConstraint = Matter.MouseConstraint, Events = Matter.Events,
-              Vector = Matter.Vector, Composite = Matter.Composite;
+        const Engine = Matter.Engine,
+              World = Matter.World,
+              Bodies = Matter.Bodies,
+              Body = Matter.Body,
+              Constraint = Matter.Constraint,
+              Mouse = Matter.Mouse,
+              MouseConstraint = Matter.MouseConstraint,
+              Events = Matter.Events,
+              Vector = Matter.Vector,
+              Composite = Matter.Composite;
 
         let engine, world, canvas, ctx, width, height;
         let bird, sling, pigs = [], blocks = [], ground, mouseConstraint;
-        let slingPos = { x: 200, y: 0 };
+        let slingPos = { x: 220, y: 0 };
         let isFired = false, score = 0, gameState = 'PLAYING';
         let birdQueue = [], currentBirdType = '', isAbilityUsed = false;
         let activeExplosions = []; 
         let currentLevel = 1;
-        const totalLevels = 3;
+        const totalLevels = 20;
+        
+        // Guardas de asentamiento estructural para evitar que los niveles se completen solos al cargar
+        let levelFrameCount = 0;
+
+        // Variables del Sistema de Recompensas
+        let pendingReward = null;  // Almacena la recompensa ganada para el siguiente nivel
+        let activeReward = null;   // Almacena la recompensa aplicada en el intento de nivel actual
+        
+        // Parámetros de efectos modificados por recompensas
+        let bonusExplosionRadius = 1; // Multiplicador de radio de explosión (ej. 1.5)
+        let bonusBirdSpeed = 1;       // Multiplicador de velocidad de disparo de habilidad
+
+        // Definiciones de tipos de recompensas disponibles
+        const REWARDS = {
+            triple_bomb: {
+                id: 'triple_bomb',
+                name: 'Arsenal de Triple Bomba 💣',
+                desc: 'Inicia el próximo nivel con una alineación devastadora de 3 Pájaros Bomba Negros.',
+                apply: () => {} 
+            },
+            super_explosion: {
+                id: 'super_explosion',
+                name: 'Mega Detonación 💥',
+                desc: 'La onda expansiva de las explosiones de TNT y Pájaros Negros aumenta un 50% en tamaño y fuerza.',
+                apply: () => { bonusExplosionRadius = 1.5; }
+            },
+            extra_birds: {
+                id: 'extra_birds',
+                name: 'Lluvia de Pájaros 🐦',
+                desc: 'Añade 2 pájaros rojos adicionales a tu cola de reserva para tener más intentos de ataque.',
+                apply: () => {} 
+            },
+            hyper_speed: {
+                id: 'hyper_speed',
+                name: 'Súper Propulsión 🚀',
+                desc: 'La habilidad del pájaro amarillo es un 50% más rápida y destructiva al activarse.',
+                apply: () => { bonusBirdSpeed = 1.5; }
+            }
+        };
 
         const scoreEl = document.getElementById('score');
         const levelNumEl = document.getElementById('current-level-num');
         const levelSelect = document.getElementById('level-select');
         const msgContainer = document.getElementById('message-container');
         const msgTitle = document.getElementById('message-title');
+        const msgSubtitle = document.getElementById('message-subtitle');
         const btnNextLevel = document.getElementById('btn-next-level');
+        const rewardCard = document.getElementById('reward-card');
+        const rewardName = document.getElementById('reward-name');
+        const rewardDesc = document.getElementById('reward-desc');
+        const rewardBanner = document.getElementById('reward-banner');
+        const activeRewardText = document.getElementById('active-reward-text');
+
+        // Inicializar el selector de niveles con nombres descriptivos y desafiantes
+        const levelNames = [
+            "El Fuerte del Bosque (Muy Fácil)",
+            "Torres Gemelas de Piedra (Fácil)",
+            "Castillo de TNT del Rey (Fácil-Medio)",
+            "Fortaleza de Hielo (Medio)",
+            "Pirámide del Desierto (Medio-Alto)",
+            "El Puente Colgante (Alto)",
+            "Caos Aéreo (Desafiante)",
+            "La Muralla Inexpugnable (Muy Alto)",
+            "El Castillo de Cristal (Difícil)",
+            "La Venganza del Rey (Sin TNT - Experto)",
+            "El Bastión Volcánico (Experto)",
+            "Laberinto Glaciar (Extremo)",
+            "Columnas del Olimpo (Física Pura)",
+            "Plataforma Celeste (Complejo)",
+            "Búnker Subterráneo (Precisión)",
+            "TNT Oculto en las Ruinas (Estratégico)",
+            "La Puerta de Hierro (Piedra Pesada)",
+            "Torres Suspendidas en Hielo (Inestable)",
+            "El Último Castillo (Extremo)",
+            "Apocalipsis de Cerdos (Maestría Máxima)"
+        ];
+
+        function populateLevelSelect() {
+            levelSelect.innerHTML = '';
+            for (let i = 1; i <= totalLevels; i++) {
+                const opt = document.createElement('option');
+                opt.value = i;
+                opt.innerText = `Nivel ${i}: ${levelNames[i-1]}`;
+                levelSelect.appendChild(opt);
+            }
+        }
+
+        function toggleHelpModal() {
+            const modal = document.getElementById('help-modal');
+            modal.classList.toggle('hidden');
+        }
 
         function init() {
             canvas = document.getElementById('game-canvas');
             ctx = canvas.getContext('2d', { alpha: false });
             resizeCanvas();
             window.addEventListener('resize', resizeCanvas);
+            
             engine = Engine.create();
             world = engine.world;
-            engine.gravity.y = 1;
+            engine.gravity.y = 1; // Gravedad terrestre estándar para Matter.js
+
+            // Configurar el ratón para apuntar con la honda
             const mouse = Mouse.create(canvas);
             mouseConstraint = MouseConstraint.create(engine, {
                 mouse: mouse,
                 constraint: { stiffness: 0.1, render: { visible: false } }
             });
             Composite.add(world, mouseConstraint);
+
+            // Evitar que el scroll interfiera en móviles y PC
             mouseConstraint.mouse.element.removeEventListener("mousewheel", mouseConstraint.mouse.mousewheel);
             mouseConstraint.mouse.element.removeEventListener("DOMMouseScroll", mouseConstraint.mouse.mousewheel);
+            
+            populateLevelSelect();
             initGame();
+
+            // Evento para activar habilidades de los pájaros en vuelo al hacer clic/toque en pantalla
             ['mousedown', 'touchstart'].forEach(evt => {
-                window.addEventListener(evt, () => {
-                    if (isFired && currentBirdType === 'yellow' && !isAbilityUsed && bird && !bird.isDead) {
-                        isAbilityUsed = true;
-                        const currentSpeed = Vector.magnitude(bird.velocity);
-                        if (currentSpeed > 0.5) {
-                            const direction = Vector.normalise(bird.velocity);
-                            Body.setVelocity(bird, Vector.mult(direction, Math.max(currentSpeed * 1.8, 20)));
+                window.addEventListener(evt, (e) => {
+                    if (e.target !== canvas) return;
+                    
+                    if (isFired && !isAbilityUsed && bird && !bird.isDead) {
+                        if (currentBirdType === 'yellow') {
+                            isAbilityUsed = true;
+                            const currentSpeed = Vector.magnitude(bird.velocity);
+                            if (currentSpeed > 0.5) {
+                                const direction = Vector.normalise(bird.velocity);
+                                const boostFactor = 1.8 * bonusBirdSpeed;
+                                Body.setVelocity(bird, Vector.mult(direction, Math.max(currentSpeed * boostFactor, 22)));
+                            }
+                        } else if (currentBirdType === 'black') {
+                            isAbilityUsed = true;
+                            explode(bird.position, 180 * bonusExplosionRadius, 0.001 * bonusExplosionRadius);
+                            bird.isDead = true;
+                            World.remove(world, bird);
                         }
                     }
                 });
             });
+
             requestAnimationFrame(gameLoop);
             setupEvents();
         }
 
         function resizeCanvas() {
-            width = window.innerWidth; height = window.innerHeight;
-            canvas.width = width; canvas.height = height;
-            slingPos.y = height - 150;
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+            slingPos.y = height - 160; // Mantener la honda a una distancia estable del suelo dinámico
+        }
+
+        function applyRewards() {
+            // Resetear modificadores
+            bonusExplosionRadius = 1.0;
+            bonusBirdSpeed = 1.0;
+
+            if (pendingReward) {
+                activeReward = pendingReward;
+                pendingReward = null; // Consumida
+
+                if (REWARDS[activeReward]) {
+                    REWARDS[activeReward].apply();
+                    
+                    // Mostrar Banner de premio activo
+                    rewardBanner.classList.remove('opacity-0', 'translate-y-12');
+                    rewardBanner.classList.add('opacity-100', 'translate-y-0');
+                    document.getElementById('active-reward-text').innerText = REWARDS[activeReward].name;
+                }
+            } else {
+                activeReward = null;
+                rewardBanner.classList.add('opacity-0', 'translate-y-12');
+                rewardBanner.classList.remove('opacity-100', 'translate-y-0');
+            }
+        }
+
+        function getBaseBirdQueue(level) {
+            switch(level) {
+                case 1:  return ['red', 'red'];
+                case 2:  return ['red', 'yellow', 'red'];
+                case 3:  return ['yellow', 'black', 'red'];
+                case 4:  return ['red', 'yellow', 'yellow'];
+                case 5:  return ['black', 'red', 'yellow'];
+                case 6:  return ['yellow', 'black', 'red', 'red'];
+                case 7:  return ['red', 'yellow', 'black'];
+                case 8:  return ['black', 'yellow', 'yellow'];
+                case 9:  return ['yellow', 'yellow', 'black', 'red'];
+                case 10: return ['black', 'black', 'yellow', 'red'];
+                case 11: return ['red', 'yellow', 'black', 'black'];
+                case 12: return ['yellow', 'yellow', 'yellow', 'red'];
+                case 13: return ['black', 'yellow', 'red', 'red'];
+                case 14: return ['yellow', 'black', 'yellow', 'black'];
+                case 15: return ['red', 'red', 'yellow', 'black'];
+                case 16: return ['black', 'black', 'yellow', 'red', 'red'];
+                case 17: return ['yellow', 'yellow', 'black', 'black'];
+                case 18: return ['black', 'yellow', 'yellow', 'black'];
+                case 19: return ['red', 'yellow', 'black', 'black', 'red'];
+                case 20: return ['yellow', 'black', 'yellow', 'black', 'red'];
+                default: return ['red', 'yellow', 'black'];
+            }
         }
 
         function initGame() {
-            World.clear(world); Engine.clear(engine);
-            pigs = []; blocks = []; isFired = false; score = 0;
-            updateScore(0); gameState = 'PLAYING';
-            msgContainer.style.display = 'none';
-            isAbilityUsed = false; sling = null;
+            World.clear(world);
+            Engine.clear(engine);
+            pigs = [];
+            blocks = [];
+            isFired = false;
+            score = 0;
+            levelFrameCount = 0; // Reiniciar el temporizador de gracia
+            updateScore(0);
+            gameState = 'PLAYING';
+            msgContainer.classList.add('hidden');
+            isAbilityUsed = false;
+            sling = null;
             activeExplosions = [];
             levelNumEl.innerText = currentLevel;
             levelSelect.value = currentLevel;
+
+            applyRewards();
+
+            let queue = getBaseBirdQueue(currentLevel);
             
-            if (currentLevel === 1) {
-                birdQueue = ['red', 'yellow', 'red'];
-            } else if (currentLevel === 2) {
-                birdQueue = ['yellow', 'black', 'red'];
-            } else {
-                birdQueue = ['black', 'yellow', 'black', 'red'];
+            if (activeReward === 'triple_bomb') {
+                queue = ['black', 'black', 'black'];
+            } else if (activeReward === 'extra_birds') {
+                queue.push('red', 'red');
             }
 
+            birdQueue = queue;
+
             Composite.add(world, mouseConstraint);
+
+            // Crear el suelo del juego
             ground = Bodies.rectangle(width / 2, height - 20, width * 2, 40, {
-                isStatic: true, label: 'ground', friction: 0.8
+                isStatic: true,
+                label: 'ground',
+                friction: 0.8
             });
             Composite.add(world, ground);
+
             loadNextBird();
             buildLevel();
         }
 
         function selectLevel(val) {
             currentLevel = parseInt(val);
+            pendingReward = null; // Reiniciar recompensa al seleccionar nivel manualmente
             initGame();
         }
 
@@ -207,6 +430,7 @@
                 initGame();
             } else {
                 currentLevel = 1;
+                pendingReward = null;
                 initGame();
             }
         }
@@ -214,134 +438,440 @@
         function loadNextBird() {
             if (birdQueue.length === 0) return;
             currentBirdType = birdQueue.shift();
-            isFired = false; isAbilityUsed = false;
+            isFired = false;
+            isAbilityUsed = false;
+
             let birdOpts = { restitution: 0.4, frictionAir: 0.01, label: 'bird', birdType: currentBirdType };
-            if (currentBirdType === 'yellow') birdOpts.density = 0.002;
-            else if (currentBirdType === 'black') birdOpts.density = 0.01;
+            
+            if (currentBirdType === 'yellow') birdOpts.density = 0.0025;
+            else if (currentBirdType === 'black') birdOpts.density = 0.012;
             else birdOpts.density = 0.005;
+
             bird = Bodies.circle(slingPos.x, slingPos.y, 20, birdOpts);
+            
             if (sling) World.remove(world, sling);
+            
             sling = Constraint.create({
                 pointA: { x: slingPos.x, y: slingPos.y },
-                bodyB: bird, stiffness: 0.05, damping: 0.01, length: 0
+                bodyB: bird,
+                stiffness: 0.05,
+                damping: 0.01,
+                length: 0
             });
+            
             Composite.add(world, [bird, sling]);
         }
 
         function buildLevel() {
-            const baseX = width * 0.7, baseY = height - 40;
+            const baseX = width * 0.73, baseY = height - 40;
             
+            // Opciones y densidades físicas de los materiales de construcción
             const woodOpts = { restitution: 0.1, density: 0.002, friction: 0.5, label: 'wood' };
-            const stoneOpts = { restitution: 0.05, density: 0.006, friction: 0.6, label: 'stone' };
+            const stoneOpts = { restitution: 0.05, density: 0.007, friction: 0.65, label: 'stone' };
             const iceOpts = { restitution: 0.15, density: 0.0012, friction: 0.15, label: 'ice' };
             const tntOpts = { restitution: 0.1, density: 0.0015, friction: 0.4, label: 'tnt' };
             const pigOpts = { restitution: 0.35, density: 0.001, friction: 0.4, label: 'pig' };
             const bonusOpts = { restitution: 0.6, density: 0.0005, friction: 0.2, label: 'bonus' };
 
+            // FUNCIONES AUXILIARES DE ALINEACIÓN MATEMÁTICA PERFECTA (SIN SOLAPAMIENTO)
+            const spawnColumn = (x, y, w, h, materialOpts) => {
+                const col = Bodies.rectangle(x, y - h/2, w, h, materialOpts);
+                blocks.push(col);
+                return col;
+            };
+
+            const spawnBeam = (x, y, w, h, materialOpts) => {
+                const beam = Bodies.rectangle(x, y - h/2, w, h, materialOpts);
+                blocks.push(beam);
+                return beam;
+            };
+
+            const spawnTNT = (x, y, size) => {
+                const tnt = Bodies.rectangle(x, y - size/2, size, size, tntOpts);
+                blocks.push(tnt);
+                return tnt;
+            };
+
+            const spawnPig = (x, y, radius, pigType) => {
+                const pig = Bodies.circle(x, y - radius, radius, { ...pigOpts, pigType });
+                pigs.push(pig);
+                return pig;
+            };
+
+            const spawnBoulder = (x, y, radius) => {
+                const boulder = Bodies.circle(x, y - radius, radius, { ...stoneOpts, label: 'boulder' });
+                blocks.push(boulder);
+                return boulder;
+            };
+
+            const spawnBonus = (x, y, radius, bonusType) => {
+                const bonus = Bodies.circle(x, y - radius, radius, { ...bonusOpts, bonusType });
+                blocks.push(bonus);
+                return bonus;
+            };
+
+            // Estructuras de los 20 Niveles
             if (currentLevel === 1) {
-                blocks.push(Bodies.rectangle(baseX - 60, baseY - 30, 25, 60, woodOpts)); 
-                blocks.push(Bodies.rectangle(baseX + 60, baseY - 30, 25, 60, woodOpts)); 
-                blocks.push(Bodies.rectangle(baseX, baseY - 70, 160, 20, woodOpts)); 
-                
-                pigs.push(Bodies.circle(baseX, baseY - 20, 18, { ...pigOpts, pigType: 'normal' }));
-                
-                blocks.push(Bodies.rectangle(baseX - 40, baseY - 100, 25, 40, iceOpts));
-                blocks.push(Bodies.rectangle(baseX + 40, baseY - 100, 25, 40, iceOpts));
-                blocks.push(Bodies.rectangle(baseX, baseY - 130, 120, 15, iceOpts));
-                
-                pigs.push(Bodies.circle(baseX, baseY - 100, 18, { ...pigOpts, pigType: 'normal' }));
-                blocks.push(Bodies.circle(baseX + 130, baseY - 80, 15, { ...bonusOpts, bonusType: 'duck' }));
+                spawnColumn(baseX - 50, baseY, 20, 60, woodOpts);
+                spawnColumn(baseX + 50, baseY, 20, 60, woodOpts);
+                spawnBeam(baseX, baseY - 60, 140, 20, woodOpts);
+                spawnPig(baseX, baseY, 18, 'normal');
 
             } else if (currentLevel === 2) {
-                blocks.push(Bodies.rectangle(baseX - 80, baseY - 35, 30, 70, stoneOpts));
-                blocks.push(Bodies.rectangle(baseX - 80, baseY - 105, 30, 70, stoneOpts));
-                blocks.push(Bodies.rectangle(baseX - 80, baseY - 150, 80, 15, stoneOpts)); 
-                
-                blocks.push(Bodies.rectangle(baseX + 80, baseY - 35, 30, 70, stoneOpts));
-                blocks.push(Bodies.rectangle(baseX + 80, baseY - 105, 30, 70, stoneOpts));
-                blocks.push(Bodies.rectangle(baseX + 80, baseY - 150, 80, 15, stoneOpts)); 
+                spawnColumn(baseX - 60, baseY, 25, 80, stoneOpts);
+                spawnColumn(baseX - 10, baseY, 25, 80, stoneOpts);
+                spawnBeam(baseX - 35, baseY - 80, 90, 15, stoneOpts);
+                spawnPig(baseX - 35, baseY, 18, 'normal');
 
-                blocks.push(Bodies.rectangle(baseX, baseY - 30, 20, 60, woodOpts)); 
-                blocks.push(Bodies.rectangle(baseX, baseY - 70, 110, 15, woodOpts)); 
-                
-                blocks.push(Bodies.rectangle(baseX, baseY - 100, 35, 35, tntOpts));
-
-                pigs.push(Bodies.circle(baseX - 80, baseY - 180, 20, { ...pigOpts, pigType: 'cowboy' })); 
-                pigs.push(Bodies.circle(baseX + 80, baseY - 180, 20, { ...pigOpts, pigType: 'cowboy' })); 
-                pigs.push(Bodies.circle(baseX, baseY - 20, 18, { ...pigOpts, pigType: 'normal' }));       
-
-                blocks.push(Bodies.circle(baseX - 160, baseY - 100, 18, { ...bonusOpts, bonusType: 'balloon' }));
-                blocks.push(Bodies.circle(baseX + 160, baseY - 100, 18, { ...bonusOpts, bonusType: 'balloon' }));
+                spawnColumn(baseX + 10, baseY, 25, 80, stoneOpts);
+                spawnColumn(baseX + 60, baseY, 25, 80, stoneOpts);
+                spawnBeam(baseX + 35, baseY - 80, 90, 15, stoneOpts);
+                spawnPig(baseX + 35, baseY, 18, 'normal');
 
             } else if (currentLevel === 3) {
-                blocks.push(Bodies.rectangle(baseX - 90, baseY - 35, 25, 70, stoneOpts)); 
-                blocks.push(Bodies.rectangle(baseX + 90, baseY - 35, 25, 70, stoneOpts)); 
-                blocks.push(Bodies.circle(baseX - 125, baseY - 20, 20, { ...stoneOpts, label: 'boulder' }));
-                blocks.push(Bodies.circle(baseX + 125, baseY - 20, 20, { ...stoneOpts, label: 'boulder' }));
+                spawnColumn(baseX - 80, baseY, 25, 80, woodOpts);
+                spawnColumn(baseX + 80, baseY, 25, 80, woodOpts);
+                spawnBeam(baseX, baseY - 80, 200, 15, stoneOpts); // Techo del primer piso
+
+                spawnColumn(baseX - 40, baseY - 95, 20, 60, iceOpts);
+                spawnColumn(baseX + 40, baseY - 95, 20, 60, iceOpts);
+                spawnBeam(baseX, baseY - 155, 120, 15, woodOpts); // Techo del segundo piso
+
+                spawnTNT(baseX, baseY, 35);
+                spawnPig(baseX, baseY - 95, 22, 'helmet');
+                spawnPig(baseX, baseY - 170, 26, 'king');
+
+            } else if (currentLevel === 4) {
+                for (let i = 0; i < 3; i++) {
+                    let px = baseX - 90 + i * 90;
+                    spawnColumn(px, baseY, 25, 90, iceOpts);
+                    spawnBeam(px, baseY - 90, 80, 15, iceOpts);
+                    spawnPig(px, baseY, 18, 'normal');
+                }
+                spawnBeam(baseX, baseY - 105, 260, 15, iceOpts);
+                spawnPig(baseX, baseY - 120, 22, 'helmet');
+
+            } else if (currentLevel === 5) {
+                let layers = 4;
+                for (let row = 0; row < layers; row++) {
+                    let y = baseY - (row * 65);
+                    let count = layers - row;
+                    for (let col = 0; col < count; col++) {
+                        let px = baseX - ((count - 1) * 35) + (col * 70);
+                        let material = row === 0 ? stoneOpts : (row === 1 ? woodOpts : iceOpts);
+                        spawnColumn(px, y, 20, 50, material);
+                        spawnBeam(px, y - 50, 65, 15, material);
+                        if (col < count - 1) {
+                            spawnPig(px + 35, y, 18, 'cowboy');
+                        }
+                    }
+                }
+
+            } else if (currentLevel === 6) {
+                spawnColumn(baseX - 160, baseY, 40, 140, stoneOpts); 
+                spawnColumn(baseX + 160, baseY, 40, 140, stoneOpts); 
                 
-                pigs.push(Bodies.circle(baseX, baseY - 20, 22, { ...pigOpts, pigType: 'helmet' }));
-                blocks.push(Bodies.rectangle(baseX, baseY - 75, 230, 15, stoneOpts));
-
-                const triLeft = Bodies.polygon(baseX - 80, baseY - 110, 3, 25, { ...woodOpts, label: 'wood_tri' });
-                const triRight = Bodies.polygon(baseX + 80, baseY - 110, 3, 25, { ...woodOpts, label: 'wood_tri' });
-                Body.setAngle(triLeft, Math.PI / 6);
-                Body.setAngle(triRight, -Math.PI / 6);
-                blocks.push(triLeft, triRight);
-
-                blocks.push(Bodies.rectangle(baseX - 45, baseY - 110, 20, 50, iceOpts));
-                blocks.push(Bodies.rectangle(baseX + 45, baseY - 110, 20, 50, iceOpts));
+                spawnBeam(baseX, baseY, 280, 20, woodOpts); // Puente inferior
                 
-                blocks.push(Bodies.rectangle(baseX - 15, baseY - 100, 30, 30, tntOpts));
-                blocks.push(Bodies.rectangle(baseX + 15, baseY - 100, 30, 30, tntOpts));
+                spawnPig(baseX - 80, baseY - 20, 18, 'helmet');
+                spawnPig(baseX + 80, baseY - 20, 18, 'helmet');
+                
+                spawnColumn(baseX - 60, baseY - 20, 20, 100, iceOpts);
+                spawnColumn(baseX + 60, baseY - 20, 20, 100, iceOpts);
+                spawnColumn(baseX, baseY - 20, 25, 100, stoneOpts);
+                
+                spawnBeam(baseX, baseY - 140, 320, 20, iceOpts); // Puente superior
+                
+                spawnPig(baseX - 100, baseY - 160, 20, 'cowboy');
+                spawnPig(baseX + 100, baseY - 160, 20, 'cowboy');
+                spawnPig(baseX, baseY - 160, 24, 'king');
+                
+                spawnBoulder(baseX - 140, baseY - 160, 22);
+                spawnBoulder(baseX + 140, baseY - 160, 22);
 
-                pigs.push(Bodies.circle(baseX - 55, baseY - 150, 18, { ...pigOpts, pigType: 'cowboy' }));
-                blocks.push(Bodies.rectangle(baseX, baseY - 145, 140, 15, woodOpts));
+            } else if (currentLevel === 7) {
+                spawnColumn(baseX - 130, baseY, 30, 120, woodOpts);
+                spawnBeam(baseX - 130, baseY - 120, 90, 20, woodOpts);
+                spawnPig(baseX - 130, baseY - 140, 20, 'helmet');
+                spawnBonus(baseX - 180, baseY - 100, 18, 'balloon');
+                
+                spawnColumn(baseX + 130, baseY, 30, 120, woodOpts);
+                spawnBeam(baseX + 130, baseY - 120, 90, 20, woodOpts);
+                spawnPig(baseX + 130, baseY - 140, 20, 'helmet');
+                spawnBonus(baseX + 180, baseY - 100, 18, 'balloon');
 
-                blocks.push(Bodies.rectangle(baseX - 35, baseY - 175, 15, 45, iceOpts));
-                blocks.push(Bodies.rectangle(baseX + 35, baseY - 175, 15, 45, iceOpts));
+                spawnBeam(baseX, baseY, 100, 15, stoneOpts);
+                spawnTNT(baseX, baseY - 15, 35);
+                
+                spawnColumn(baseX - 40, baseY - 50, 15, 80, iceOpts);
+                spawnColumn(baseX + 40, baseY - 50, 15, 80, iceOpts);
+                spawnBeam(baseX, baseY - 130, 160, 15, woodOpts);
+                
+                spawnTNT(baseX - 50, baseY - 145, 30);
+                spawnTNT(baseX + 50, baseY - 145, 30);
+                spawnPig(baseX, baseY - 145, 22, 'cowboy');
+                spawnBonus(baseX, baseY - 220, 20, 'balloon');
 
-                const stoneTriL = Bodies.polygon(baseX - 60, baseY - 175, 3, 20, { ...stoneOpts, label: 'stone_tri' });
-                const stoneTriR = Bodies.polygon(baseX + 60, baseY - 175, 3, 20, { ...stoneOpts, label: 'stone_tri' });
-                blocks.push(stoneTriL, stoneTriR);
+            } else if (currentLevel === 8) {
+                for(let j = 0; j < 3; j++) {
+                    let y = baseY - (j * 70);
+                    spawnColumn(baseX - 80, y, 30, 70, stoneOpts);
+                    spawnColumn(baseX - 50, y, 30, 70, woodOpts);
+                    spawnColumn(baseX - 20, y, 30, 70, stoneOpts);
+                }
+                spawnPig(baseX + 60, baseY, 22, 'king');
+                spawnBeam(baseX + 60, baseY - 44, 80, 15, woodOpts);
+                spawnPig(baseX + 60, baseY - 59, 20, 'helmet');
+                spawnBeam(baseX + 60, baseY - 99, 80, 15, woodOpts);
 
-                pigs.push(Bodies.circle(baseX, baseY - 180, 26, { ...pigOpts, pigType: 'king' }));
-                blocks.push(Bodies.rectangle(baseX, baseY - 205, 95, 15, iceOpts));
+            } else if (currentLevel === 9) {
+                for(let i = -2; i <= 2; i += 2) {
+                    spawnColumn(baseX + i * 40, baseY, 20, 100, iceOpts);
+                    spawnColumn(baseX + i * 40, baseY - 115, 20, 100, iceOpts);
+                    spawnPig(baseX + i * 40, baseY - 230, 18, 'normal');
+                }
+                spawnBeam(baseX, baseY - 100, 240, 15, iceOpts);
+                spawnBeam(baseX, baseY - 215, 240, 15, iceOpts);
+                spawnPig(baseX, baseY, 22, 'helmet');
+                spawnPig(baseX, baseY - 115, 22, 'helmet');
+                spawnBoulder(baseX, baseY - 230, 20);
 
-                blocks.push(Bodies.circle(baseX - 180, baseY - 130, 18, { ...bonusOpts, bonusType: 'balloon' }));
-                blocks.push(Bodies.circle(baseX + 180, baseY - 130, 18, { ...bonusOpts, bonusType: 'balloon' }));
-                blocks.push(Bodies.circle(baseX - 120, baseY - 110, 15, { ...bonusOpts, bonusType: 'watermelon' }));
-                blocks.push(Bodies.circle(baseX + 120, baseY - 110, 15, { ...bonusOpts, bonusType: 'duck' }));
+            } else if (currentLevel === 10) {
+                spawnColumn(baseX - 140, baseY, 40, 120, stoneOpts);
+                spawnColumn(baseX + 140, baseY, 40, 120, stoneOpts);
+                spawnColumn(baseX, baseY, 30, 80, stoneOpts);
+                
+                spawnBeam(baseX, baseY - 120, 340, 20, stoneOpts);
+                
+                spawnPig(baseX - 80, baseY - 140, 20, 'helmet');
+                spawnPig(baseX + 80, baseY - 140, 20, 'helmet');
+                spawnPig(baseX, baseY - 140, 28, 'king');
+                
+                spawnColumn(baseX - 110, baseY - 140, 20, 90, iceOpts);
+                spawnColumn(baseX + 110, baseY - 140, 20, 90, iceOpts);
+                spawnColumn(baseX - 40, baseY - 140, 20, 90, woodOpts);
+                spawnColumn(baseX + 40, baseY - 140, 20, 90, woodOpts);
+                
+                spawnBeam(baseX, baseY - 230, 280, 15, woodOpts);
+                spawnBoulder(baseX, baseY - 245, 30);
+
+            } else if (currentLevel === 11) {
+                spawnColumn(baseX - 120, baseY, 45, 140, stoneOpts);
+                spawnColumn(baseX + 120, baseY, 45, 140, stoneOpts);
+                spawnBeam(baseX, baseY - 140, 300, 25, stoneOpts);
+
+                spawnTNT(baseX - 80, baseY - 165, 35);
+                spawnTNT(baseX + 80, baseY - 165, 35);
+                
+                spawnColumn(baseX - 50, baseY - 165, 20, 80, woodOpts);
+                spawnColumn(baseX + 50, baseY - 165, 20, 80, woodOpts);
+                spawnBeam(baseX, baseY - 245, 150, 20, stoneOpts);
+
+                spawnPig(baseX, baseY - 265, 25, 'king');
+                spawnPig(baseX, baseY, 20, 'helmet');
+                spawnBoulder(baseX - 50, baseY - 265, 20);
+
+            } else if (currentLevel === 12) {
+                for (let i = -2; i <= 2; i++) {
+                    let px = baseX + i * 55;
+                    spawnColumn(px, baseY, 15, 120, iceOpts);
+                    if (Math.abs(i) !== 2) {
+                        spawnPig(px + 27.5, baseY, 18, 'cowboy');
+                    }
+                }
+                spawnBeam(baseX, baseY - 120, 270, 15, iceOpts);
+                
+                spawnColumn(baseX - 80, baseY - 135, 20, 80, iceOpts);
+                spawnColumn(baseX + 80, baseY - 135, 20, 80, iceOpts);
+                spawnBeam(baseX, baseY - 215, 200, 15, woodOpts);
+
+                spawnPig(baseX, baseY - 230, 24, 'king');
+                spawnTNT(baseX, baseY - 135, 35);
+
+            } else if (currentLevel === 13) {
+                const colWidth = 15;
+                const colHeight = 150;
+                for (let i = -2; i <= 2; i++) {
+                    let px = baseX + i * 70;
+                    spawnColumn(px, baseY, colWidth, colHeight, stoneOpts);
+                    spawnBeam(px, baseY - 150, 45, 10, stoneOpts);
+                    spawnPig(px - 10, baseY - 160, 15, 'helmet');
+                    spawnBoulder(px + 10, baseY - 160, 15);
+                }
+
+            } else if (currentLevel === 14) {
+                spawnColumn(baseX - 100, baseY, 25, 90, woodOpts);
+                spawnColumn(baseX + 100, baseY, 25, 90, woodOpts);
+                spawnBeam(baseX, baseY - 90, 240, 15, woodOpts);
+
+                const fX = baseX;
+                const fY = baseY - 160;
+                spawnBeam(fX, fY, 180, 15, iceOpts);
+                spawnBonus(fX - 90, fY, 20, 'balloon');
+                spawnBonus(fX + 90, fY, 20, 'balloon');
+
+                spawnTNT(fX, fY - 15, 35);
+                spawnPig(fX - 45, fY - 15, 18, 'cowboy');
+                spawnPig(fX + 45, fY - 15, 18, 'cowboy');
+                spawnPig(fX, fY - 50, 22, 'helmet');
+
+            } else if (currentLevel === 15) {
+                spawnColumn(baseX - 150, baseY, 50, 120, stoneOpts);
+                spawnColumn(baseX + 150, baseY, 50, 120, stoneOpts);
+                spawnColumn(baseX, baseY, 40, 120, stoneOpts);
+
+                spawnBeam(baseX, baseY - 120, 360, 30, stoneOpts);
+                
+                spawnPig(baseX - 75, baseY, 18, 'helmet');
+                spawnPig(baseX + 75, baseY, 18, 'helmet');
+
+                spawnTNT(baseX, baseY - 150, 35);
+                spawnPig(baseX, baseY - 185, 24, 'king');
+
+            } else if (currentLevel === 16) {
+                spawnColumn(baseX - 60, baseY, 30, 110, stoneOpts);
+                spawnColumn(baseX + 60, baseY, 30, 110, stoneOpts);
+                spawnBeam(baseX, baseY - 110, 150, 20, stoneOpts);
+
+                spawnTNT(baseX, baseY, 40);
+                spawnPig(baseX, baseY - 130, 26, 'king');
+
+                spawnColumn(baseX - 120, baseY, 20, 80, woodOpts);
+                spawnColumn(baseX + 120, baseY, 20, 80, woodOpts);
+                spawnBeam(baseX - 120, baseY - 80, 60, 15, woodOpts);
+                spawnBeam(baseX + 120, baseY - 80, 60, 15, woodOpts);
+
+                spawnPig(baseX - 120, baseY - 95, 18, 'cowboy');
+                spawnPig(baseX + 120, baseY - 95, 18, 'cowboy');
+
+            } else if (currentLevel === 17) {
+                for (let j = 0; j < 4; j++) {
+                    let y = baseY - (j * 20);
+                    spawnBeam(baseX - 55, y, 100, 20, stoneOpts);
+                    spawnBeam(baseX + 55, y, 100, 20, stoneOpts);
+                }
+                
+                spawnPig(baseX + 140, baseY, 28, 'king');
+                spawnPig(baseX + 140, baseY - 56, 22, 'helmet');
+                spawnColumn(baseX + 190, baseY, 20, 120, woodOpts);
+                spawnBeam(baseX + 145, baseY - 120, 110, 15, woodOpts);
+
+            } else if (currentLevel === 18) {
+                spawnColumn(baseX - 90, baseY, 40, 40, iceOpts);
+                spawnColumn(baseX - 90, baseY - 40, 30, 80, stoneOpts);
+                spawnBeam(baseX - 90, baseY - 120, 80, 15, woodOpts);
+                spawnPig(baseX - 90, baseY - 135, 20, 'helmet');
+
+                spawnColumn(baseX + 90, baseY, 40, 40, iceOpts);
+                spawnColumn(baseX + 90, baseY - 40, 30, 80, stoneOpts);
+                spawnBeam(baseX + 90, baseY - 120, 80, 15, woodOpts);
+                spawnPig(baseX + 90, baseY - 135, 20, 'helmet');
+
+                spawnBeam(baseX, baseY - 40, 100, 15, woodOpts);
+                spawnTNT(baseX, baseY - 55, 30);
+                spawnPig(baseX, baseY, 18, 'cowboy');
+
+            } else if (currentLevel === 19) {
+                spawnColumn(baseX - 140, baseY, 30, 150, stoneOpts);
+                spawnColumn(baseX + 140, baseY, 30, 150, stoneOpts);
+                spawnBeam(baseX, baseY - 150, 310, 20, stoneOpts);
+
+                spawnColumn(baseX - 80, baseY, 20, 80, woodOpts);
+                spawnColumn(baseX + 80, baseY, 20, 80, woodOpts);
+                spawnBeam(baseX, baseY - 80, 160, 15, woodOpts);
+
+                spawnTNT(baseX, baseY, 35);
+                spawnPig(baseX - 40, baseY, 18, 'normal');
+                spawnPig(baseX + 40, baseY, 18, 'normal');
+
+                spawnColumn(baseX - 60, baseY - 170, 20, 80, iceOpts);
+                spawnColumn(baseX + 60, baseY - 170, 20, 80, iceOpts);
+                spawnBeam(baseX, baseY - 250, 160, 15, iceOpts);
+
+                spawnPig(baseX, baseY - 170, 26, 'king');
+                spawnPig(baseX - 110, baseY - 170, 20, 'helmet');
+                spawnPig(baseX + 110, baseY - 170, 20, 'helmet');
+
+                spawnBoulder(baseX, baseY - 265, 30);
+
+            } else if (currentLevel === 20) {
+                spawnColumn(baseX - 160, baseY, 50, 160, stoneOpts);
+                spawnColumn(baseX + 160, baseY, 50, 160, stoneOpts);
+                spawnColumn(baseX, baseY, 40, 140, stoneOpts);
+                spawnBeam(baseX, baseY - 160, 370, 25, stoneOpts);
+
+                spawnTNT(baseX - 80, baseY, 35);
+                spawnTNT(baseX + 80, baseY, 35);
+
+                spawnPig(baseX - 80, baseY - 35, 20, 'helmet');
+                spawnPig(baseX + 80, baseY - 35, 20, 'helmet');
+
+                spawnColumn(baseX - 100, baseY - 185, 20, 100, iceOpts);
+                spawnColumn(baseX + 100, baseY - 185, 20, 100, iceOpts);
+                spawnColumn(baseX - 30, baseY - 185, 20, 100, woodOpts);
+                spawnColumn(baseX + 30, baseY - 185, 20, 100, woodOpts);
+                spawnBeam(baseX, baseY - 285, 240, 15, woodOpts);
+
+                spawnPig(baseX, baseY - 185, 28, 'king');
+                spawnPig(baseX - 130, baseY - 185, 22, 'helmet');
+                spawnPig(baseX + 130, baseY - 185, 22, 'helmet');
+
+                spawnBoulder(baseX, baseY - 300, 30);
+                spawnBonus(baseX - 190, baseY - 100, 20, 'balloon');
+                spawnBonus(baseX + 190, baseY - 100, 20, 'balloon');
+                spawnBonus(baseX - 220, baseY - 150, 18, 'duck');
+                spawnBonus(baseX + 220, baseY - 150, 18, 'watermelon');
             }
 
             Composite.add(world, [...blocks, ...pigs]);
         }
 
         function setupEvents() {
+            // ANTI-TRAMPA REFORZADO: Impedir arrastrar cualquier cuerpo que no sea el pájaro activo en la honda
+            Events.on(mouseConstraint, 'startdrag', function(event) {
+                if (event.body !== bird || isFired) {
+                    mouseConstraint.body = null;
+                }
+            });
+
             Events.on(mouseConstraint, 'enddrag', function(event) {
                 if (event.body === bird && !isFired) {
+                    // Validar dirección de tiro: la tensión debe realizarse tirando hacia atrás (izquierda)
                     if (bird.position.x < slingPos.x + 20) {
                         isFired = true;
-                        setTimeout(() => { if (sling) sling.bodyB = null; }, 20);
+                        setTimeout(() => { 
+                            if (sling) sling.bodyB = null; 
+                        }, 20);
+                    } else {
+                        // Devolver el pájaro al centro si se suelta hacia el fuerte (evita comportamientos inválidos)
+                        Body.setPosition(bird, { x: slingPos.x, y: slingPos.y });
+                        Body.setVelocity(bird, { x: 0, y: 0 });
                     }
                 }
             });
             
             Events.on(engine, 'collisionStart', function(event) {
+                // SALVAGUARDA DE INICIALIZACIÓN: No registrar daños durante el período de asentamiento inicial (1 segundo)
+                if (levelFrameCount < 60) return;
+                
+                // SALVAGUARDA DE DISPARO: Nada se rompe ni explota antes de lanzar el primer pájaro
+                if (!isFired) return;
+
                 event.pairs.forEach(pair => {
                     const { bodyA, bodyB } = pair;
                     const isBirdA = bodyA.label === 'bird', isBirdB = bodyB.label === 'bird';
                     const birdBody = isBirdA ? bodyA : (isBirdB ? bodyB : null);
                     
-                    if (birdBody && birdBody.birdType === 'black' && isFired && !isAbilityUsed) {
+                    // Mecánica exclusiva del Pájaro Bomba Negro: Fusible retardado
+                    if (birdBody && birdBody.birdType === 'black' && isFired && !birdBody.fuseActive) {
                         const other = isBirdA ? bodyB : bodyA;
-                        if (other.label !== 'ground' || Vector.magnitude(birdBody.velocity) > 2) {
-                            isAbilityUsed = true;
-                            explode(birdBody.position, 160, 0.0008);
-                            birdBody.isDead = true;
-                            World.remove(world, birdBody);
+                        if (other.label !== 'ground' || Vector.magnitude(birdBody.velocity) > 1.5) {
+                            birdBody.fuseActive = true;
+                            birdBody.fuseTimer = 120; // 2 segundos (60fps)
                         }
                     }
 
+                    // Colisión con Dinamita TNT
                     const isTNTA = bodyA.label === 'tnt', isTNTB = bodyB.label === 'tnt';
                     if (isTNTA || isTNTB) {
                         const tntBody = isTNTA ? bodyA : bodyB;
@@ -351,6 +881,7 @@
                         }
                     }
 
+                    // Daño colateral a los Cerdos por impactos de velocidad
                     const isPigA = bodyA.label === 'pig', isPigB = bodyB.label === 'pig';
                     if (isPigA || isPigB) {
                         const pig = isPigA ? bodyA : bodyB;
@@ -358,14 +889,16 @@
                         const relativeVelocity = Vector.magnitude(Vector.sub(bodyA.velocity, bodyB.velocity));
                         
                         let threshold = 3.0;
-                        if (pig.pigType === 'helmet') threshold = 6.0;
-                        if (pig.pigType === 'king') threshold = 5.0;
+                        if (pig.pigType === 'helmet') threshold = 6.2;
+                        if (pig.pigType === 'king') threshold = 5.2;
+                        if (pig.pigType === 'cowboy') threshold = 4.0;
 
                         if (relativeVelocity > threshold || other.label === 'bird' || other.label === 'tnt') {
                             pig.isDead = true;
                         }
                     }
 
+                    // Rotura de bonificadores decorativos
                     const isBonusA = bodyA.label === 'bonus', isBonusB = bodyB.label === 'bonus';
                     if (isBonusA || isBonusB) {
                         const bonus = isBonusA ? bodyA : bodyB;
@@ -384,7 +917,7 @@
                 y: position.y,
                 radius: radius,
                 timer: 0,
-                maxTimer: 15
+                maxTimer: 18
             });
 
             Composite.allBodies(world).forEach(b => {
@@ -408,72 +941,131 @@
             });
         }
 
-        function updateScore(points) { score += points; scoreEl.innerText = score; }
+        function updateScore(points) { 
+            score += points; 
+            scoreEl.innerText = score; 
+        }
 
         function gameLoop() {
             requestAnimationFrame(gameLoop);
             if (gameState !== 'PLAYING') return;
             
             Engine.update(engine, 1000 / 60);
+            levelFrameCount++; // Incrementar temporizador de frames de asentamiento
 
+            // LIMITADOR FÍSICO DE TENSIÓN DE LA HONDA (Máximo 120px)
+            if (bird && !isFired && mouseConstraint.body === bird) {
+                const maxDragDistance = 120;
+                const offset = Vector.sub(bird.position, slingPos);
+                const distance = Vector.magnitude(offset);
+                if (distance > maxDragDistance) {
+                    const normalized = Vector.normalise(offset);
+                    const cappedPosition = Vector.add(slingPos, Vector.mult(normalized, maxDragDistance));
+                    Body.setPosition(bird, cappedPosition);
+                    Body.setVelocity(bird, { x: 0, y: 0 });
+                }
+            }
+
+            // Gestión del fusible activo del Pájaro Bomba
+            if (bird && bird.birdType === 'black' && bird.fuseActive && !isAbilityUsed) {
+                bird.fuseTimer--;
+                if (bird.fuseTimer <= 0) {
+                    isAbilityUsed = true;
+                    explode(bird.position, 180 * bonusExplosionRadius, 0.001 * bonusExplosionRadius);
+                    bird.isDead = true;
+                    World.remove(world, bird);
+                    bird = null;
+                }
+            }
+
+            // Fuerza ascendente de helio para los globos flotantes
             blocks.forEach(b => {
                 if (b.label === 'bonus' && b.bonusType === 'balloon') {
-                    Body.applyForce(b, b.position, { x: 0, y: -0.00015 * b.mass });
+                    Body.applyForce(b, b.position, { x: 0, y: -0.00018 * b.mass });
                 }
             });
 
+            // Limpieza y puntuación de bloques destruidos (con explosiones de TNT encadenadas)
             for (let i = blocks.length - 1; i >= 0; i--) {
                 if (blocks[i].isDead) {
                     if (blocks[i].label === 'tnt') {
-                        explode(blocks[i].position, 200, 0.0009);
-                        updateScore(1000);
+                        explode(blocks[i].position, 200 * bonusExplosionRadius, 0.0012 * bonusExplosionRadius);
+                        updateScore(1200);
                     } else if (blocks[i].label === 'bonus') {
-                        updateScore(250);
+                        updateScore(300);
+                    } else {
+                        updateScore(100);
                     }
                     World.remove(world, blocks[i]);
                     blocks.splice(i, 1);
                 }
             }
 
+            // Limpieza y puntuación de cerdos destruidos
             for (let i = pigs.length - 1; i >= 0; i--) {
                 if (pigs[i].isDead) {
                     World.remove(world, pigs[i]);
                     let bonusPoints = 500;
-                    if (pigs[i].pigType === 'king') bonusPoints = 2000;
-                    if (pigs[i].pigType === 'helmet') bonusPoints = 1000;
+                    if (pigs[i].pigType === 'king') bonusPoints = 2500;
+                    if (pigs[i].pigType === 'helmet') bonusPoints = 1200;
+                    if (pigs[i].pigType === 'cowboy') bonusPoints = 800;
                     pigs.splice(i, 1);
                     updateScore(bonusPoints);
                 }
             }
 
-            if (pigs.length === 0 && gameState === 'PLAYING') {
+            // CONDICIÓN DE VICTORIA
+            if (pigs.length === 0 && gameState === 'PLAYING' && levelFrameCount > 60) {
                 gameState = 'WON';
-                msgContainer.style.display = 'block';
+                
+                const rewardKeys = Object.keys(REWARDS);
+                const randomKey = rewardKeys[Math.floor(Math.random() * rewardKeys.length)];
+                pendingReward = randomKey; 
+                
+                const rData = REWARDS[randomKey];
+
+                rewardName.innerText = rData.name;
+                rewardDesc.innerText = rData.desc;
+                rewardCard.classList.remove('hidden');
+
+                msgContainer.classList.remove('hidden');
+                document.getElementById('modal-icon-container').innerHTML = '<i class="fa-solid fa-gift animate-bounce text-yellow-400"></i>';
+                
                 if (currentLevel < totalLevels) {
                     msgTitle.innerText = "¡Nivel Completado!";
                     msgTitle.style.color = "#2ed573";
+                    msgSubtitle.innerText = "Has limpiado la zona de invasores y desbloqueado un potenciador.";
                     btnNextLevel.innerText = "Siguiente Nivel ➡️";
                 } else {
-                    msgTitle.innerText = "🏆 ¡VICTORIA TOTAL! 🏆";
+                    msgTitle.innerText = "🏆 ¡VICTORIA SUPREMA! 🏆";
                     msgTitle.style.color = "#ffbe76";
+                    msgSubtitle.innerText = "¡Has completado los 20 niveles del juego y salvado la galaxia de los cerdos!";
                     btnNextLevel.innerText = "Volver a Jugar 🔄";
                 }
             }
 
+            // CONDICIÓN DE DERROTA / CAMBIO DE PÁJARO
             if (isFired && pigs.length > 0 && bird) {
                 const speed = Vector.magnitude(bird.velocity);
-                const outOfBounds = bird.position.x > width || bird.position.x < 0 || bird.position.y > height;
-                if (outOfBounds || (speed < 0.2 && bird.position.y > height - 60) || bird.isDead) {
+                const outOfBounds = bird.position.x > width + 100 || bird.position.x < -100 || bird.position.y > height + 100;
+                
+                if (outOfBounds || (speed < 0.22 && bird.position.y > height - 60) || bird.isDead) {
                     if (!bird.deathTimer) bird.deathTimer = 1;
                     bird.deathTimer++;
-                    if (bird.deathTimer > 80) {
-                        World.remove(world, bird); bird = null;
-                        if (birdQueue.length > 0) loadNextBird();
-                        else {
+                    if (bird.deathTimer > 75) {
+                        World.remove(world, bird); 
+                        bird = null;
+                        
+                        if (birdQueue.length > 0) {
+                            loadNextBird();
+                        } else {
                             gameState = 'LOST';
-                            msgContainer.style.display = 'block';
-                            msgTitle.innerText = "¡Nivel Fallado!";
+                            rewardCard.classList.add('hidden'); 
+                            msgContainer.classList.remove('hidden');
+                            document.getElementById('modal-icon-container').innerHTML = '<i class="fa-solid fa-heart-crack text-red-500"></i>';
+                            msgTitle.innerText = "¡Intento Fallido!";
                             msgTitle.style.color = "#ff4757";
+                            msgSubtitle.innerText = "Te has quedado sin pájaros. ¡Inténtalo de nuevo!";
                             btnNextLevel.innerText = "Reintentar Nivel 🔄";
                         }
                     }
@@ -493,7 +1085,7 @@
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
 
-            // Dibujar estructura Y de madera real
+            // Estructura Y de madera real
             ctx.beginPath();
             ctx.moveTo(slingPos.x, bottomY);
             ctx.lineTo(slingPos.x, slingPos.y + 40);
@@ -502,7 +1094,7 @@
             ctx.lineTo(slingPos.x + 20, slingPos.y);
             ctx.stroke();
 
-            // Dibujar detalles de vetas de madera en el poste de la resortera
+            // Detalles de vetas de madera
             ctx.strokeStyle = '#54352b';
             ctx.lineWidth = 2;
             ctx.beginPath();
@@ -530,20 +1122,17 @@
             ctx.restore();
         }
 
-        function drawProceduralBird(type, radius) {
+        function drawProceduralBird(type, radius, isFlashing = false) {
             ctx.save();
             if (type === 'red') {
-                // Cuerpo Principal Rojo
                 ctx.fillStyle = '#e74c3c';
                 ctx.beginPath(); ctx.arc(0, 0, radius, 0, Math.PI * 2); ctx.fill();
 
-                // Vientre de color crema/blanco inferior
                 ctx.fillStyle = '#f5f6fa';
                 ctx.beginPath();
                 ctx.arc(0, radius * 0.35, radius * 0.8, Math.PI * 0.95, Math.PI * 2.05);
                 ctx.closePath(); ctx.fill();
 
-                // Ojos
                 ctx.fillStyle = '#ffffff';
                 ctx.beginPath(); ctx.arc(-radius * 0.3, -radius * 0.15, radius * 0.28, 0, Math.PI * 2); ctx.fill();
                 ctx.beginPath(); ctx.arc(radius * 0.15, -radius * 0.15, radius * 0.28, 0, Math.PI * 2); ctx.fill();
@@ -551,24 +1140,20 @@
                 ctx.beginPath(); ctx.arc(-radius * 0.22, -radius * 0.12, radius * 0.08, 0, Math.PI * 2); ctx.fill();
                 ctx.beginPath(); ctx.arc(radius * 0.22, -radius * 0.12, radius * 0.08, 0, Math.PI * 2); ctx.fill();
 
-                // Cejas Rojas/Negras muy enfadadas
                 ctx.strokeStyle = '#2c3e50'; ctx.lineWidth = radius * 0.14; ctx.lineCap = 'round';
                 ctx.beginPath(); ctx.moveTo(-radius * 0.65, -radius * 0.45); ctx.lineTo(radius * 0.1, -radius * 0.28); ctx.stroke();
                 ctx.beginPath(); ctx.moveTo(radius * 0.55, -radius * 0.45); ctx.lineTo(-radius * 0.1, -radius * 0.28); ctx.stroke();
 
-                // Pico de color naranja con sombreado
                 ctx.fillStyle = '#f39c12';
                 ctx.beginPath(); ctx.moveTo(-radius * 0.25, -radius * 0.02); ctx.lineTo(radius * 0.3, radius * 0.08); ctx.lineTo(-radius * 0.25, radius * 0.28); ctx.closePath(); ctx.fill();
                 ctx.fillStyle = '#e67e22';
                 ctx.beginPath(); ctx.moveTo(-radius * 0.25, radius * 0.08); ctx.lineTo(radius * 0.3, radius * 0.08); ctx.lineTo(-radius * 0.25, radius * 0.28); ctx.closePath(); ctx.fill();
 
-                // Cresta/Pluma trasera
                 ctx.fillStyle = '#e74c3c';
                 ctx.beginPath(); ctx.arc(-radius * 0.8, -radius * 0.4, radius * 0.3, 0, Math.PI * 2); ctx.fill();
                 ctx.beginPath(); ctx.arc(-radius * 0.9, -radius * 0.1, radius * 0.2, 0, Math.PI * 2); ctx.fill();
 
             } else if (type === 'yellow') {
-                // Pájaro Amarillo Triangular (Chuck)
                 ctx.fillStyle = '#f1c40f';
                 ctx.beginPath();
                 ctx.moveTo(0, -radius * 1.2);
@@ -576,12 +1161,10 @@
                 ctx.lineTo(-radius * 1.1, radius * 0.9);
                 ctx.closePath(); ctx.fill();
 
-                // Cresta/Pelo Negro superior
                 ctx.strokeStyle = '#2c3e50'; ctx.lineWidth = radius * 0.18; ctx.lineCap = 'round';
                 ctx.beginPath(); ctx.moveTo(-radius * 0.1, -radius * 1.1); ctx.lineTo(-radius * 0.6, -radius * 1.6); ctx.stroke();
                 ctx.beginPath(); ctx.moveTo(radius * 0.05, -radius * 1.1); ctx.lineTo(-radius * 0.25, -radius * 1.7); ctx.stroke();
 
-                // Vientre de color crema/blanco inferior
                 ctx.fillStyle = '#f5f6fa';
                 ctx.beginPath();
                 ctx.moveTo(-radius * 0.9, radius * 0.7);
@@ -590,7 +1173,6 @@
                 ctx.lineTo(-radius * 1.1, radius * 0.9);
                 ctx.closePath(); ctx.fill();
 
-                // Ojos
                 ctx.fillStyle = '#ffffff';
                 ctx.beginPath(); ctx.arc(-radius * 0.25, 0, radius * 0.24, 0, Math.PI * 2); ctx.fill();
                 ctx.beginPath(); ctx.arc(radius * 0.2, 0, radius * 0.24, 0, Math.PI * 2); ctx.fill();
@@ -598,36 +1180,29 @@
                 ctx.beginPath(); ctx.arc(-radius * 0.18, 0, radius * 0.07, 0, Math.PI * 2); ctx.fill();
                 ctx.beginPath(); ctx.arc(radius * 0.22, 0, radius * 0.07, 0, Math.PI * 2); ctx.fill();
 
-                // Cejas marrón/rojizo oscuras
                 ctx.strokeStyle = '#962d22'; ctx.lineWidth = radius * 0.12; ctx.lineCap = 'round';
                 ctx.beginPath(); ctx.moveTo(-radius * 0.55, -radius * 0.3); ctx.lineTo(radius * 0.05, -radius * 0.1); ctx.stroke();
                 ctx.beginPath(); ctx.moveTo(radius * 0.5, -radius * 0.3); ctx.lineTo(-radius * 0.05, -radius * 0.1); ctx.stroke();
 
-                // Pico de color naranja
                 ctx.fillStyle = '#e67e22';
                 ctx.beginPath(); ctx.moveTo(-radius * 0.2, 0.05); ctx.lineTo(radius * 0.5, radius * 0.25); ctx.lineTo(-radius * 0.2, radius * 0.45); ctx.closePath(); ctx.fill();
 
             } else if (type === 'black') {
-                // Pájaro Bomba Negro
-                ctx.fillStyle = '#2c3e50';
+                ctx.fillStyle = isFlashing ? '#e74c3c' : '#2c3e50';
                 ctx.beginPath(); ctx.arc(0, 0, radius, 0, Math.PI * 2); ctx.fill();
 
-                // Frente de color grisáceo
                 ctx.fillStyle = '#7f8c8d';
                 ctx.beginPath(); ctx.arc(0, -radius * 0.5, radius * 0.4, 0, Math.PI * 2); ctx.fill();
 
-                // Detalle del fusible superior (mechón de pelo con punta naranja/amarilla)
                 ctx.strokeStyle = '#2c3e50'; ctx.lineWidth = radius * 0.2;
                 ctx.beginPath(); ctx.moveTo(0, -radius * 0.9); ctx.lineTo(0, -radius * 1.3); ctx.stroke();
-                ctx.fillStyle = '#f1c40f';
+                ctx.fillStyle = isFlashing ? '#f39c12' : '#f1c40f';
                 ctx.beginPath(); ctx.arc(0, -radius * 1.35, radius * 0.15, 0, Math.PI * 2); ctx.fill();
 
-                // Puntos decorativos de mejillas
                 ctx.fillStyle = '#7f8c8d';
                 ctx.beginPath(); ctx.arc(-radius * 0.5, radius * 0.2, radius * 0.2, 0, Math.PI * 2); ctx.fill();
                 ctx.beginPath(); ctx.arc(radius * 0.5, radius * 0.2, radius * 0.2, 0, Math.PI * 2); ctx.fill();
 
-                // Ojos furiosos con borde rojo
                 ctx.fillStyle = '#e74c3c';
                 ctx.beginPath(); ctx.arc(-radius * 0.26, -radius * 0.05, radius * 0.26, 0, Math.PI * 2); ctx.fill();
                 ctx.beginPath(); ctx.arc(radius * 0.26, -radius * 0.05, radius * 0.26, 0, Math.PI * 2); ctx.fill();
@@ -638,12 +1213,10 @@
                 ctx.beginPath(); ctx.arc(-radius * 0.18, -radius * 0.05, radius * 0.08, 0, Math.PI * 2); ctx.fill();
                 ctx.beginPath(); ctx.arc(radius * 0.22, -radius * 0.05, radius * 0.08, 0, Math.PI * 2); ctx.fill();
 
-                // Cejas naranjas prominentes
                 ctx.strokeStyle = '#e67e22'; ctx.lineWidth = radius * 0.15; ctx.lineCap = 'round';
                 ctx.beginPath(); ctx.moveTo(-radius * 0.6, -radius * 0.35); ctx.lineTo(0, -radius * 0.15); ctx.stroke();
                 ctx.beginPath(); ctx.moveTo(radius * 0.6, -radius * 0.35); ctx.lineTo(0, -radius * 0.15); ctx.stroke();
 
-                // Pico de color amarillo
                 ctx.fillStyle = '#f1c40f';
                 ctx.beginPath(); ctx.moveTo(-radius * 0.15, radius * 0.1); ctx.lineTo(radius * 0.25, radius * 0.2); ctx.lineTo(-radius * 0.15, radius * 0.35); ctx.closePath(); ctx.fill();
             }
@@ -652,11 +1225,9 @@
 
         function drawProceduralPig(pigType, radius) {
             ctx.save();
-            // Cuerpo Verde de Cerdo
             ctx.fillStyle = '#2ecc71';
             ctx.beginPath(); ctx.arc(0, 0, radius, 0, Math.PI * 2); ctx.fill();
 
-            // Orejas de cerdito
             ctx.fillStyle = '#2ecc71';
             ctx.beginPath(); ctx.arc(-radius * 0.8, -radius * 0.7, radius * 0.3, 0, Math.PI * 2); ctx.fill();
             ctx.beginPath(); ctx.arc(radius * 0.8, -radius * 0.7, radius * 0.3, 0, Math.PI * 2); ctx.fill();
@@ -664,7 +1235,6 @@
             ctx.beginPath(); ctx.arc(-radius * 0.8, -radius * 0.7, radius * 0.15, 0, Math.PI * 2); ctx.fill();
             ctx.beginPath(); ctx.arc(radius * 0.8, -radius * 0.7, radius * 0.15, 0, Math.PI * 2); ctx.fill();
 
-            // Ojos con pupila cruzada o asombrada
             ctx.fillStyle = '#ffffff';
             ctx.beginPath(); ctx.arc(-radius * 0.35, -radius * 0.2, radius * 0.25, 0, Math.PI * 2); ctx.fill();
             ctx.beginPath(); ctx.arc(radius * 0.35, -radius * 0.2, radius * 0.25, 0, Math.PI * 2); ctx.fill();
@@ -672,24 +1242,19 @@
             ctx.beginPath(); ctx.arc(-radius * 0.32, -radius * 0.2, radius * 0.08, 0, Math.PI * 2); ctx.fill();
             ctx.beginPath(); ctx.arc(radius * 0.38, -radius * 0.2, radius * 0.08, 0, Math.PI * 2); ctx.fill();
 
-            // Hocico Ovalado
             ctx.fillStyle = '#27ae60';
             ctx.beginPath();
             ctx.ellipse(0, radius * 0.15, radius * 0.45, radius * 0.3, 0, 0, Math.PI * 2);
             ctx.fill();
-            // Fosas nasales oscuras
             ctx.fillStyle = '#145d2f';
             ctx.beginPath(); ctx.arc(-radius * 0.15, radius * 0.15, radius * 0.08, 0, Math.PI * 2); ctx.fill();
             ctx.beginPath(); ctx.arc(radius * 0.15, radius * 0.15, radius * 0.08, 0, Math.PI * 2); ctx.fill();
 
-            // Cejas sutiles asustadas
             ctx.strokeStyle = '#1e824c'; ctx.lineWidth = radius * 0.08; ctx.lineCap = 'round';
             ctx.beginPath(); ctx.moveTo(-radius * 0.6, -radius * 0.55); ctx.lineTo(-radius * 0.15, -radius * 0.45); ctx.stroke();
             ctx.beginPath(); ctx.moveTo(radius * 0.6, -radius * 0.55); ctx.lineTo(radius * 0.15, -radius * 0.45); ctx.stroke();
 
-            // --- ACCESORIOS DE CERDOS DE ACUERDO A SU CLASE ---
             if (pigType === 'helmet') {
-                // Casco Militar de Piedra/Hierro Verde Militar en la mitad superior
                 ctx.fillStyle = '#5c6b73';
                 ctx.strokeStyle = '#2f3e46';
                 ctx.lineWidth = 3;
@@ -698,22 +1263,18 @@
                 ctx.closePath();
                 ctx.fill(); ctx.stroke();
 
-                // Detalles del remache y brillo del casco
                 ctx.fillStyle = '#ffffff';
                 ctx.beginPath(); ctx.arc(radius * 0.5, -radius * 0.8, radius * 0.08, 0, Math.PI * 2); ctx.fill();
 
             } else if (pigType === 'cowboy') {
-                // Sombrero de Vaquero Marrón de ala ancha
                 ctx.fillStyle = '#8a5a36';
                 ctx.strokeStyle = '#5c3a21';
                 ctx.lineWidth = 2;
                 
-                // Ala del sombrero (elipse en la frente)
                 ctx.beginPath();
                 ctx.ellipse(0, -radius * 0.35, radius * 1.3, radius * 0.3, 0, 0, Math.PI * 2);
                 ctx.fill(); ctx.stroke();
 
-                // Copa del sombrero
                 ctx.beginPath();
                 ctx.moveTo(-radius * 0.7, -radius * 0.35);
                 ctx.quadraticCurveTo(-radius * 0.5, -radius * 1.2, 0, -radius * 1.15);
@@ -721,7 +1282,6 @@
                 ctx.closePath();
                 ctx.fill(); ctx.stroke();
 
-                // Banda negra decorativa
                 ctx.fillStyle = '#2c3e50';
                 ctx.beginPath();
                 ctx.moveTo(-radius * 0.7, -radius * 0.35);
@@ -731,23 +1291,21 @@
                 ctx.closePath(); ctx.fill();
 
             } else if (pigType === 'king') {
-                // Corona Real del Rey Cerdo con joyas rojas
-                ctx.fillStyle = '#f1c40f'; // Oro brillante
+                ctx.fillStyle = '#f1c40f'; 
                 ctx.strokeStyle = '#d35400';
                 ctx.lineWidth = 2.5;
 
                 ctx.beginPath();
                 ctx.moveTo(-radius * 0.7, -radius * 0.7);
-                ctx.lineTo(-radius * 0.5, -radius * 1.3); // Pico Izq
+                ctx.lineTo(-radius * 0.5, -radius * 1.3); 
                 ctx.lineTo(-radius * 0.2, -radius * 0.95);
-                ctx.lineTo(0, -radius * 1.4);          // Pico Central
+                ctx.lineTo(0, -radius * 1.4);          
                 ctx.lineTo(radius * 0.2, -radius * 0.95);
-                ctx.lineTo(radius * 0.5, -radius * 1.3);  // Pico Der
+                ctx.lineTo(radius * 0.5, -radius * 1.3);  
                 ctx.lineTo(radius * 0.7, -radius * 0.7);
                 ctx.closePath();
                 ctx.fill(); ctx.stroke();
 
-                // Gemas Rojas de rubí
                 ctx.fillStyle = '#e74c3c';
                 ctx.beginPath(); ctx.arc(-radius * 0.5, -radius * 1.25, radius * 0.08, 0, Math.PI * 2); ctx.fill();
                 ctx.beginPath(); ctx.arc(0, -radius * 1.35, radius * 0.08, 0, Math.PI * 2); ctx.fill();
@@ -759,33 +1317,21 @@
         function drawProceduralBlock(label, width, height) {
             ctx.save();
             if (label === 'wood' || label === 'wood_tri') {
-                // Textura de Madera (Marrón Claro con Vetas y Clavos)
                 ctx.fillStyle = '#d3a26a';
                 ctx.strokeStyle = '#8b5a2b';
                 ctx.lineWidth = 3;
 
                 if (label === 'wood_tri') {
-                    // Render de Triángulo de Madera
                     ctx.beginPath();
                     ctx.moveTo(-width / 2, height / 2);
                     ctx.lineTo(width / 2, height / 2);
                     ctx.lineTo(0, -height / 2);
                     ctx.closePath();
                     ctx.fill(); ctx.stroke();
-
-                    // Vetas internas del triángulo
-                    ctx.strokeStyle = '#b07c4b';
-                    ctx.beginPath();
-                    ctx.moveTo(-width * 0.3, height * 0.35);
-                    ctx.lineTo(0, -height * 0.2);
-                    ctx.lineTo(width * 0.3, height * 0.35);
-                    ctx.stroke();
                 } else {
-                    // Rectángulo de madera
                     ctx.fillRect(-width / 2, -height / 2, width, height);
                     ctx.strokeRect(-width / 2, -height / 2, width, height);
 
-                    // Líneas de vetas longitudinales
                     ctx.strokeStyle = '#b07c4b';
                     ctx.lineWidth = 1.5;
                     ctx.beginPath();
@@ -794,44 +1340,24 @@
                     ctx.moveTo(-width / 2 + 5, height / 4);
                     ctx.lineTo(width / 2 - 5, height / 4);
                     ctx.stroke();
-
-                    // Pequeños tornillos/clavos en las esquinas de las tablas
-                    ctx.fillStyle = '#7f8c8d';
-                    const offset = 4;
-                    ctx.beginPath();
-                    ctx.arc(-width / 2 + offset, -height / 2 + offset, 2, 0, Math.PI * 2);
-                    ctx.arc(width / 2 - offset, -height / 2 + offset, 2, 0, Math.PI * 2);
-                    ctx.arc(-width / 2 + offset, height / 2 - offset, 2, 0, Math.PI * 2);
-                    ctx.arc(width / 2 - offset, height / 2 - offset, 2, 0, Math.PI * 2);
-                    ctx.fill();
                 }
 
             } else if (label === 'stone' || label === 'stone_tri' || label === 'boulder') {
-                // Textura de Piedra Rústica Agrietada
-                ctx.fillStyle = '#95a5a6';
-                ctx.strokeStyle = '#7f8c8d';
+                ctx.fillStyle = '#7f8c8d';
+                ctx.strokeStyle = '#4f5d65';
                 ctx.lineWidth = 3;
 
                 if (label === 'boulder') {
-                    // Roca Redonda Agrietada
                     const radius = width / 2;
                     ctx.beginPath(); ctx.arc(0, 0, radius, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
 
-                    // Grietas físicas en la piedra
-                    ctx.strokeStyle = '#626567';
+                    ctx.strokeStyle = '#323b40';
                     ctx.lineWidth = 2;
                     ctx.beginPath();
                     ctx.moveTo(-radius * 0.5, -radius * 0.3);
                     ctx.lineTo(-radius * 0.1, radius * 0.1);
                     ctx.lineTo(radius * 0.4, -radius * 0.2);
                     ctx.stroke();
-
-                    // Sombreado interno volumétrico
-                    const grad = ctx.createRadialGradient(-radius*0.2, -radius*0.2, radius*0.2, 0, 0, radius);
-                    grad.addColorStop(0, 'rgba(255,255,255,0.15)');
-                    grad.addColorStop(1, 'rgba(0,0,0,0.25)');
-                    ctx.fillStyle = grad;
-                    ctx.beginPath(); ctx.arc(0, 0, radius, 0, Math.PI * 2); ctx.fill();
 
                 } else if (label === 'stone_tri') {
                     ctx.beginPath();
@@ -840,84 +1366,42 @@
                     ctx.lineTo(0, -height / 2);
                     ctx.closePath();
                     ctx.fill(); ctx.stroke();
-
-                    // Grietas en el triángulo de piedra
-                    ctx.strokeStyle = '#626567';
-                    ctx.beginPath();
-                    ctx.moveTo(0, -height * 0.1);
-                    ctx.lineTo(-width * 0.25, height * 0.3);
-                    ctx.stroke();
                 } else {
-                    // Rectángulo de piedra tallada
                     ctx.fillRect(-width / 2, -height / 2, width, height);
                     ctx.strokeRect(-width / 2, -height / 2, width, height);
-
-                    // Textura rugosa de relieve
-                    ctx.strokeStyle = '#7f8c8d';
-                    ctx.beginPath();
-                    ctx.moveTo(-width / 2 + 10, -height / 2 + 10);
-                    ctx.lineTo(width / 2 - 10, height / 2 - 10);
-                    ctx.stroke();
-
-                    ctx.strokeStyle = '#626567';
-                    ctx.lineWidth = 1.5;
-                    ctx.beginPath();
-                    ctx.moveTo(-width / 3, -height / 2);
-                    ctx.lineTo(-width / 3, height / 2);
-                    ctx.moveTo(width / 3, -height / 2);
-                    ctx.lineTo(width / 3, height / 2);
-                    ctx.stroke();
                 }
 
             } else if (label === 'ice') {
-                // Textura de Hielo Cristalino Translúcido
-                ctx.fillStyle = 'rgba(173, 216, 230, 0.7)';
+                ctx.fillStyle = 'rgba(100, 210, 240, 0.65)';
                 ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
-                ctx.lineWidth = 2;
+                ctx.lineWidth = 2.5;
 
-                // Relleno base
                 ctx.fillRect(-width / 2, -height / 2, width, height);
                 ctx.strokeRect(-width / 2, -height / 2, width, height);
 
-                // Brillos diagonales e internos de congelación
-                ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
                 ctx.lineWidth = 1.5;
                 ctx.beginPath();
                 ctx.moveTo(-width / 2 + 3, -height / 2 + 12);
                 ctx.lineTo(width / 2 - 12, height / 2 - 3);
                 ctx.stroke();
 
-                // Esquina sombreada en azul glaciar
-                ctx.fillStyle = 'rgba(41, 128, 185, 0.25)';
-                ctx.beginPath();
-                ctx.moveTo(width / 2, -height / 2);
-                ctx.lineTo(width / 2, height / 2);
-                ctx.lineTo(-width / 2, height / 2);
-                ctx.closePath();
-                ctx.fill();
-
             } else if (label === 'tnt') {
-                // Caja de Dinamita TNT Detallada
-                ctx.fillStyle = '#c0392b'; // Rojo oscuro de caja
-                ctx.strokeStyle = '#7f0000';
+                ctx.fillStyle = '#b32424'; 
+                ctx.strokeStyle = '#5c1010';
                 ctx.lineWidth = 2.5;
                 ctx.fillRect(-width / 2, -height / 2, width, height);
                 ctx.strokeRect(-width / 2, -height / 2, width, height);
 
-                // Cuerdas/Correas metálicas de sujeción (bandas amarillas)
                 ctx.fillStyle = '#f1c40f';
                 ctx.fillRect(-width / 2 + 2, -height / 4, width - 4, 6);
                 ctx.fillRect(-width / 2 + 2, height / 4 - 6, width - 4, 6);
 
-                // Estencil de TNT en medio
                 ctx.fillStyle = '#ffffff';
                 ctx.font = 'bold 11px monospace';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
-                ctx.shadowColor = 'black';
-                ctx.shadowBlur = 1;
                 ctx.fillText('TNT', 0, 0);
-                ctx.shadowBlur = 0; // Resetear sombra
             }
             ctx.restore();
         }
@@ -925,109 +1409,65 @@
         function drawProceduralBonus(type, radius) {
             ctx.save();
             if (type === 'balloon') {
-                // Globo de helio flotante e inflado (Rojo brillante volumétrico)
                 const grad = ctx.createRadialGradient(-radius*0.2, -radius*0.3, radius*0.1, 0, 0, radius);
                 grad.addColorStop(0, '#ff7675');
                 grad.addColorStop(0.7, '#d63031');
                 grad.addColorStop(1, '#810000');
                 ctx.fillStyle = grad;
 
-                ctx.beginPath();
-                ctx.arc(0, -radius * 0.1, radius, 0, Math.PI * 2);
-                ctx.fill();
+                ctx.beginPath(); ctx.arc(0, -radius * 0.1, radius, 0, Math.PI * 2); ctx.fill();
 
-                // Nudo del globo en la parte inferior
                 ctx.fillStyle = '#d63031';
                 ctx.beginPath();
-                ctx.moveTo(-4, radius * 0.85);
-                ctx.lineTo(4, radius * 0.85);
-                ctx.lineTo(0, radius * 1.1);
+                ctx.moveTo(-4, radius * 0.85); ctx.lineTo(4, radius * 0.85); ctx.lineTo(0, radius * 1.1);
                 ctx.closePath(); ctx.fill();
 
-                // Hilo de sujeción que oscila levemente
-                ctx.strokeStyle = 'rgba(0,0,0,0.35)';
-                ctx.lineWidth = 1.5;
-                ctx.beginPath();
-                ctx.moveTo(0, radius * 1.0);
-                ctx.quadraticCurveTo(-10, radius * 1.6, 2, radius * 2.3);
-                ctx.stroke();
+                ctx.strokeStyle = 'rgba(255,255,255,0.4)'; ctx.lineWidth = 1.5;
+                ctx.beginPath(); ctx.moveTo(0, radius * 1.0); ctx.quadraticCurveTo(-10, radius * 1.6, 2, radius * 2.3); ctx.stroke();
 
             } else if (type === 'watermelon') {
-                // Rebanada de Sandía
-                ctx.fillStyle = '#27ae60'; // Corteza verde
-                ctx.beginPath();
-                ctx.arc(0, 0, radius, 0, Math.PI, false);
-                ctx.closePath(); ctx.fill();
-
-                ctx.fillStyle = '#2ecc71'; // Capa verde clara
-                ctx.beginPath();
-                ctx.arc(0, 0, radius * 0.85, 0, Math.PI, false);
-                ctx.closePath(); ctx.fill();
-
-                ctx.fillStyle = '#ffffff'; // Parte blanca
-                ctx.beginPath();
-                ctx.arc(0, 0, radius * 0.78, 0, Math.PI, false);
-                ctx.closePath(); ctx.fill();
-
-                ctx.fillStyle = '#e74c3c'; // Pulpa roja deliciosa
-                ctx.beginPath();
-                ctx.arc(0, 0, radius * 0.68, 0, Math.PI, false);
-                ctx.closePath(); ctx.fill();
-
-                // Semillas negras
-                ctx.fillStyle = '#2c3e50';
-                ctx.beginPath();
-                ctx.arc(-radius * 0.3, radius * 0.3, 1.8, 0, Math.PI * 2);
-                ctx.arc(0, radius * 0.45, 1.8, 0, Math.PI * 2);
-                ctx.arc(radius * 0.3, radius * 0.3, 1.8, 0, Math.PI * 2);
-                ctx.fill();
+                ctx.fillStyle = '#27ae60';
+                ctx.beginPath(); ctx.arc(0, 0, radius, 0, Math.PI, false); ctx.closePath(); ctx.fill();
+                ctx.fillStyle = '#e74c3c';
+                ctx.beginPath(); ctx.arc(0, 0, radius * 0.75, 0, Math.PI, false); ctx.closePath(); ctx.fill();
+                ctx.fillStyle = '#000';
+                ctx.beginPath(); ctx.arc(-4, 4, 1.5, 0, Math.PI * 2); ctx.arc(4, 4, 1.5, 0, Math.PI * 2); ctx.fill();
 
             } else if (type === 'duck') {
-                // Patito de Goma Amarillo
-                // Cuerpo
                 ctx.fillStyle = '#f1c40f';
-                ctx.beginPath();
-                ctx.ellipse(0, radius * 0.2, radius * 0.8, radius * 0.6, 0, 0, Math.PI * 2);
-                ctx.fill();
-
-                // Cabeza
-                ctx.beginPath();
-                ctx.arc(radius * 0.35, -radius * 0.35, radius * 0.4, 0, Math.PI * 2);
-                ctx.fill();
-
-                // Ala pequeña
-                ctx.fillStyle = '#f39c12';
-                ctx.beginPath();
-                ctx.ellipse(-radius * 0.2, radius * 0.1, radius * 0.35, radius * 0.2, Math.PI / 8, 0, Math.PI * 2);
-                ctx.fill();
-
-                // Pico de color naranja
+                ctx.beginPath(); ctx.ellipse(0, radius * 0.2, radius * 0.8, radius * 0.6, 0, 0, Math.PI * 2); ctx.fill();
+                ctx.beginPath(); ctx.arc(radius * 0.35, -radius * 0.35, radius * 0.4, 0, Math.PI * 2); ctx.fill();
                 ctx.fillStyle = '#e67e22';
-                ctx.beginPath();
-                ctx.moveTo(radius * 0.6, -radius * 0.35);
-                ctx.lineTo(radius * 1.05, -radius * 0.3);
-                ctx.lineTo(radius * 0.6, -radius * 0.18);
-                ctx.closePath(); ctx.fill();
-
-                // Ojo
-                ctx.fillStyle = '#000000';
-                ctx.beginPath(); ctx.arc(radius * 0.3, -radius * 0.45, 2, 0, Math.PI * 2); ctx.fill();
+                ctx.beginPath(); ctx.moveTo(radius * 0.6, -radius * 0.35); ctx.lineTo(radius * 1.05, -radius * 0.3); ctx.lineTo(radius * 0.6, -radius * 0.18); ctx.closePath(); ctx.fill();
             }
             ctx.restore();
         }
 
-        // --- RENDER GAME LOOP PRINCIPAL ---
-
         function draw() {
-            ctx.fillStyle = '#87CEEB';
+            // Fondo de cielo nocturno con gradiente espacial
+            const skyGrad = ctx.createLinearGradient(0, 0, 0, height);
+            skyGrad.addColorStop(0, '#0d0415');
+            skyGrad.addColorStop(0.6, '#20082c');
+            skyGrad.addColorStop(1, '#4a154b');
+            ctx.fillStyle = skyGrad;
             ctx.fillRect(0, 0, width, height);
             
-            ctx.fillStyle = '#7bed9f';
+            // Dibujar estrellas decorativas de fondo
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+            for (let i = 0; i < 30; i++) {
+                let sX = (Math.sin(i) * 0.5 + 0.5) * width;
+                let sY = (Math.cos(i * 3) * 0.5 + 0.5) * (height - 180);
+                ctx.fillRect(sX, sY, 2, 2);
+            }
+
+            // Suelo morado
+            ctx.fillStyle = '#1e0926';
             ctx.fillRect(0, height - 40, width, 40);
-            drawBody(ground, '#574b90');
+            drawBody(ground, '#501764');
 
             drawProceduralSling();
 
+            // Renderizado de bloques y estructuras de construcción
             blocks.forEach(block => {
                 ctx.save();
                 ctx.translate(Math.floor(block.position.x), Math.floor(block.position.y));
@@ -1044,6 +1484,7 @@
                 ctx.restore();
             });
 
+            // Renderizado de enemigos (Cerdos)
             pigs.forEach(pig => {
                 ctx.save();
                 ctx.translate(Math.floor(pig.position.x), Math.floor(pig.position.y));
@@ -1053,18 +1494,22 @@
                 ctx.restore();
             });
 
+            // Renderizado de Pájaro Activo
             if (bird && !bird.isDead) {
                 ctx.save();
                 ctx.translate(Math.floor(bird.position.x), Math.floor(bird.position.y));
                 ctx.rotate(bird.angle);
                 const r = (bird.bounds.max.x - bird.bounds.min.x) / 2;
-                drawProceduralBird(currentBirdType, r);
+                
+                const isFlashing = (bird.birdType === 'black' && bird.fuseActive && Math.floor(bird.fuseTimer / 6) % 2 === 0);
+                drawProceduralBird(currentBirdType, r, isFlashing);
                 ctx.restore();
             }
 
+            // Dibujar cola de reserva de pájaros restantes
             birdQueue.forEach((type, index) => {
                 ctx.save();
-                ctx.translate(slingPos.x - 40 - (index * 35), height - 25);
+                ctx.translate(slingPos.x - 55 - (index * 35), height - 25);
                 drawProceduralBird(type, 13);
                 ctx.restore();
             });
@@ -1076,10 +1521,15 @@
             ctx.beginPath();
             const v = body.vertices;
             ctx.moveTo(Math.floor(v[0].x), Math.floor(v[0].y));
-            for (let j = 1; j < v.length; j++) ctx.lineTo(Math.floor(v[j].x), Math.floor(v[j].y));
+            for (let j = 1; j < v.length; j++) {
+                ctx.lineTo(Math.floor(v[j].x), Math.floor(v[j].y));
+            }
             ctx.lineTo(Math.floor(v[0].x), Math.floor(v[0].y));
-            ctx.fillStyle = color; ctx.fill();
-            ctx.strokeStyle = '#000'; ctx.lineWidth = 1; ctx.stroke();
+            ctx.fillStyle = color; 
+            ctx.fill();
+            ctx.strokeStyle = '#0f0214'; 
+            ctx.lineWidth = 2.5; 
+            ctx.stroke();
         }
 
         function drawExplosions() {
@@ -1093,9 +1543,9 @@
                 ctx.save();
                 const grad = ctx.createRadialGradient(exp.x, exp.y, currentRadius * 0.1, exp.x, exp.y, currentRadius);
                 grad.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
-                grad.addColorStop(0.2, 'rgba(255, 200, 0, 0.85)');
-                grad.addColorStop(0.6, 'rgba(255, 50, 0, 0.6)');
-                grad.addColorStop(1, 'rgba(128, 128, 128, 0)');
+                grad.addColorStop(0.2, 'rgba(255, 180, 0, 0.9)');
+                grad.addColorStop(0.6, 'rgba(214, 48, 49, 0.6)');
+                grad.addColorStop(1, 'rgba(110, 37, 107, 0)');
                 
                 ctx.fillStyle = grad;
                 ctx.beginPath();
