@@ -90,11 +90,11 @@
             <div class="flex flex-col gap-1.5">
                 <div class="flex items-center justify-between text-xs">
                     <span class="text-slate-300">Tus bajas:</span>
-                    <div id="player-captured" class="flex gap-1 text-slate-400 text-sm"></div>
+                    <div id="player-captured" class="flex gap-1 text-slate-400 text-sm animate-fade-in"></div>
                 </div>
                 <div class="flex items-center justify-between text-xs">
                     <span class="text-emerald-400">Bajas rival:</span>
-                    <div id="ai-captured" class="flex gap-1 text-emerald-400 text-sm"></div>
+                    <div id="ai-captured" class="flex gap-1 text-emerald-400 text-sm animate-fade-in"></div>
                 </div>
             </div>
         </div>
@@ -152,44 +152,52 @@
 
     <script>
         // Base de datos de los 20 niveles con sus características estéticas y algoritmos de IA
+        // Se han optimizado las profundidades para que el motor de IA responda de forma fluida
         const CAMPAIGN_LEVELS = [
             { id: 1, country: "Japón", flag: "🇯🇵", opponent: "Samurai Army", elo: 600, theme: "shinto", depth: 1, desc: "Santuario Shinto rodeado de flores de cerezo.", boardColor1: 0xffd1dc, boardColor2: 0x4a2432, particleType: "blossom" },
             { id: 2, country: "Egipto", flag: "🇪🇬", opponent: "Anubis Guard", elo: 750, theme: "egyptian", depth: 1, desc: "Cámara dorada con antorchas místicas.", boardColor1: 0xffdf00, boardColor2: 0x5a3e1a, particleType: "sand" },
             { id: 3, country: "Italia", flag: "🇮🇹", opponent: "Florentine Artist", elo: 900, theme: "marble", depth: 2, desc: "Patio florentino con mármol Carrara pulido.", boardColor1: 0xeeeeee, boardColor2: 0x444444, particleType: "dust" },
             { id: 4, country: "México", flag: "🇲🇽", opponent: "Catrina Bones", elo: 1050, theme: "dayofdead", depth: 2, desc: "Noche de altar vibrante con papel picado y marigold.", boardColor1: 0xff6600, boardColor2: 0x4b0082, particleType: "marigold" },
-            { id: 5, country: "India", flag: "🇮🇳", opponent: "Mughal Strategist", elo: 1200, theme: "sandstone", depth: 3, desc: "Atardecer carmesí sobre un palacio de Rajasthan.", boardColor1: 0xe07a5f, boardColor2: 0x3d405b, particleType: "glow" },
-            { id: 6, country: "Grecia", flag: "🇬🇷", opponent: "Olympus Guard", elo: 1300, theme: "olympus", depth: 3, desc: "Colinas divinas con destellos celestiales.", boardColor1: 0x8ecae6, boardColor2: 0x023047, particleType: "sparks" },
-            { id: 7, country: "Islandia", flag: "🇮🇸", opponent: "Frost Giant", elo: 1400, theme: "fireice", depth: 4, desc: "Caverna volcánica rodeada de glaciares azules.", boardColor1: 0x00f2fe, boardColor2: 0x4facfe, particleType: "snow" },
-            { id: 8, country: "China", flag: "🇨🇳", opponent: "Imperial Jade", elo: 1500, theme: "jade", depth: 4, desc: "Jardín imperial cubierto de agua de jade.", boardColor1: 0x52b788, boardColor2: 0x1b4332, particleType: "willow" },
-            { id: 9, country: "Brasil", flag: "🇧🇷", opponent: "Jaguar Knight", elo: 1550, theme: "amazon", depth: 4, desc: "Tupida selva con destellos de luz solar.", boardColor1: 0x70e000, boardColor2: 0x004b23, particleType: "jungle" },
-            { id: 10, country: "Kenia", flag: "🇰🇪", opponent: "Savannah Shaman", elo: 1600, theme: "savannah", depth: 5, desc: "Siluetas de acacias bajo un sol naranja ardiente.", boardColor1: 0xfca311, boardColor2: 0x14213d, particleType: "heat" },
-            { id: 11, country: "Francia", flag: "🇫🇷", opponent: "Palace Glassmaker", elo: 1650, theme: "versailles", depth: 5, desc: "Cúpulas de cristal y espejos iluminados por la luna.", boardColor1: 0xabc4ff, boardColor2: 0x463f3a, particleType: "crystals" },
-            { id: 12, country: "Perú", flag: "🇵🇪", opponent: "Inca Priest", elo: 1700, theme: "machupicchu", depth: 5, desc: "Cuna de templos sobre el abismo andino.", boardColor1: 0xccd5ae, boardColor2: 0xd4a373, particleType: "mist" },
-            { id: 13, country: "Reino Unido", flag: "🇬🇧", opponent: "Steampunk Master", elo: 1750, theme: "steampunk", depth: 5, desc: "Taller subterráneo de latón, cobre y vapor.", boardColor1: 0xb1a7a6, boardColor2: 0x161a1d, particleType: "steam" },
-            { id: 14, country: "Australia", flag: "🇦🇺", opponent: "Coral Triton", elo: 1800, theme: "reef", depth: 5, desc: "Arrecife coral bajo el océano turquesa.", boardColor1: 0x4cc9f0, boardColor2: 0x4361ee, particleType: "bubbles" },
-            { id: 15, country: "Rusia", flag: "🇷🇺", opponent: "Porcelain Master", elo: 1850, theme: "winter", depth: 6, desc: "Nieve profunda bajo la aurora boreal de Siberia.", boardColor1: 0xe0aaff, boardColor2: 0x3c096c, particleType: "aurora" },
-            { id: 16, country: "España", flag: "🇪🇸", opponent: "Medieval Knight", elo: 1900, theme: "alhambratile", depth: 6, desc: "Azulejos geométricos y fuentes reflectantes.", boardColor1: 0xffb703, boardColor2: 0x8338ec, particleType: "glow" },
-            { id: 17, country: "Marruecos", flag: "🇲🇦", opponent: "Sahara Oasis", elo: 1950, theme: "sahara", depth: 6, desc: "Tienda bereber frente a dunas estelares.", boardColor1: 0xf4a261, boardColor2: 0x264653, particleType: "sanddrift" },
-            { id: 18, country: "Canadá", flag: "🇨🇦", opponent: "Boreal Carver", elo: 2000, theme: "cabin", depth: 6, desc: "Calidez rústica de cabaña con chimenea de pino.", boardColor1: 0xffcad4, boardColor2: 0x9b2226, particleType: "embers" },
-            { id: 19, country: "Alemania", flag: "🇩🇪", opponent: "Gargoyle Guardian", elo: 2100, theme: "gothic", depth: 7, desc: "Tormenta dramática en un castillo de montaña.", boardColor1: 0xd8e2dc, boardColor2: 0x3d3d3d, particleType: "rain" },
-            { id: 20, country: "USA", flag: "🇺🇸", opponent: "Cyberpunk Rogue", elo: 2200, theme: "cyberpunk", depth: 7, desc: "Plataforma holográfica en una metrópolis de neón.", boardColor1: 0x00ffff, boardColor2: 0xff00ff, particleType: "neon" }
+            { id: 5, country: "India", flag: "🇮🇳", opponent: "Mughal Strategist", elo: 1200, theme: "sandstone", depth: 2, desc: "Atardecer carmesí sobre un palacio de Rajasthan.", boardColor1: 0xe07a5f, boardColor2: 0x3d405b, particleType: "glow" },
+            { id: 6, country: "Grecia", flag: "🇬🇷", opponent: "Olympus Guard", elo: 1300, theme: "olympus", depth: 2, desc: "Colinas divinas con destellos celestiales.", boardColor1: 0x8ecae6, boardColor2: 0x023047, particleType: "sparks" },
+            { id: 7, country: "Islandia", flag: "🇮🇸", opponent: "Frost Giant", elo: 1400, theme: "fireice", depth: 3, desc: "Caverna volcánica rodeada de glaciares azules.", boardColor1: 0x00f2fe, boardColor2: 0x4facfe, particleType: "snow" },
+            { id: 8, country: "China", flag: "🇨🇳", opponent: "Imperial Jade", elo: 1500, theme: "jade", depth: 3, desc: "Jardín imperial cubierto de agua de jade.", boardColor1: 0x52b788, boardColor2: 0x1b4332, particleType: "willow" },
+            { id: 9, country: "Brasil", flag: "🇧🇷", opponent: "Jaguar Knight", elo: 1550, theme: "amazon", depth: 3, desc: "Tupida selva con destellos de luz solar.", boardColor1: 0x70e000, boardColor2: 0x004b23, particleType: "jungle" },
+            { id: 10, country: "Kenia", flag: "🇰🇪", opponent: "Savannah Shaman", elo: 1600, theme: "savannah", depth: 3, desc: "Siluetas de acacias bajo un sol naranja ardiente.", boardColor1: 0xfca311, boardColor2: 0x14213d, particleType: "heat" },
+            { id: 11, country: "Francia", flag: "🇫🇷", opponent: "Palace Glassmaker", elo: 1650, theme: "versailles", depth: 3, desc: "Cúpulas de cristal y espejos iluminados por la luna.", boardColor1: 0xabc4ff, boardColor2: 0x463f3a, particleType: "crystals" },
+            { id: 12, country: "Perú", flag: "🇵🇪", opponent: "Inca Priest", elo: 1700, theme: "machupicchu", depth: 3, desc: "Cuna de templos sobre el abismo andino.", boardColor1: 0xccd5ae, boardColor2: 0xd4a373, particleType: "mist" },
+            { id: 13, country: "Reino Unido", flag: "🇬🇧", opponent: "Steampunk Master", elo: 1750, theme: "steampunk", depth: 3, desc: "Taller subterráneo de latón, cobre y vapor.", boardColor1: 0xb1a7a6, boardColor2: 0x161a1d, particleType: "steam" },
+            { id: 14, country: "Australia", flag: "🇦🇺", opponent: "Coral Triton", elo: 1800, theme: "reef", depth: 3, desc: "Arrecife coral bajo el océano turquesa.", boardColor1: 0x4cc9f0, boardColor2: 0x4361ee, particleType: "bubbles" },
+            { id: 15, country: "Rusia", flag: "🇷🇺", opponent: "Porcelain Master", elo: 1850, theme: "winter", depth: 4, desc: "Nieve profunda bajo la aurora boreal de Siberia.", boardColor1: 0xe0aaff, boardColor2: 0x3c096c, particleType: "aurora" },
+            { id: 16, country: "España", flag: "🇪🇸", opponent: "Medieval Knight", elo: 1900, theme: "alhambratile", depth: 4, desc: "Azulejos geométricos y fuentes reflectantes.", boardColor1: 0xffb703, boardColor2: 0x8338ec, particleType: "glow" },
+            { id: 17, country: "Marruecos", flag: "🇲🇦", opponent: "Sahara Oasis", elo: 1950, theme: "sahara", depth: 4, desc: "Tienda bereber frente a dunas estelares.", boardColor1: 0xf4a261, boardColor2: 0x264653, particleType: "sanddrift" },
+            { id: 18, country: "Canadá", flag: "🇨🇦", opponent: "Boreal Carver", elo: 2000, theme: "cabin", depth: 4, desc: "Calidez rústica de cabaña con chimenea de pino.", boardColor1: 0xffcad4, boardColor2: 0x9b2226, particleType: "embers" },
+            { id: 19, country: "Alemania", flag: "🇩🇪", opponent: "Gargoyle Guardian", elo: 2100, theme: "gothic", depth: 4, desc: "Tormenta dramática en un castillo de montaña.", boardColor1: 0xd8e2dc, boardColor2: 0x3d3d3d, particleType: "rain" },
+            { id: 20, country: "USA", flag: "🇺🇸", opponent: "Cyberpunk Rogue", elo: 2200, theme: "cyberpunk", depth: 4, desc: "Plataforma holográfica en una metrópolis de neón.", boardColor1: 0x00ffff, boardColor2: 0xff00ff, particleType: "neon" }
         ];
 
         // Estado inicial de la campaña
         let currentLevelIndex = 0;
         let unlockedLevels = [1]; // El nivel 1 siempre está desbloqueado
 
-        // Inicializar persistencia de datos
-        if (localStorage.getItem("chess_campaign_unlocked")) {
-            unlockedLevels = JSON.parse(localStorage.getItem("chess_campaign_unlocked"));
-        }
-        if (localStorage.getItem("chess_campaign_index")) {
-            currentLevelIndex = parseInt(localStorage.getItem("chess_campaign_index"), 10);
+        // Inicializar persistencia de datos de forma segura
+        try {
+            if (localStorage.getItem("chess_campaign_unlocked")) {
+                unlockedLevels = JSON.parse(localStorage.getItem("chess_campaign_unlocked"));
+            }
+            if (localStorage.getItem("chess_campaign_index")) {
+                currentLevelIndex = parseInt(localStorage.getItem("chess_campaign_index"), 10);
+            }
+        } catch (e) {
+            unlockedLevels = [1];
+            currentLevelIndex = 0;
         }
 
         function saveCampaignProgress() {
-            localStorage.setItem("chess_campaign_unlocked", JSON.stringify(unlockedLevels));
-            localStorage.setItem("chess_campaign_index", currentLevelIndex.toString());
+            try {
+                localStorage.setItem("chess_campaign_unlocked", JSON.stringify(unlockedLevels));
+                localStorage.setItem("chess_campaign_index", currentLevelIndex.toString());
+            } catch(e) {}
         }
     </script>
 
@@ -207,7 +215,6 @@
 
             switch (type) {
                 case 'move': {
-                    // Sonido seco y corto de pieza de madera
                     const osc = audioCtx.createOscillator();
                     const gain = audioCtx.createGain();
                     osc.type = 'triangle';
@@ -224,7 +231,6 @@
                     break;
                 }
                 case 'capture': {
-                    // Impacto metálico de piezas
                     const osc1 = audioCtx.createOscillator();
                     const osc2 = audioCtx.createOscillator();
                     const gain = audioCtx.createGain();
@@ -251,15 +257,14 @@
                     break;
                 }
                 case 'check': {
-                    // Acorde agudo de advertencia
                     const osc1 = audioCtx.createOscillator();
                     const osc2 = audioCtx.createOscillator();
                     const gain = audioCtx.createGain();
                     
                     osc1.type = 'sine';
-                    osc1.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5
+                    osc1.frequency.setValueAtTime(587.33, audioCtx.currentTime);
                     osc2.type = 'sine';
-                    osc2.frequency.setValueAtTime(698.46, audioCtx.currentTime); // F5
+                    osc2.frequency.setValueAtTime(698.46, audioCtx.currentTime);
                     
                     gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
                     gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
@@ -275,7 +280,6 @@
                     break;
                 }
                 case 'win': {
-                    // Fanfarria ascendente alegre
                     const freqs = [261.63, 329.63, 392.00, 523.25];
                     freqs.forEach((freq, idx) => {
                         const osc = audioCtx.createOscillator();
@@ -293,7 +297,6 @@
                     break;
                 }
                 case 'lose': {
-                    // Arpegio descendente sombrío
                     const freqs = [392.00, 311.13, 261.63, 196.00];
                     freqs.forEach((freq, idx) => {
                         const osc = audioCtx.createOscillator();
@@ -316,16 +319,12 @@
 
     <script>
         // Declaramos la lógica de evaluación y búsqueda Minimax para nuestro Worker inline.
-        // Esto le permite a la IA pensar independientemente de los fotogramas del canvas 3D.
+        // Se corrigieron los índices de evaluación para que las piezas reconozcan su avance de forma simétrica.
         const workerCode = `
+            importScripts('https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js');
+
             self.onmessage = function(e) {
                 const { fen, depth } = e.data;
-                
-                // Un motor minimalista integrado en el worker para evaluar posiciones
-                // y buscar jugadas óptimas con poda Alpha-Beta.
-                // Cargamos Chess.js de forma dinámica en el contexto del Web Worker.
-                importScripts('https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js');
-                
                 const game = new Chess(fen);
                 const bestMove = computeAI(game, depth);
                 self.postMessage({ bestMove });
@@ -411,21 +410,21 @@
                 else if (type === 'q') value = 90;
                 else if (type === 'k') value = 9000;
 
-                // Añadir peso de posición en base al color
+                // Sincronizar perspectiva de matrices posicionales de manera correcta
                 if (color === 'w') {
-                    if (type === 'p') value += PawnEval[7 - y][x];
-                    else if (type === 'n') value += KnightEval[7 - y][x];
-                    else if (type === 'b') value += BishopEval[7 - y][x];
-                    else if (type === 'r') value += RookEval[7 - y][x];
-                    else if (type === 'q') value += QueenEval[7 - y][x];
-                    else if (type === 'k') value += KingEval[7 - y][x];
+                    if (type === 'p') value += PawnEval[y][x];
+                    else if (type === 'n') value += KnightEval[y][x];
+                    else if (type === 'b') value += BishopEval[y][x];
+                    else if (type === 'r') value += RookEval[y][x];
+                    else if (type === 'q') value += QueenEval[y][x];
+                    else if (type === 'k') value += KingEval[y][x];
                 } else {
-                    if (type === 'p') value += PawnEval[y][7 - x];
-                    else if (type === 'n') value += KnightEval[y][7 - x];
-                    else if (type === 'b') value += BishopEval[y][7 - x];
-                    else if (type === 'r') value += RookEval[y][7 - x];
-                    else if (type === 'q') value += QueenEval[y][7 - x];
-                    else if (type === 'k') value += KingEval[y][7 - x];
+                    if (type === 'p') value += PawnEval[7 - y][7 - x];
+                    else if (type === 'n') value += KnightEval[7 - y][7 - x];
+                    else if (type === 'b') value += BishopEval[7 - y][7 - x];
+                    else if (type === 'r') value += RookEval[7 - y][7 - x];
+                    else if (type === 'q') value += QueenEval[7 - y][7 - x];
+                    else if (type === 'k') value += KingEval[7 - y][7 - x];
                 }
                 return value;
             }
@@ -484,11 +483,10 @@
                 const moves = game.moves({ verbose: true });
                 if (moves.length === 0) return null;
                 
-                // Mezclamos un poco los movimientos para añadir variabilidad humana a niveles bajos
+                // Variabilidad de juego
                 moves.sort(() => Math.random() - 0.5);
 
                 let bestMove = null;
-                // El rival (IA) en esta campaña juega con las piezas Negras (minimizando el score)
                 let bestValue = Infinity;
 
                 for (let i = 0; i < moves.length; i++) {
@@ -519,115 +517,122 @@
         const BOARD_HALF = 3.5 * BOARD_SQUARE_SIZE;
 
         // Estructuras de mallas y mapeo de posición
-        let boardSquares = []; // Almacena casillas 3D individuales para raycasting e iluminación
-        let piece3DMap = {};   // Mapea ID de chess.js a objetos 3D de Three.js
+        let boardSquares = []; 
+        let piece3DMap = {};   
 
         // Selección de casillas e interactividad
         let activeSelectedSquare = null; 
         let activeHoveredSquare = null;
         let legalMoveIndicators = [];
+        let pointerDownPos = { x: 0, y: 0 }; // Evitar falsas selecciones al arrastrar cámara
 
         // Inicializador del juego de ajedrez
         const chessGame = new Chess();
 
-        // Cargar geometrías optimizadas en memoria para evitar instanciación redundante
+        // Cargar geometrías optimizadas en memoria
         const PieceGeometries = {};
 
         function buildPieceGeometries() {
-            // Base común de las piezas de ajedrez
-            const baseShape = new THREE.CylinderGeometry(0.45, 0.5, 0.15, 16);
+            // Material temporal para instanciar las mallas (se re-asignará en syncPieces3D)
+            const placeholderMat = new THREE.MeshStandardMaterial();
+            const baseShapeGeom = new THREE.CylinderGeometry(0.45, 0.5, 0.15, 16);
             
-            // Geometría: Peón (Pawn)
+            // Peón
             const pawnGeom = new THREE.Group();
-            const pawnBody = new THREE.CylinderGeometry(0.25, 0.35, 0.6, 16);
-            pawnBody.translate(0, 0.35, 0);
-            const pawnHead = new THREE.SphereGeometry(0.22, 16, 16);
-            pawnHead.translate(0, 0.7, 0);
-            pawnGeom.add(baseShape.clone());
-            pawnGeom.add(pawnBody);
-            pawnGeom.add(pawnHead);
+            const pawnBodyGeom = new THREE.CylinderGeometry(0.25, 0.35, 0.6, 16);
+            pawnBodyGeom.translate(0, 0.35, 0);
+            const pawnHeadGeom = new THREE.SphereGeometry(0.22, 16, 16);
+            pawnHeadGeom.translate(0, 0.7, 0);
+
+            // IMPORTANTE: Envolvemos las geometrías en mallas (Mesh) de Three.js antes de añadirlas al grupo.
+            pawnGeom.add(new THREE.Mesh(baseShapeGeom, placeholderMat));
+            pawnGeom.add(new THREE.Mesh(pawnBodyGeom, placeholderMat));
+            pawnGeom.add(new THREE.Mesh(pawnHeadGeom, placeholderMat));
             PieceGeometries['p'] = pawnGeom;
 
-            // Geometría: Torre (Rook)
+            // Torre
             const rookGeom = new THREE.Group();
-            const rookBody = new THREE.CylinderGeometry(0.32, 0.38, 0.8, 16);
-            rookBody.translate(0, 0.45, 0);
-            const rookCrown = new THREE.CylinderGeometry(0.4, 0.35, 0.25, 16);
-            rookCrown.translate(0, 0.8, 0);
-            rookGeom.add(baseShape.clone());
-            rookGeom.add(rookBody);
-            rookGeom.add(rookCrown);
+            const rookBodyGeom = new THREE.CylinderGeometry(0.32, 0.38, 0.8, 16);
+            rookBodyGeom.translate(0, 0.45, 0);
+            const rookCrownGeom = new THREE.CylinderGeometry(0.4, 0.35, 0.25, 16);
+            rookCrownGeom.translate(0, 0.8, 0);
+
+            rookGeom.add(new THREE.Mesh(baseShapeGeom, placeholderMat));
+            rookGeom.add(new THREE.Mesh(rookBodyGeom, placeholderMat));
+            rookGeom.add(new THREE.Mesh(rookCrownGeom, placeholderMat));
             PieceGeometries['r'] = rookGeom;
 
-            // Geometría: Caballo (Knight)
+            // Caballo
             const knightGeom = new THREE.Group();
-            const knightBase = new THREE.CylinderGeometry(0.32, 0.38, 0.3, 16);
-            knightBase.translate(0, 0.2, 0);
-            const knightMuzzle = new THREE.BoxGeometry(0.25, 0.5, 0.45);
-            knightMuzzle.translate(0, 0.5, 0.1);
-            const knightEars = new THREE.ConeGeometry(0.08, 0.2, 4);
-            knightEars.translate(0, 0.8, -0.1);
-            knightGeom.add(baseShape.clone());
-            knightGeom.add(knightBase);
-            knightGeom.add(knightMuzzle);
-            knightGeom.add(knightEars);
+            const knightBaseGeom = new THREE.CylinderGeometry(0.32, 0.38, 0.3, 16);
+            knightBaseGeom.translate(0, 0.2, 0);
+            const knightMuzzleGeom = new THREE.BoxGeometry(0.25, 0.5, 0.45);
+            knightMuzzleGeom.translate(0, 0.5, 0.1);
+            const knightEarsGeom = new THREE.ConeGeometry(0.08, 0.2, 4);
+            knightEarsGeom.translate(0, 0.8, -0.1);
+
+            knightGeom.add(new THREE.Mesh(baseShapeGeom, placeholderMat));
+            knightGeom.add(new THREE.Mesh(knightBaseGeom, placeholderMat));
+            knightGeom.add(new THREE.Mesh(knightMuzzleGeom, placeholderMat));
+            knightGeom.add(new THREE.Mesh(knightEarsGeom, placeholderMat));
             PieceGeometries['n'] = knightGeom;
 
-            // Geometría: Alfil (Bishop)
+            // Alfil
             const bishopGeom = new THREE.Group();
-            const bishopBody = new THREE.CylinderGeometry(0.22, 0.35, 0.85, 16);
-            bishopBody.translate(0, 0.45, 0);
-            const bishopTip = new THREE.SphereGeometry(0.18, 16, 16);
-            bishopTip.scale(1, 1.4, 1);
-            bishopTip.translate(0, 0.9, 0);
-            bishopGeom.add(baseShape.clone());
-            bishopGeom.add(bishopBody);
-            bishopGeom.add(bishopTip);
+            const bishopBodyGeom = new THREE.CylinderGeometry(0.22, 0.35, 0.85, 16);
+            bishopBodyGeom.translate(0, 0.45, 0);
+            const bishopTipGeom = new THREE.SphereGeometry(0.18, 16, 16);
+            bishopTipGeom.scale(1, 1.4, 1);
+            bishopTipGeom.translate(0, 0.9, 0);
+
+            bishopGeom.add(new THREE.Mesh(baseShapeGeom, placeholderMat));
+            bishopGeom.add(new THREE.Mesh(bishopBodyGeom, placeholderMat));
+            bishopGeom.add(new THREE.Mesh(bishopTipGeom, placeholderMat));
             PieceGeometries['b'] = bishopGeom;
 
-            // Geometría: Reina (Queen)
+            // Reina
             const queenGeom = new THREE.Group();
-            const queenBody = new THREE.CylinderGeometry(0.2, 0.38, 1.1, 16);
-            queenBody.translate(0, 0.6, 0);
-            const queenCrown = new THREE.CylinderGeometry(0.4, 0.25, 0.3, 16);
-            queenCrown.translate(0, 1.2, 0);
-            const queenOrb = new THREE.SphereGeometry(0.08, 10, 10);
-            queenOrb.translate(0, 1.4, 0);
-            queenGeom.add(baseShape.clone());
-            queenGeom.add(queenBody);
-            queenGeom.add(queenCrown);
-            queenGeom.add(queenOrb);
+            const queenBodyGeom = new THREE.CylinderGeometry(0.2, 0.38, 1.1, 16);
+            queenBodyGeom.translate(0, 0.6, 0);
+            const queenCrownGeom = new THREE.CylinderGeometry(0.4, 0.25, 0.3, 16);
+            queenCrownGeom.translate(0, 1.2, 0);
+            const queenOrbGeom = new THREE.SphereGeometry(0.08, 10, 10);
+            queenOrbGeom.translate(0, 1.4, 0);
+
+            queenGeom.add(new THREE.Mesh(baseShapeGeom, placeholderMat));
+            queenGeom.add(new THREE.Mesh(queenBodyGeom, placeholderMat));
+            queenGeom.add(new THREE.Mesh(queenCrownGeom, placeholderMat));
+            queenGeom.add(new THREE.Mesh(queenOrbGeom, placeholderMat));
             PieceGeometries['q'] = queenGeom;
 
-            // Geometría: Rey (King)
+            // Rey
             const kingGeom = new THREE.Group();
-            const kingBody = new THREE.CylinderGeometry(0.22, 0.38, 1.2, 16);
-            kingBody.translate(0, 0.6, 0);
-            const kingCrown = new THREE.CylinderGeometry(0.42, 0.28, 0.35, 16);
-            kingCrown.translate(0, 1.3, 0);
-            const kingCrossH = new THREE.BoxGeometry(0.12, 0.28, 0.12);
-            kingCrossH.translate(0, 1.6, 0);
-            const kingCrossV = new THREE.BoxGeometry(0.24, 0.1, 0.12);
-            kingCrossV.translate(0, 1.65, 0);
-            kingGeom.add(baseShape.clone());
-            kingGeom.add(kingBody);
-            kingGeom.add(kingCrown);
-            kingGeom.add(kingCrossH);
-            kingGeom.add(kingCrossV);
+            const kingBodyGeom = new THREE.CylinderGeometry(0.22, 0.38, 1.2, 16);
+            kingBodyGeom.translate(0, 0.6, 0);
+            const kingCrownGeom = new THREE.CylinderGeometry(0.42, 0.28, 0.35, 16);
+            kingCrownGeom.translate(0, 1.3, 0);
+            const kingCrossHGeom = new THREE.BoxGeometry(0.12, 0.28, 0.12);
+            kingCrossHGeom.translate(0, 1.6, 0);
+            const kingCrossVGeom = new THREE.BoxGeometry(0.24, 0.1, 0.12);
+            kingCrossVGeom.translate(0, 1.65, 0);
+
+            kingGeom.add(new THREE.Mesh(baseShapeGeom, placeholderMat));
+            kingGeom.add(new THREE.Mesh(kingBodyGeom, placeholderMat));
+            kingGeom.add(new THREE.Mesh(kingCrownGeom, placeholderMat));
+            kingGeom.add(new THREE.Mesh(kingCrossHGeom, placeholderMat));
+            kingGeom.add(new THREE.Mesh(kingCrossVGeom, placeholderMat));
             PieceGeometries['k'] = kingGeom;
         }
 
-        // Traducir coordenadas algebraicas de ajedrez (a1-h8) a espacio de coordenadas 3D (X, Z)
         function algebraToCoords(square) {
-            const file = square.charCodeAt(0) - 97; // a = 0, h = 7
-            const rank = parseInt(square.charAt(1), 10) - 1; // 1 = 0, 8 = 7
+            const file = square.charCodeAt(0) - 97; 
+            const rank = parseInt(square.charAt(1), 10) - 1; 
             return {
                 x: (file - 3.5) * BOARD_SQUARE_SIZE,
                 z: -(rank - 3.5) * BOARD_SQUARE_SIZE
             };
         }
 
-        // Traducir coordenadas matriciales (fileIndex, rankIndex) a algebraicas
         function indicesToAlgebra(file, rank) {
             const fileChar = String.fromCharCode(97 + file);
             const rankNum = rank + 1;
@@ -639,17 +644,16 @@
         function initEngine3D() {
             const container = document.getElementById('canvas-container');
             
-            // Inicializar Escena
             scene = new THREE.Scene();
             scene.fog = new THREE.FogExp2(0x0f172a, 0.015);
 
-            // Inicializar Cámara
-            camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
-            setPresetCamera('white');
+            const width = container.clientWidth || window.innerWidth;
+            const height = container.clientHeight || window.innerHeight;
 
-            // Inicializar Renderizador con Sombras y Antialiasing
+            camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
+            
             renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
-            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setSize(width, height);
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             renderer.shadowMap.enabled = true;
             renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -657,15 +661,15 @@
             renderer.toneMappingExposure = 1.0;
             container.appendChild(renderer.domElement);
 
-            // Controles de Cámara Orbitales
             controls = new THREE.OrbitControls(camera, renderer.domElement);
             controls.enableDamping = true;
             controls.dampingFactor = 0.05;
-            controls.maxPolarAngle = Math.PI / 2 - 0.05; // Evitar pasar por debajo del tablero
+            controls.maxPolarAngle = Math.PI / 2 - 0.05; 
             controls.minDistance = 5;
             controls.maxDistance = 25;
 
-            // Creación de Grupos de la Escena
+            setPresetCamera('white');
+
             boardGroup = new THREE.Group();
             piecesGroup = new THREE.Group();
             lightsGroup = new THREE.Group();
@@ -673,16 +677,11 @@
             scene.add(piecesGroup);
             scene.add(lightsGroup);
 
-            // Construcción de Geometrías en Caché
             buildPieceGeometries();
-
-            // Cargar Nivel Inicial de la Campaña
             loadLevelTheme(CAMPAIGN_LEVELS[currentLevelIndex]);
 
-            // Listener de Redimensionamiento
             window.addEventListener('resize', onWindowResize);
 
-            // Iniciar Bucle de Animación
             animate();
         }
 
@@ -692,36 +691,37 @@
             } else if (perspective === 'black') {
                 camera.position.set(0, 11, -11);
             } else {
-                camera.position.set(11, 8, 0); // Lateral
+                camera.position.set(11, 8, 0); 
             }
-            if (controls) controls.target.set(0, 0, 0);
+            if (controls) {
+                controls.target.set(0, 0, 0);
+                controls.update();
+            }
         }
 
         function onWindowResize() {
             const container = document.getElementById('canvas-container');
-            camera.aspect = container.clientWidth / container.clientHeight;
+            const width = container.clientWidth || window.innerWidth;
+            const height = container.clientHeight || window.innerHeight;
+            camera.aspect = width / height;
             camera.updateProjectionMatrix();
-            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setSize(width, height);
         }
     </script>
 
     <script>
         function loadLevelTheme(lvl) {
-            // 1. Limpiar luces anteriores
             while(lightsGroup.children.length > 0) {
                 lightsGroup.remove(lightsGroup.children[0]);
             }
-            // 2. Limpiar sistema de partículas anterior
             if (particleSystem) {
                 scene.remove(particleSystem);
             }
 
-            // 3. Configuración de Iluminación Ambiental y Direccional Dinámica
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.45);
             lightsGroup.add(ambientLight);
 
-            // Luz direccional clave para generar sombras cinemáticas de las piezas
-            const dirLight = new THREE.DirectionalLight(0xfff8e7, 1.2);
+            const dirLight = new THREE.DirectionalLight(0xfff8e7, 1.25);
             dirLight.position.set(6, 12, 5);
             dirLight.castShadow = true;
             dirLight.shadow.mapSize.width = 2048;
@@ -735,7 +735,6 @@
             dirLight.shadow.bias = -0.0005;
             lightsGroup.add(dirLight);
 
-            // Luces puntuales de acento temático
             const spot1 = new THREE.PointLight(lvl.boardColor1, 1.5, 15);
             spot1.position.set(-6, 4, -6);
             lightsGroup.add(spot1);
@@ -744,33 +743,24 @@
             spot2.position.set(6, 4, 6);
             lightsGroup.add(spot2);
 
-            // Ajuste de color de niebla ambiental en función de la nación seleccionada
             scene.fog.color.setHex(lvl.boardColor2);
             renderer.setClearColor(lvl.boardColor2, 1);
 
-            // 4. Regenerar el tablero con la nueva paleta de colores y propiedades PBR de materiales
             rebuildBoard(lvl);
-
-            // 5. Instanciar Sistema de Partículas Ambientales Cinemáticas
             createParticles(lvl.particleType, lvl.boardColor1);
-
-            // 6. Sincronizar piezas con la nueva paleta de color y re-renderizar
             syncPieces3D();
 
-            // 7. Actualizar interfaz de usuario
             document.getElementById('level-flag').innerText = lvl.flag;
             document.getElementById('level-name').innerText = `Nivel ${lvl.id}: ${lvl.country}`;
             document.getElementById('level-opponent').innerText = `Rival: ${lvl.opponent} (ELO ${lvl.elo})`;
         }
 
         function rebuildBoard(lvl) {
-            // Eliminar casillas anteriores
             while(boardGroup.children.length > 0) {
                 boardGroup.remove(boardGroup.children[0]);
             }
             boardSquares = [];
 
-            // Base o marco exterior del tablero
             const borderGeo = new THREE.BoxGeometry(BOARD_SQUARE_SIZE * 8 + 0.6, 0.4, BOARD_SQUARE_SIZE * 8 + 0.6);
             const borderMat = new THREE.MeshStandardMaterial({
                 color: 0x111111,
@@ -782,10 +772,8 @@
             borderMesh.receiveShadow = true;
             boardGroup.add(borderMesh);
 
-            // Crear las 64 casillas individuales
             const squareGeo = new THREE.BoxGeometry(BOARD_SQUARE_SIZE, 0.15, BOARD_SQUARE_SIZE);
             
-            // Materiales con físicas reales (PBR)
             const lightSquareMat = new THREE.MeshStandardMaterial({
                 color: lvl.boardColor1,
                 roughness: 0.2,
@@ -809,7 +797,6 @@
                     squareMesh.position.set(posX, -0.05, posZ);
                     squareMesh.receiveShadow = true;
 
-                    // Almacenar metadatos en el objeto 3D para la lógica de raycasting e IA
                     squareMesh.userData = {
                         file: c,
                         rank: r,
@@ -824,32 +811,30 @@
         }
 
         function createParticles(type, colorHex) {
-            const particleCount = 250;
+            const particleCount = 200;
             const geometry = new THREE.BufferGeometry();
             const positions = new Float32Array(particleCount * 3);
             const velocities = [];
 
             for (let i = 0; i < particleCount; i++) {
-                // Esparcir partículas en un cubo alrededor del tablero
                 positions[i * 3] = (Math.random() - 0.5) * 20;
                 positions[i * 3 + 1] = Math.random() * 10;
                 positions[i * 3 + 2] = (Math.random() - 0.5) * 20;
 
                 velocities.push({
-                    x: (Math.random() - 0.5) * 0.02,
-                    y: -Math.random() * 0.015 - 0.005,
-                    z: (Math.random() - 0.5) * 0.02
+                    x: (Math.random() - 0.5) * 0.015,
+                    y: -Math.random() * 0.012 - 0.004,
+                    z: (Math.random() - 0.5) * 0.015
                 });
             }
 
             geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
 
-            // Material suave para simular elementos ambientales flotantes
             const material = new THREE.PointsMaterial({
                 color: colorHex,
-                size: 0.15,
+                size: 0.09,
                 transparent: true,
-                opacity: 0.6,
+                opacity: 0.55,
                 blending: THREE.AdditiveBlending
             });
 
@@ -868,7 +853,6 @@
                 positions[i * 3 + 1] += velocities[i].y;
                 positions[i * 3 + 2] += velocities[i].z;
 
-                // Reiniciar partículas al salir de los límites
                 if (positions[i * 3 + 1] < 0) {
                     positions[i * 3 + 1] = 10;
                     positions[i * 3] = (Math.random() - 0.5) * 20;
@@ -881,7 +865,6 @@
 
     <script>
         function syncPieces3D() {
-            // 1. Limpiar mallas 3D existentes
             while(piecesGroup.children.length > 0) {
                 piecesGroup.remove(piecesGroup.children[0]);
             }
@@ -890,7 +873,6 @@
             const board = chessGame.board();
             const currentTheme = CAMPAIGN_LEVELS[currentLevelIndex];
 
-            // Materiales PBR altamente pulidos para las piezas en juego
             const whitePieceMat = new THREE.MeshStandardMaterial({
                 color: 0xfbfbfb,
                 roughness: 0.12,
@@ -898,7 +880,6 @@
                 clearcoat: 0.8
             });
 
-            // El oponente de IA (Negras) adopta colores oscuros tematizados por país
             const blackPieceMat = new THREE.MeshStandardMaterial({
                 color: currentTheme.boardColor2,
                 roughness: 0.25,
@@ -916,7 +897,6 @@
                         const pieceMesh = clonePieceGeometry(piece.type);
                         pieceMesh.position.set(coords.x, 0, coords.z);
                         
-                        // Aplicar material en base al color de la pieza
                         const mat = piece.color === 'w' ? whitePieceMat : blackPieceMat;
                         pieceMesh.traverse(child => {
                             if (child.isMesh) {
@@ -926,12 +906,10 @@
                             }
                         });
 
-                        // El caballo negro debe rotar 180 grados para mirar al oponente
                         if (piece.type === 'n') {
                             pieceMesh.rotation.y = piece.color === 'w' ? 0 : Math.PI;
                         }
 
-                        // Almacenar metadatos clave para interactividad
                         pieceMesh.userData = {
                             type: piece.type,
                             color: piece.color,
@@ -955,15 +933,14 @@
             return clone;
         }
 
-        // Animación suave de transición de pieza (Interpolación Lineal en X-Z con arco parabólico en Y)
         function animatePieceMove3D(fromSquare, toSquare, isCapture, callback) {
             const pieceMesh = piece3DMap[fromSquare];
             if (!pieceMesh) {
+                syncPieces3D();
                 if (callback) callback();
                 return;
             }
 
-            // Eliminar pieza capturada si existe
             if (piece3DMap[toSquare]) {
                 const capturedMesh = piece3DMap[toSquare];
                 piecesGroup.remove(capturedMesh);
@@ -973,10 +950,9 @@
             const startCoords = algebraToCoords(fromSquare);
             const endCoords = algebraToCoords(toSquare);
 
-            const duration = 500; // ms
+            const duration = 400; 
             const startTime = performance.now();
 
-            // Mapear referencia
             piece3DMap[toSquare] = pieceMesh;
             delete piece3DMap[fromSquare];
             pieceMesh.userData.square = toSquare;
@@ -984,15 +960,10 @@
             function updateLerp(now) {
                 const elapsed = now - startTime;
                 const t = Math.min(elapsed / duration, 1);
-
-                // Suavizar curva de animación (Cubic easing out)
                 const ease = 1 - Math.pow(1 - t, 3);
 
-                // Interpolación X, Z
                 const x = startCoords.x + (endCoords.x - startCoords.x) * ease;
                 const z = startCoords.z + (endCoords.z - startCoords.z) * ease;
-                
-                // Arco parabólico simulando salto o movimiento fluido
                 const y = Math.sin(t * Math.PI) * 0.8;
 
                 pieceMesh.position.set(x, y, z);
@@ -1001,6 +972,8 @@
                     requestAnimationFrame(updateLerp);
                 } else {
                     pieceMesh.position.set(endCoords.x, 0, endCoords.z);
+                    // IMPORTANTE: Sincronización total para resolver enroques, capturas al paso y coronaciones automáticamente
+                    syncPieces3D();
                     if (callback) callback();
                 }
             }
@@ -1017,6 +990,7 @@
             const container = document.getElementById('canvas-container');
             container.addEventListener('pointerdown', onPointerDown);
             container.addEventListener('pointermove', onPointerMove);
+            container.addEventListener('pointerup', onPointerUp);
         }
 
         function onPointerMove(event) {
@@ -1028,7 +1002,6 @@
             raycaster.setFromCamera(mouse, camera);
             const intersects = raycaster.intersectObjects(boardSquares);
 
-            // Control de hover visual sobre las casillas del tablero
             if (intersects.length > 0) {
                 const square = intersects[0].object;
                 if (activeHoveredSquare !== square) {
@@ -1036,7 +1009,6 @@
                         resetSquareColor(activeHoveredSquare);
                     }
                     activeHoveredSquare = square;
-                    // Resaltar casilla en hover (color turquesa traslúcido)
                     if (square !== activeSelectedSquare) {
                         square.material.color.setHex(0x38bdf8);
                     }
@@ -1050,8 +1022,17 @@
         }
 
         function onPointerDown(event) {
-            // Evitar clic accidental si se rota la cámara
-            if (event.button !== 0) return; // Solo clic izquierdo
+            if (event.button !== 0) return; 
+            pointerDownPos.x = event.clientX;
+            pointerDownPos.y = event.clientY;
+        }
+
+        function onPointerUp(event) {
+            if (event.button !== 0) return;
+            
+            // Si el puntero se movió más de 5 píxeles, asumimos que fue arrastre/rotación de cámara y cancelamos la selección
+            const distanceMoved = Math.hypot(event.clientX - pointerDownPos.x, event.clientY - pointerDownPos.y);
+            if (distanceMoved > 5) return;
 
             const container = document.getElementById('canvas-container');
             const rect = container.getBoundingClientRect();
@@ -1065,18 +1046,15 @@
                 const square = intersects[0].object;
                 const algebraic = square.userData.algebraic;
 
-                // Si ya hay una casilla seleccionada, intentamos realizar un movimiento
                 if (activeSelectedSquare) {
                     const fromSquare = activeSelectedSquare.userData.algebraic;
                     const toSquare = algebraic;
 
                     if (fromSquare === toSquare) {
-                        // Deseleccionar al hacer clic de nuevo en la misma pieza
                         deselectSquare();
                         return;
                     }
 
-                    // Intentar realizar el movimiento vía Chess.js
                     const moveResult = validateAndExecutePlayerMove(fromSquare, toSquare);
                     if (moveResult) {
                         deselectSquare();
@@ -1084,7 +1062,6 @@
                     }
                 }
 
-                // Intentar seleccionar una pieza blanca del jugador
                 const piece = chessGame.get(algebraic);
                 if (piece && piece.color === 'w') {
                     selectSquare(square);
@@ -1099,13 +1076,12 @@
         function selectSquare(square) {
             deselectSquare();
             activeSelectedSquare = square;
-            square.material.color.setHex(0x34d399); // Color verde para indicar selección activa
+            square.material.color.setHex(0x34d399); 
 
-            // Generar indicadores 3D para movimientos legales posibles
             const moves = chessGame.moves({ square: square.userData.algebraic, verbose: true });
             
             const ringGeo = new THREE.RingGeometry(0.55, 0.65, 16);
-            ringGeo.rotateX(-Math.PI / 2); // Acostar el disco sobre el tablero
+            ringGeo.rotateX(-Math.PI / 2); 
             const ringMat = new THREE.MeshBasicMaterial({ color: 0x34d399, side: THREE.DoubleSide });
 
             moves.forEach(m => {
@@ -1122,7 +1098,6 @@
                 resetSquareColor(activeSelectedSquare);
                 activeSelectedSquare = null;
             }
-            // Limpiar indicadores de jugadas legales de la escena
             legalMoveIndicators.forEach(ind => scene.remove(ind));
             legalMoveIndicators = [];
         }
@@ -1133,7 +1108,7 @@
     </script>
 
     <script>
-        let isAIPuenteActive = false; // Bloqueo de entrada mientras la IA está pensando
+        let isAIPuenteActive = false; 
 
         function validateAndExecutePlayerMove(fromSquare, toSquare) {
             if (isAIPuenteActive) return false;
@@ -1142,23 +1117,18 @@
             const validMove = moves.find(m => m.from === fromSquare && m.to === toSquare);
 
             if (validMove) {
-                // Ejecutar movimiento lógico en Chess.js
-                const actualMove = chessGame.move({ from: fromSquare, to: toSquare, promotion: 'q' }); // Auto-promocionar a reina para simplificar UX en 3D
-                
+                const actualMove = chessGame.move({ from: fromSquare, to: toSquare, promotion: 'q' }); 
                 const isCapture = actualMove.captured ? true : false;
                 
-                // Ejecutar animación física en Three.js
                 animatePieceMove3D(fromSquare, toSquare, isCapture, () => {
                     playSynthSound(isCapture ? 'capture' : 'move');
                     updateCapturedPiecesUI();
                     appendMoveHistoryUI(actualMove);
                     
-                    // Comprobar estado de jaque, tablas o jaque mate
                     if (checkGameStatus()) {
                         return;
                     }
 
-                    // Pasar turno a la IA (Negras)
                     setTurnUI('ai');
                     triggerAIMove();
                 });
@@ -1171,19 +1141,16 @@
             isAIPuenteActive = true;
             const currentLevel = CAMPAIGN_LEVELS[currentLevelIndex];
 
-            // Mandar el tablero lógico actual a calcular en segundo hilo (Worker)
             aiWorker.postMessage({
                 fen: chessGame.fen(),
                 depth: currentLevel.depth
             });
         }
 
-        // El worker de IA nos responde cuando calcula la mejor jugada
         aiWorker.onmessage = function(e) {
             const { bestMove } = e.data;
             
             if (bestMove) {
-                // Pequeño retardo humano artificial para simular procesamiento
                 setTimeout(() => {
                     const actualMove = chessGame.move(bestMove);
                     const isCapture = actualMove.captured ? true : false;
@@ -1198,7 +1165,7 @@
 
                         checkGameStatus();
                     });
-                }, 400);
+                }, 300);
             } else {
                 isAIPuenteActive = false;
                 setTurnUI('player');
@@ -1209,9 +1176,11 @@
             if (chessGame.in_checkmate()) {
                 playSynthSound(chessGame.turn() === 'w' ? 'lose' : 'win');
                 showEndgameModal(chessGame.turn() === 'b' ? 'win' : 'lose');
+                document.getElementById('game-result').innerText = chessGame.turn() === 'b' ? "Victoria" : "Derrota";
                 return true;
             } else if (chessGame.in_draw() || chessGame.in_stalemate() || chessGame.in_threefold_repetition()) {
                 showEndgameModal('draw');
+                document.getElementById('game-result').innerText = "Tablas";
                 return true;
             } else if (chessGame.in_check()) {
                 playSynthSound('check');
@@ -1243,7 +1212,7 @@
             }
 
             const item = document.createElement('div');
-            item.className = "flex justify-between items-center bg-slate-900/60 py-1 px-2 rounded hover:bg-slate-800 transition-all border border-slate-800/40 text-xs";
+            item.className = "flex justify-between items-center bg-slate-900/60 py-1 px-2 rounded hover:bg-slate-800 transition-all border border-slate-800/40 text-xs animate-fade-in";
             
             const colorCircle = move.color === 'w' ? 'bg-white' : 'bg-slate-600';
             const pieceChar = move.piece.toUpperCase();
@@ -1259,7 +1228,6 @@
             container.scrollTop = container.scrollHeight;
         }
 
-        // Actualizar el visualizador de piezas capturadas basándonos en la diferencia de set inicial de piezas
         function updateCapturedPiecesUI() {
             const initialSet = {
                 p: 8, n: 2, b: 2, r: 2, q: 1
@@ -1277,7 +1245,6 @@
                 });
             });
 
-            // Generar emojis o iconos de bajas
             const whiteCapturesCont = document.getElementById('player-captured');
             const blackCapturesCont = document.getElementById('ai-captured');
 
@@ -1286,7 +1253,6 @@
 
             const pieceEmojis = { p: '♟', n: '♞', b: '♝', r: '♜', q: '♛' };
 
-            // Tus bajas (Piezas blancas capturadas por la IA)
             Object.keys(initialSet).forEach(t => {
                 const diff = initialSet[t] - whiteLeft[t];
                 for(let i=0; i<diff; i++) {
@@ -1294,7 +1260,6 @@
                 }
             });
 
-            // Bajas del oponente (Piezas negras capturadas por ti)
             Object.keys(initialSet).forEach(t => {
                 const diff = initialSet[t] - blackLeft[t];
                 for(let i=0; i<diff; i++) {
@@ -1326,7 +1291,7 @@
                             <span class="text-2xl">${lvl.flag}</span>
                             <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${
                                 isActive 
-                                ? 'bg-emerald-500 text-slate-950' 
+                                ? 'bg-emerald-50 text-slate-950' 
                                 : isUnlocked ? 'bg-slate-800 text-slate-300' : 'bg-slate-950 text-slate-500'
                             }">
                                 ${isActive ? 'Activo' : isUnlocked ? 'Desbloqueado' : 'Bloqueado'}
@@ -1337,7 +1302,7 @@
                     </div>
                     <div class="flex justify-between items-center border-t border-slate-800/60 pt-3 mt-3">
                         <span class="text-xs text-emerald-400 font-semibold">ELO ${lvl.elo}</span>
-                        <span class="text-[10px] text-slate-500 font-medium">Búsqueda: Lvl ${lvl.depth}</span>
+                        <span class="text-[10px] text-slate-500 font-medium">IA Nivel ${lvl.depth}</span>
                     </div>
                 `;
 
@@ -1370,7 +1335,6 @@
                 icon.className = "w-16 h-16 mx-auto mb-4 bg-emerald-500/10 text-emerald-400 rounded-full flex items-center justify-center";
                 title.innerText = "¡Victoria Magistral!";
                 
-                // Desbloquear siguiente nivel en la campaña de 20 niveles
                 const currentLevel = CAMPAIGN_LEVELS[currentLevelIndex];
                 const nextLevel = CAMPAIGN_LEVELS[currentLevelIndex + 1];
 
@@ -1453,19 +1417,14 @@
         function animate(time) {
             requestAnimationFrame(animate);
 
-            // Actualizar controles orbitales de cámara
             if (controls) controls.update();
-
-            // Actualizar sistema de partículas cinemáticas por país
             updateParticles();
 
-            // Renderizar escena
             if (renderer && scene && camera) {
                 renderer.render(scene, camera);
             }
         }
 
-        // Arrancar el motor en la carga de la página
         window.onload = function() {
             initEngine3D();
             setupInteractions();
