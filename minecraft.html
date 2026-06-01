@@ -374,7 +374,6 @@
         };
 
         const geometry = new THREE.BoxGeometry(1, 1, 1);
-        const materialMap = new Map();
         
         // El hotbar mapea dinámicamente qué objeto está en cada slot
         let slotToType = { 
@@ -401,6 +400,212 @@
         const audioContext = new (window.AudioContext || window.webkitAudioContext)();
         let musicActive = false;
         let isUsingSynthesizer = false;
+
+        // --- SISTEMA DE GENERACIÓN DE TEXTURAS PROCEDURALES 16x16 PIXEL ART ---
+        const textureCache = {};
+        const materialCache = new Map();
+
+        function generateProceduralTexture(type) {
+            if (textureCache[type]) return textureCache[type];
+
+            const canvas = document.createElement('canvas');
+            canvas.width = 16;
+            canvas.height = 16;
+            const ctx = canvas.getContext('2d');
+
+            // Función auxiliar para añadir ruido clásica sobre un fondo base
+            function applyClassicNoise(baseColor, speckleColors, percentage = 0.4) {
+                ctx.fillStyle = baseColor;
+                ctx.fillRect(0, 0, 16, 16);
+                for (let x = 0; x < 16; x++) {
+                    for (let y = 0; y < 16; y++) {
+                        if (Math.random() < percentage) {
+                            ctx.fillStyle = speckleColors[Math.floor(Math.random() * speckleColors.length)];
+                            ctx.fillRect(x, y, 1, 1);
+                        }
+                    }
+                }
+            }
+
+            // Función para dibujar cúmulos u ore-clusters al estilo clásico de Minecraft
+            function overlayOreClusters(colorList) {
+                // Rellenar primero con textura de roca/stone
+                applyClassicNoise('#737373', ['#616161', '#525252', '#838383', '#5a5a5a'], 0.45);
+                
+                const numClusters = 4 + Math.floor(Math.random() * 3);
+                for (let i = 0; i < numClusters; i++) {
+                    let cx = 1 + Math.floor(Math.random() * 13);
+                    let cy = 1 + Math.floor(Math.random() * 13);
+                    ctx.fillStyle = colorList[Math.floor(Math.random() * colorList.length)];
+                    ctx.fillRect(cx, cy, 1, 1);
+                    
+                    // Diseños en cruz/bloques vecinos característicos de Minecraft
+                    if (Math.random() < 0.75) ctx.fillRect(cx + 1, cy, 1, 1);
+                    if (Math.random() < 0.75) ctx.fillRect(cx, cy + 1, 1, 1);
+                    if (Math.random() < 0.4) ctx.fillRect(cx + 1, cy + 1, 1, 1);
+                    if (Math.random() < 0.3) ctx.fillRect(cx - 1, cy + 1, 1, 1);
+                }
+            }
+
+            // Dibujar según el bloque solicitado
+            switch (type) {
+                case 'stone':
+                    applyClassicNoise('#737373', ['#616161', '#525252', '#838383', '#5a5a5a'], 0.45);
+                    break;
+                case 'dirt':
+                    applyClassicNoise('#866043', ['#573d26', '#9c7253', '#6b4c35'], 0.4);
+                    break;
+                case 'grass_top':
+                    applyClassicNoise('#557e2d', ['#4c7028', '#639235', '#3c5a1f'], 0.4);
+                    break;
+                case 'grass_side':
+                    // Primero pintamos la tierra de base
+                    applyClassicNoise('#866043', ['#573d26', '#9c7253'], 0.35);
+                    // Colgantes verdes desiguales y pixelados en el tope de la cara
+                    ctx.fillStyle = '#557e2d';
+                    for (let x = 0; x < 16; x++) {
+                        let h = 2 + Math.floor(Math.sin(x * 1.5) * 1.5 + 1.5);
+                        h = Math.max(2, Math.min(6, h)); // Restricciones de tamaño
+                        for (let y = 0; y < h; y++) {
+                            ctx.fillStyle = (y === h - 1) ? '#4c7028' : (Math.random() < 0.25 ? '#639235' : '#557e2d');
+                            ctx.fillRect(x, y, 1, 1);
+                        }
+                    }
+                    break;
+                case 'wood_side':
+                    // Corteza marrón oscuro con líneas de relieve vertical
+                    ctx.fillStyle = '#735135';
+                    ctx.fillRect(0, 0, 16, 16);
+                    for (let x = 0; x < 16; x++) {
+                        if (x % 4 === 0 || x % 4 === 3) {
+                            ctx.fillStyle = '#543b26';
+                            ctx.fillRect(x, 0, 1, 16);
+                        }
+                        for (let y = 0; y < 16; y++) {
+                            if (Math.random() < 0.18) {
+                                ctx.fillStyle = '#3e2a1a';
+                                ctx.fillRect(x, y, 1, 1);
+                            }
+                        }
+                    }
+                    break;
+                case 'wood_top':
+                    // Tronco de árbol cortado con anillos concéntricos
+                    ctx.fillStyle = '#d7a15c';
+                    ctx.fillRect(0, 0, 16, 16);
+                    ctx.fillStyle = '#b68344';
+                    ctx.fillRect(2, 2, 12, 12);
+                    ctx.fillStyle = '#d7a15c';
+                    ctx.fillRect(3, 3, 10, 10);
+                    ctx.fillStyle = '#b68344';
+                    ctx.fillRect(5, 5, 6, 6);
+                    ctx.fillStyle = '#8f612d';
+                    ctx.fillRect(7, 7, 2, 2);
+                    break;
+                case 'planks':
+                    // Tablones horizontales estructurados
+                    ctx.fillStyle = '#cda05f';
+                    ctx.fillRect(0, 0, 16, 16);
+                    ctx.fillStyle = '#8b6435'; // Divisiones
+                    ctx.fillRect(0, 0, 16, 1);
+                    ctx.fillRect(0, 4, 16, 1);
+                    ctx.fillRect(0, 8, 16, 1);
+                    ctx.fillRect(0, 12, 16, 1);
+                    // Divisiones verticales de ladrillo/tablas alternas
+                    ctx.fillRect(4, 0, 1, 4);
+                    ctx.fillRect(10, 4, 1, 4);
+                    ctx.fillRect(3, 8, 1, 4);
+                    ctx.fillRect(12, 12, 1, 4);
+                    break;
+                case 'leaves':
+                    applyClassicNoise('#145c14', ['#0f440f', '#1e751e', '#2bb12b'], 0.5);
+                    break;
+                case 'coal':
+                    overlayOreClusters(['#262626', '#141414', '#0d0d0d']);
+                    break;
+                case 'iron':
+                    overlayOreClusters(['#d3a484', '#b38263', '#9c6f52']);
+                    break;
+                case 'gold':
+                    overlayOreClusters(['#fcee4b', '#e0b115', '#f1c40f']);
+                    break;
+                case 'diamond':
+                    overlayOreClusters(['#5cd7f9', '#22d3ee', '#0891b2']);
+                    break;
+                case 'emerald':
+                    overlayOreClusters(['#10b981', '#059669', '#34d399']);
+                    break;
+                case 'water':
+                    applyClassicNoise('#3b82f6', ['#2563eb', '#60a5fa', '#1d4ed8'], 0.4);
+                    break;
+                case 'lava':
+                    applyClassicNoise('#ea580c', ['#b91c1c', '#f97316', '#facc15'], 0.5);
+                    break;
+                default:
+                    ctx.fillStyle = '#888888';
+                    ctx.fillRect(0, 0, 16, 16);
+            }
+
+            const texture = new THREE.CanvasTexture(canvas);
+            // Configurar NearestFilter para evitar difuminado borroso (Pixel Art crispado y perfecto)
+            texture.minFilter = THREE.NearestFilter;
+            texture.magFilter = THREE.NearestFilter;
+            texture.wrapS = THREE.RepeatWrapping;
+            texture.wrapT = THREE.RepeatWrapping;
+
+            textureCache[type] = texture;
+            return texture;
+        }
+
+        // Recuperar material multi-cara o único optimizadamente
+        function getMaterial(type) {
+            if (materialCache.has(type)) return materialCache.get(type);
+
+            let mats;
+            if (type === "grass") {
+                const side = new THREE.MeshLambertMaterial({ map: generateProceduralTexture("grass_side") });
+                const top = new THREE.MeshLambertMaterial({ map: generateProceduralTexture("grass_top") });
+                const bottom = new THREE.MeshLambertMaterial({ map: generateProceduralTexture("dirt") });
+                // Orden de caras: Der, Izq, Sup, Inf, Front, Tras
+                mats = [side, side, top, bottom, side, side];
+            } else if (type === "wood") {
+                const side = new THREE.MeshLambertMaterial({ map: generateProceduralTexture("wood_side") });
+                const top = new THREE.MeshLambertMaterial({ map: generateProceduralTexture("wood_top") });
+                mats = [side, side, top, top, side, side];
+            } else if (type === "dirt" || type === "stone" || type === "planks" || type === "leaves" || 
+                       type === "iron" || type === "gold" || type === "diamond" || type === "coal") {
+                const mat = new THREE.MeshLambertMaterial({ map: generateProceduralTexture(type) });
+                mats = [mat, mat, mat, mat, mat, mat];
+            } else if (type === "emerald") {
+                const mat = new THREE.MeshLambertMaterial({ 
+                    map: generateProceduralTexture("emerald"),
+                    emissive: 0x10b981,
+                    emissiveIntensity: 0.2
+                });
+                mats = [mat, mat, mat, mat, mat, mat];
+            } else if (type === "water") {
+                const mat = new THREE.MeshLambertMaterial({ 
+                    map: generateProceduralTexture("water"),
+                    transparent: true,
+                    opacity: 0.65
+                });
+                mats = [mat, mat, mat, mat, mat, mat];
+            } else if (type === "lava") {
+                const mat = new THREE.MeshLambertMaterial({ 
+                    map: generateProceduralTexture("lava"),
+                    emissive: 0xff3300,
+                    emissiveIntensity: 0.8
+                });
+                mats = [mat, mat, mat, mat, mat, mat];
+            } else {
+                // Fallback de color plano
+                const mat = new THREE.MeshLambertMaterial({ color: 0x888888 });
+                mats = [mat, mat, mat, mat, mat, mat];
+            }
+
+            materialCache.set(type, mats);
+            return mats;
+        }
 
         function showNotification(text, color = "#44ffaa") {
             const el = document.getElementById("notification");
@@ -568,6 +773,20 @@
                 if (slotEl) {
                     if (i === selectedSlot) {
                         slotEl.classList.add('active');
+                        // Actualizar dinámicamente el contenido visual en el slot del inventario si cambia su tipo
+                        const currentType = slotToType[i];
+                        const meta = itemMetaData[currentType];
+                        if (meta) {
+                            if (meta.isTool) {
+                                let label = meta.emoji;
+                                if (currentType === "pickaxe") label += `<span id="pick-tier" style="font-size:9px; display:block;">${tiers[pickaxeLevel].name}</span>`;
+                                else if (currentType === "sword") label += `<span id="sword-tier" style="font-size:9px; display:block;">${tiers[swordLevel].name}</span>`;
+                                slotEl.innerHTML = label;
+                            } else {
+                                const count = isCreative ? "∞" : resources[meta.resourceName];
+                                slotEl.innerHTML = `${meta.emoji}<span class="qty">${count}</span>`;
+                            }
+                        }
                     } else {
                         slotEl.classList.remove('active');
                     }
@@ -575,6 +794,7 @@
             }
         }
 
+        // --- ACTUALIZADO PARA EQUIPAR DIRECCIONALMENTE EN EL HOTBAR ---
         function renderLargeInventory() {
             const grid = document.getElementById('large-inventory-grid');
             grid.innerHTML = ''; 
@@ -607,11 +827,15 @@
                         slotDiv.classList.add('locked-item');
                         slotDiv.title = `${meta.name} (No desbloqueado)`;
                     } else {
-                        slotDiv.title = `Haz clic para equipar ${meta.name} en la ranura activa del Hotbar`;
+                        slotDiv.title = `Haz clic para equipar ${meta.name} en el Hotbar principal`;
                         slotDiv.onclick = () => {
+                            // Asignación directa al Hotbar activo seleccionado
                             slotToType[selectedSlot] = itemType;
-                            showNotification(`Equipado: ${meta.name} en ranura ${selectedSlot}`, "#ffd700");
+                            showNotification(`Equipado: ${meta.name} en la ranura activa ${selectedSlot}`, "#ffd700");
                             playBlockSound(false);
+                            
+                            // Forzar la actualización de la herramienta en mano del modelo 3D
+                            handleSlotChange(selectedSlot);
                             updateInventoryUI();
                             renderLargeInventory();
                         };
@@ -1188,59 +1412,13 @@
             worldData.forEach((voxel, key) => {
                 if (voxel.mesh) return;
                 const [x, y, z] = key.split(',').map(Number);
+                // getMaterial() ahora devuelve el array de materiales (por caras o únicos) texturizados de forma pixelada
                 const mesh = new THREE.Mesh(geometry, getMaterial(voxel.type));
                 mesh.position.set(x, y, z);
                 mesh.userData = { x, y, z, type: voxel.type };
                 scene.add(mesh);
                 voxel.mesh = mesh;
             });
-        }
-
-        function getMaterial(type) {
-            let color = 0x888888;
-            let isTransparent = false;
-            let opacity = 1.0;
-            let emissive = 0x000000;
-            let emissiveIntensity = 0;
-
-            if (type === "grass") {
-                const colors = [0x7eb356, 0x6e9c4c, 0x8fc266, 0x5a8f3d];
-                color = colors[Math.abs(Math.floor(Math.random() * colors.length))];
-            }
-            else if (type === "dirt") color = 0x8B4513;
-            else if (type === "wood") color = 0x5D4037;
-            else if (type === "planks") color = 0xcda05f;
-            else if (type === "leaves") color = 0x2E7D32;
-            else if (type === "iron") color = 0xdadada;
-            else if (type === "gold") color = 0xFFD700;
-            else if (type === "diamond") color = 0x33eaff;
-            else if (type === "emerald") {
-                color = 0x10b981; 
-                emissive = 0x047857;
-                emissiveIntensity = 0.2;
-            }
-            else if (type === "water") {
-                color = 0x3366ff;
-                isTransparent = true;
-                opacity = 0.6;
-            }
-            else if (type === "lava") {
-                color = 0xff4400;
-                emissive = 0xff2200;
-                emissiveIntensity = 0.8;
-            }
-            
-            const matKey = `${color}_${isTransparent}_${opacity}_${emissive}`;
-            if (!materialMap.has(matKey)) {
-                materialMap.set(matKey, new THREE.MeshLambertMaterial({ 
-                    color, 
-                    transparent: isTransparent, 
-                    opacity, 
-                    emissive, 
-                    emissiveIntensity 
-                }));
-            }
-            return materialMap.get(matKey);
         }
 
         function updateCycle() {
@@ -1841,6 +2019,8 @@
                             resources.diamond++;
                         } else if (blockType === "emerald") {
                             resources.emerald++;
+                        } else if (blockType === "coal") {
+                            resources.coal++;
                         } else if (blockType === "leaves") {
                             if (Math.random() < 0.25) {
                                 resources.apple++;
@@ -1872,7 +2052,8 @@
 
                 const blockHits = ray.intersectObjects(scene.children.filter(c => c.userData.type));
                 if (blockHits.length > 0 && blockHits[0].distance < 6) {
-                    if (type === "pickaxe" || type === "sword" || type === "bow" || type === "apple" || type === "coal" || type === "meat") return;
+                    // Quitamos "coal" del filtro restrictivo para permitir que se coloque como un bloque físico
+                    if (type === "pickaxe" || type === "sword" || type === "bow" || type === "apple" || type === "meat") return;
                     
                     if (!isCreative) {
                         const meta = itemMetaData[type];
@@ -1906,6 +2087,7 @@
             return hit.face.normal;
         }
 
+        // Animación de renderizado
         function animate() {
             requestAnimationFrame(animate);
             if (document.pointerLockElement) {
