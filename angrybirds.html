@@ -162,7 +162,8 @@
               MouseConstraint = Matter.MouseConstraint,
               Events = Matter.Events,
               Vector = Matter.Vector,
-              Composite = Matter.Composite;
+              Composite = Matter.Composite,
+              Query = Matter.Query;
 
         let engine, world, canvas, ctx, width, height;
         let bird, sling, pigs = [], blocks = [], ground, mouseConstraint;
@@ -827,10 +828,28 @@
         }
 
         function setupEvents() {
-            // ANTI-TRAMPA REFORZADO: Impedir arrastrar cualquier cuerpo que no sea el pájaro activo en la honda
+            // ANTI-TRAMPA ULTRA-REFORZADO: Impedir arrastrar cualquier cuerpo, bloque, cerdo o pájaro antes y después de disparar.
+            // Solo se permite interactuar con el pájaro activo en la honda antes de ser disparado.
+            Events.on(mouseConstraint, 'mousedown', function(event) {
+                if (!bird) return;
+                const bodies = Composite.allBodies(world);
+                const mousePosition = mouseConstraint.mouse.position;
+                const clickedBodies = Query.point(bodies, mousePosition);
+                
+                if (clickedBodies.length > 0) {
+                    const clickedActiveBird = clickedBodies.find(b => b === bird);
+                    // Si lo que se clickea no es el pájaro activo, o si ya fue disparado, se cancela el agarre instantáneamente
+                    if (!clickedActiveBird || isFired) {
+                        mouseConstraint.constraint.bodyB = null;
+                        mouseConstraint.body = null;
+                    }
+                }
+            });
+
             Events.on(mouseConstraint, 'startdrag', function(event) {
                 if (event.body !== bird || isFired) {
                     mouseConstraint.body = null;
+                    mouseConstraint.constraint.bodyB = null;
                 }
             });
 
