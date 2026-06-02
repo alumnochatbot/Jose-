@@ -345,7 +345,8 @@
         let isFlying = false;
         let resources = { 
             wood: 0, stone: 0, iron: 0, gold: 0, diamond: 0, 
-            planks: 0, arrows: 0, grass: Infinity, coal: 0, emerald: 0, apple: 0, meat: 0 
+            planks: 0, arrows: 0, grass: Infinity, coal: 0, emerald: 0, apple: 0, meat: 0,
+            beef: 0, chicken_meat: 0, mutton: 0
         };
         let history = []; 
 
@@ -394,12 +395,21 @@
             coal: { name: "Carbón", emoji: "⚫", resourceName: "coal" },
             emerald: { name: "Esmeralda", emoji: "💚", resourceName: "emerald" },
             apple: { name: "Manzana", emoji: "🍎", resourceName: "apple" },
-            meat: { name: "Filete Crudo", emoji: "🥩", resourceName: "meat" }
+            meat: { name: "Filete de Cerdo", emoji: "🥩", resourceName: "meat" },
+            beef: { name: "Filete de Vaca", emoji: "🥩", resourceName: "beef" },
+            chicken_meat: { name: "Pollo Crudo", emoji: "🍗", resourceName: "chicken_meat" },
+            mutton: { name: "Cordero Crudo", emoji: "🍖", resourceName: "mutton" }
         };
 
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        let musicActive = false;
-        let isUsingSynthesizer = false;
+        const foodValues = {
+            apple: { name: "Manzana 🍎", heal: 15 },
+            meat: { name: "Filete de Cerdo 🥩", heal: 20 },
+            beef: { name: "Filete de Vaca 🥩", heal: 30 },
+            chicken_meat: { name: "Pollo Crudo 🍗", heal: 15 },
+            mutton: { name: "Cordero Crudo 🍖", heal: 25 }
+        };
+
+        const peacefulTypes = ['pig', 'cow', 'chicken', 'sheep'];
 
         // --- SISTEMA DE GENERACIÓN DE TEXTURAS PROCEDURALES 16x16 PIXEL ART ---
         const textureCache = {};
@@ -413,7 +423,7 @@
             canvas.height = 16;
             const ctx = canvas.getContext('2d');
 
-            // Función auxiliar para añadir ruido clásica sobre un fondo base
+            // Añadir ruido clásico sobre un fondo base
             function applyClassicNoise(baseColor, speckleColors, percentage = 0.4) {
                 ctx.fillStyle = baseColor;
                 ctx.fillRect(0, 0, 16, 16);
@@ -427,15 +437,15 @@
                 }
             }
 
-            // Función para dibujar cúmulos u ore-clusters al estilo clásico de Minecraft
+            // Dibujar cúmulos u ore-clusters al estilo clásico de Minecraft tomando la imagen de referencia
             function overlayOreClusters(colorList) {
-                // Rellenar primero con textura de roca/stone
+                // Rellenar primero con textura de roca/stone de fondo
                 applyClassicNoise('#737373', ['#616161', '#525252', '#838383', '#5a5a5a'], 0.45);
                 
                 const numClusters = 4 + Math.floor(Math.random() * 3);
                 for (let i = 0; i < numClusters; i++) {
-                    let cx = 1 + Math.floor(Math.random() * 13);
-                    let cy = 1 + Math.floor(Math.random() * 13);
+                    let cx = 2 + Math.floor(Math.random() * 11);
+                    let cy = 2 + Math.floor(Math.random() * 11);
                     ctx.fillStyle = colorList[Math.floor(Math.random() * colorList.length)];
                     ctx.fillRect(cx, cy, 1, 1);
                     
@@ -459,13 +469,11 @@
                     applyClassicNoise('#557e2d', ['#4c7028', '#639235', '#3c5a1f'], 0.4);
                     break;
                 case 'grass_side':
-                    // Primero pintamos la tierra de base
                     applyClassicNoise('#866043', ['#573d26', '#9c7253'], 0.35);
-                    // Colgantes verdes desiguales y pixelados en el tope de la cara
                     ctx.fillStyle = '#557e2d';
                     for (let x = 0; x < 16; x++) {
                         let h = 2 + Math.floor(Math.sin(x * 1.5) * 1.5 + 1.5);
-                        h = Math.max(2, Math.min(6, h)); // Restricciones de tamaño
+                        h = Math.max(2, Math.min(6, h)); 
                         for (let y = 0; y < h; y++) {
                             ctx.fillStyle = (y === h - 1) ? '#4c7028' : (Math.random() < 0.25 ? '#639235' : '#557e2d');
                             ctx.fillRect(x, y, 1, 1);
@@ -473,7 +481,6 @@
                     }
                     break;
                 case 'wood_side':
-                    // Corteza marrón oscuro con líneas de relieve vertical
                     ctx.fillStyle = '#735135';
                     ctx.fillRect(0, 0, 16, 16);
                     for (let x = 0; x < 16; x++) {
@@ -490,7 +497,6 @@
                     }
                     break;
                 case 'wood_top':
-                    // Tronco de árbol cortado con anillos concéntricos
                     ctx.fillStyle = '#d7a15c';
                     ctx.fillRect(0, 0, 16, 16);
                     ctx.fillStyle = '#b68344';
@@ -503,15 +509,13 @@
                     ctx.fillRect(7, 7, 2, 2);
                     break;
                 case 'planks':
-                    // Tablones horizontales estructurados
                     ctx.fillStyle = '#cda05f';
                     ctx.fillRect(0, 0, 16, 16);
-                    ctx.fillStyle = '#8b6435'; // Divisiones
+                    ctx.fillStyle = '#8b6435'; 
                     ctx.fillRect(0, 0, 16, 1);
                     ctx.fillRect(0, 4, 16, 1);
                     ctx.fillRect(0, 8, 16, 1);
                     ctx.fillRect(0, 12, 16, 1);
-                    // Divisiones verticales de ladrillo/tablas alternas
                     ctx.fillRect(4, 0, 1, 4);
                     ctx.fillRect(10, 4, 1, 4);
                     ctx.fillRect(3, 8, 1, 4);
@@ -521,18 +525,23 @@
                     applyClassicNoise('#145c14', ['#0f440f', '#1e751e', '#2bb12b'], 0.5);
                     break;
                 case 'coal':
+                    // Carbón: Vetras oscuras de antracita gris oscuro/negro
                     overlayOreClusters(['#262626', '#141414', '#0d0d0d']);
                     break;
                 case 'iron':
+                    // Hierro: Vetras de color café claro/beige anaranjado suave
                     overlayOreClusters(['#d3a484', '#b38263', '#9c6f52']);
                     break;
                 case 'gold':
+                    // Oro: Vetras de amarillo brillante y dorado
                     overlayOreClusters(['#fcee4b', '#e0b115', '#f1c40f']);
                     break;
                 case 'diamond':
+                    // Diamante: Vetras de azul celeste brillante
                     overlayOreClusters(['#5cd7f9', '#22d3ee', '#0891b2']);
                     break;
                 case 'emerald':
+                    // Esmeralda: Vetras de verde esmeralda puro
                     overlayOreClusters(['#10b981', '#059669', '#34d399']);
                     break;
                 case 'water':
@@ -547,7 +556,7 @@
             }
 
             const texture = new THREE.CanvasTexture(canvas);
-            // Configurar NearestFilter para evitar difuminado borroso (Pixel Art crispado y perfecto)
+            // Evitar difuminado bilineal para conservar estética pixelada estricta
             texture.minFilter = THREE.NearestFilter;
             texture.magFilter = THREE.NearestFilter;
             texture.wrapS = THREE.RepeatWrapping;
@@ -557,7 +566,7 @@
             return texture;
         }
 
-        // Recuperar material multi-cara o único optimizadamente
+        // Recuperación y cacheado de materiales por tipo
         function getMaterial(type) {
             if (materialCache.has(type)) return materialCache.get(type);
 
@@ -566,7 +575,6 @@
                 const side = new THREE.MeshLambertMaterial({ map: generateProceduralTexture("grass_side") });
                 const top = new THREE.MeshLambertMaterial({ map: generateProceduralTexture("grass_top") });
                 const bottom = new THREE.MeshLambertMaterial({ map: generateProceduralTexture("dirt") });
-                // Orden de caras: Der, Izq, Sup, Inf, Front, Tras
                 mats = [side, side, top, bottom, side, side];
             } else if (type === "wood") {
                 const side = new THREE.MeshLambertMaterial({ map: generateProceduralTexture("wood_side") });
@@ -598,7 +606,6 @@
                 });
                 mats = [mat, mat, mat, mat, mat, mat];
             } else {
-                // Fallback de color plano
                 const mat = new THREE.MeshLambertMaterial({ color: 0x888888 });
                 mats = [mat, mat, mat, mat, mat, mat];
             }
@@ -606,6 +613,10 @@
             materialCache.set(type, mats);
             return mats;
         }
+
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        let musicActive = false;
+        let isUsingSynthesizer = false;
 
         function showNotification(text, color = "#44ffaa") {
             const el = document.getElementById("notification");
@@ -703,13 +714,11 @@
             loopSweden();
         }
 
-        // --- MANEJO DE LA MÚSICA EN LA PLAYBACK ---
         function toggleGameMusic() {
             const audioEl = document.getElementById('drive-audio-player');
             musicActive = !musicActive;
             
             if (musicActive) {
-                // Configurar origen de descarga directa de Google Drive
                 audioEl.src = "https://docs.google.com/uc?export=download&id=1MNNdhMFMchgv0OepJOZ82XaO5puNO2KL";
                 audioEl.volume = 0.45;
                 
@@ -717,7 +726,6 @@
                     isUsingSynthesizer = false;
                     showNotification("Música de fondo: Reproduciendo 🎵", "#55ffaa");
                 }).catch((err) => {
-                    // Fallback automático en caso de bloqueos por CORS o límite de descargas de Drive
                     isUsingSynthesizer = true;
                     startSwedenMusic();
                     showNotification("Iniciando melodía de respaldo 🎹", "#ffffaa");
@@ -730,57 +738,40 @@
         }
 
         function updateInventoryUI() {
-            const setSafeText = (id, text) => {
-                const el = document.getElementById(id);
-                if (el) el.innerText = text;
-            };
-
-            setSafeText('qty-stone', isCreative ? "∞" : resources.stone);
-            setSafeText('qty-wood', isCreative ? "∞" : resources.wood);
-            setSafeText('qty-iron', isCreative ? "∞" : resources.iron);
-            setSafeText('qty-gold', isCreative ? "∞" : resources.gold);
-            setSafeText('qty-diamond', isCreative ? "∞" : resources.diamond);
-            setSafeText('qty-planks', isCreative ? "∞" : resources.planks);
-            setSafeText('qty-arrows', isCreative ? "∞" : resources.arrows);
-            
-            const pickTier = document.getElementById('pick-tier');
-            if (pickTier) pickTier.innerText = tiers[pickaxeLevel].name;
-
-            const swordTier = document.getElementById('sword-tier');
-            if (swordTier) swordTier.innerText = tiers[swordLevel].name;
-
-            const slot7 = document.getElementById('slot-7');
-            if (slot7) {
-                if (isCreative || pickaxeLevel > 0) slot7.classList.remove('locked');
-                else slot7.classList.add('locked');
-            }
-            
-            const slot8 = document.getElementById('slot-8');
-            if (slot8) {
-                if (isCreative || swordLevel > 0) slot8.classList.remove('locked');
-                else slot8.classList.add('locked');
-            }
-
-            const slot9 = document.getElementById('slot-9');
-            if (slot9) {
-                if (isCreative || hasBow) slot9.classList.remove('locked');
-                else slot9.classList.add('locked');
-            }
-
-            // Actualizar clase 'active' en el Hotbar inferior
+            // El bucle ahora actualiza dinámicamente todo el Hotbar (activas e inactivas)
             for (let i = 1; i <= 9; i++) {
                 const slotEl = document.getElementById(`slot-${i}`);
                 if (slotEl) {
+                    const currentType = slotToType[i];
+                    const meta = itemMetaData[currentType];
+                    
                     if (i === selectedSlot) {
                         slotEl.classList.add('active');
-                        // Actualizar dinámicamente el contenido visual en el slot del inventario si cambia su tipo
-                        const currentType = slotToType[i];
-                        const meta = itemMetaData[currentType];
-                        if (meta) {
+                    } else {
+                        slotEl.classList.remove('active');
+                    }
+
+                    if (meta) {
+                        // Comprobar si es herramienta y si está desbloqueada
+                        let isLocked = false;
+                        if (meta.isTool) {
+                            if (currentType === "pickaxe") isLocked = !isCreative && pickaxeLevel === 0;
+                            else if (currentType === "sword") isLocked = !isCreative && swordLevel === 0;
+                            else if (currentType === "bow") isLocked = !isCreative && !hasBow;
+                        }
+
+                        if (isLocked) {
+                            slotEl.classList.add('locked');
+                            if (currentType === "pickaxe") slotEl.innerHTML = `⛏️<span style="font-size:9px; display:block;">Ninguno</span>`;
+                            else if (currentType === "sword") slotEl.innerHTML = `⚔️<span style="font-size:9px; display:block;">Ninguno</span>`;
+                            else if (currentType === "bow") slotEl.innerHTML = `🏹<span class="qty">0</span>`;
+                        } else {
+                            slotEl.classList.remove('locked');
                             if (meta.isTool) {
                                 let label = meta.emoji;
                                 if (currentType === "pickaxe") label += `<span id="pick-tier" style="font-size:9px; display:block;">${tiers[pickaxeLevel].name}</span>`;
                                 else if (currentType === "sword") label += `<span id="sword-tier" style="font-size:9px; display:block;">${tiers[swordLevel].name}</span>`;
+                                else if (currentType === "bow") label += `<span class="qty">${isCreative ? "∞" : resources.arrows}</span>`;
                                 slotEl.innerHTML = label;
                             } else {
                                 const count = isCreative ? "∞" : resources[meta.resourceName];
@@ -788,20 +779,19 @@
                             }
                         }
                     } else {
-                        slotEl.classList.remove('active');
+                        slotEl.innerHTML = "";
                     }
                 }
             }
         }
 
-        // --- ACTUALIZADO PARA EQUIPAR DIRECCIONALMENTE EN EL HOTBAR ---
         function renderLargeInventory() {
             const grid = document.getElementById('large-inventory-grid');
             grid.innerHTML = ''; 
 
             const allItems = [
                 'grass', 'stone', 'wood', 'coal', 'iron', 'gold', 'diamond', 'emerald', 'planks',
-                'pickaxe', 'sword', 'bow', 'apple', 'meat'
+                'pickaxe', 'sword', 'bow', 'apple', 'meat', 'beef', 'chicken_meat', 'mutton'
             ];
 
             for (let i = 0; i < 27; i++) {
@@ -829,12 +819,10 @@
                     } else {
                         slotDiv.title = `Haz clic para equipar ${meta.name} en el Hotbar principal`;
                         slotDiv.onclick = () => {
-                            // Asignación directa al Hotbar activo seleccionado
                             slotToType[selectedSlot] = itemType;
                             showNotification(`Equipado: ${meta.name} en la ranura activa ${selectedSlot}`, "#ffd700");
                             playBlockSound(false);
                             
-                            // Forzar la actualización de la herramienta en mano del modelo 3D
                             handleSlotChange(selectedSlot);
                             updateInventoryUI();
                             renderLargeInventory();
@@ -858,7 +846,6 @@
                 renderLargeInventory();
             } else {
                 renderer.domElement.requestPointerLock();
-                menu.style.none = 'none';
                 menu.style.display = 'none';
             }
         }
@@ -946,7 +933,6 @@
                 modeDisplay.innerText = "Modo: Supervivencia";
                 modeDisplay.style.color = "#44ffaa";
                 healthBar.classList.remove('creative-health');
-                badge.style.none = 'none';
                 badge.style.display = 'none';
                 showNotification("Modo Supervivencia", "#44ffaa");
             }
@@ -1028,7 +1014,6 @@
                     return;
                 }
                 
-                // DETECTOR DE NÚMEROS MEJORADO (Teclado Alfanumérico y Numérico)
                 let numMatched = null;
                 if (e.code && e.code.startsWith('Digit')) {
                     numMatched = parseInt(e.code.replace('Digit', ''));
@@ -1169,12 +1154,11 @@
             mobs.push(creeper);
         }
 
-        // --- SISTEMA DE INVOCACIÓN DE ZOMBIES ---
         function spawnZombie(x, y, z) {
             const zombie = new THREE.Group();
-            const skinMat = new THREE.MeshLambertMaterial({ color: 0x145a32 }); // Piel verde oscura
-            const clothesMat = new THREE.MeshLambertMaterial({ color: 0x008080 }); // Camiseta azul celeste/verde azulado
-            const pantsMat = new THREE.MeshLambertMaterial({ color: 0x0000ff }); // Pantalón azul
+            const skinMat = new THREE.MeshLambertMaterial({ color: 0x145a32 }); 
+            const clothesMat = new THREE.MeshLambertMaterial({ color: 0x008080 }); 
+            const pantsMat = new THREE.MeshLambertMaterial({ color: 0x0000ff }); 
             
             const head = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.4, 0.4), skinMat);
             head.position.y = 1.5;
@@ -1182,7 +1166,6 @@
             const body = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.7, 0.3), clothesMat);
             body.position.y = 1.0;
             
-            // Brazos estirados al frente (Pose clásica de Zombie)
             const leftArm = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.6, 0.15), skinMat);
             leftArm.position.set(0.3, 1.1, 0.2);
             leftArm.rotation.x = -Math.PI / 2.2;
@@ -1198,7 +1181,7 @@
             zombie.position.set(x, y, z);
             
             zombie.userData = { 
-                health: 6, // Un poco más resistente que los esqueletos y creepers
+                health: 6, 
                 velocity: new THREE.Vector3(), 
                 type: 'zombie',
                 attackCooldown: 0 
@@ -1242,43 +1225,173 @@
             mobs.push(pig);
         }
 
+        function spawnCow(x, y, z) {
+            const cow = new THREE.Group();
+            const brownMat = new THREE.MeshLambertMaterial({ color: 0x5c4033 }); 
+            const whiteMat = new THREE.MeshLambertMaterial({ color: 0xffffff }); 
+            const blackMat = new THREE.MeshBasicMaterial({ color: 0x000000 }); 
+            
+            const body = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.6, 1.0), brownMat);
+            body.position.y = 0.5;
+            cow.add(body);
+            
+            const spot1 = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.3, 0.3), whiteMat);
+            spot1.position.set(0, 0.5, 0.1);
+            cow.add(spot1);
+            
+            const head = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.35, 0.35), brownMat);
+            head.position.set(0, 0.8, -0.45);
+            cow.add(head);
+            
+            const hornL = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.15, 0.08), whiteMat);
+            hornL.position.set(0.15, 1.0, -0.45);
+            const hornR = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.15, 0.08), whiteMat);
+            hornR.position.set(-0.15, 1.0, -0.45);
+            cow.add(hornL, hornR);
+
+            const eyeL = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, 0.05), blackMat);
+            eyeL.position.set(0.12, 0.85, -0.63);
+            const eyeR = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, 0.05), blackMat);
+            eyeR.position.set(-0.12, 0.85, -0.63);
+            cow.add(eyeL, eyeR);
+
+            const legGeo = new THREE.BoxGeometry(0.14, 0.4, 0.14);
+            const legFL = new THREE.Mesh(legGeo, brownMat); legFL.position.set(0.2, 0.2, -0.35);
+            const legFR = new THREE.Mesh(legGeo, brownMat); legFR.position.set(-0.2, 0.2, -0.35);
+            const legBL = new THREE.Mesh(legGeo, brownMat); legBL.position.set(0.2, 0.2, 0.35);
+            const legBR = new THREE.Mesh(legGeo, brownMat); legBR.position.set(-0.2, 0.2, 0.35);
+            cow.add(legFL, legFR, legBL, legBR);
+
+            cow.position.set(x, y, z);
+            cow.userData = { 
+                health: 4, 
+                velocity: new THREE.Vector3(), 
+                type: 'cow', 
+                wanderTimer: 0, 
+                wanderDir: new THREE.Vector3(),
+                panicTimer: 0 
+            };
+            scene.add(cow);
+            mobs.push(cow);
+        }
+
+        function spawnChicken(x, y, z) {
+            const chicken = new THREE.Group();
+            const whiteMat = new THREE.MeshLambertMaterial({ color: 0xffffff });
+            const yellowMat = new THREE.MeshLambertMaterial({ color: 0xffa500 }); 
+            const redMat = new THREE.MeshLambertMaterial({ color: 0xff0000 }); 
+            const blackMat = new THREE.MeshBasicMaterial({ color: 0x000000 }); 
+
+            const body = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.4), whiteMat);
+            body.position.y = 0.3;
+            chicken.add(body);
+
+            const head = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 0.2), whiteMat);
+            head.position.set(0, 0.5, -0.15);
+            chicken.add(head);
+
+            const beak = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.08, 0.1), yellowMat);
+            beak.position.set(0, 0.48, -0.28);
+            chicken.add(beak);
+
+            const crest = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.08, 0.1), redMat);
+            crest.position.set(0, 0.62, -0.15);
+            chicken.add(crest);
+
+            const eyeL = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.03, 0.03), blackMat);
+            eyeL.position.set(0.08, 0.52, -0.22);
+            const eyeR = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.03, 0.03), blackMat);
+            eyeR.position.set(-0.08, 0.52, -0.22);
+            chicken.add(eyeL, eyeR);
+
+            const legGeo = new THREE.BoxGeometry(0.05, 0.18, 0.05);
+            const legL = new THREE.Mesh(legGeo, yellowMat); legL.position.set(0.08, 0.09, 0);
+            const legR = new THREE.Mesh(legGeo, yellowMat); legR.position.set(-0.08, 0.09, 0);
+            chicken.add(legL, legR);
+
+            chicken.position.set(x, y, z);
+            chicken.userData = { 
+                health: 2, 
+                velocity: new THREE.Vector3(), 
+                type: 'chicken', 
+                wanderTimer: 0, 
+                wanderDir: new THREE.Vector3(),
+                panicTimer: 0 
+            };
+            scene.add(chicken);
+            mobs.push(chicken);
+        }
+
+        function spawnSheep(x, y, z) {
+            const sheep = new THREE.Group();
+            const woolMat = new THREE.MeshLambertMaterial({ color: 0xf5f5f5 }); 
+            const skinMat = new THREE.MeshLambertMaterial({ color: 0xffdbac }); 
+            const blackMat = new THREE.MeshBasicMaterial({ color: 0x000000 }); 
+
+            const body = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.55, 0.8), woolMat);
+            body.position.y = 0.45;
+            sheep.add(body);
+
+            const head = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.3), skinMat);
+            head.position.set(0, 0.65, -0.4);
+            sheep.add(head);
+
+            const woolCap = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.15, 0.2), woolMat);
+            woolCap.position.set(0, 0.78, -0.35);
+            sheep.add(woolCap);
+
+            const eyeL = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.04, 0.04), blackMat);
+            eyeL.position.set(0.1, 0.68, -0.56);
+            const eyeR = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.04, 0.04), blackMat);
+            eyeR.position.set(-0.1, 0.68, -0.56);
+            sheep.add(eyeL, eyeR);
+
+            const legGeo = new THREE.BoxGeometry(0.12, 0.25, 0.12);
+            const legFL = new THREE.Mesh(legGeo, skinMat); legFL.position.set(0.18, 0.125, -0.25);
+            const legFR = new THREE.Mesh(legGeo, skinMat); legFR.position.set(-0.18, 0.125, -0.25);
+            const legBL = new THREE.Mesh(legGeo, skinMat); legBL.position.set(0.18, 0.125, 0.25);
+            const legBR = new THREE.Mesh(legGeo, skinMat); legBR.position.set(-0.18, 0.125, 0.25);
+            sheep.add(legFL, legFR, legBL, legBR);
+
+            sheep.position.set(x, y, z);
+            sheep.userData = { 
+                health: 3, 
+                velocity: new THREE.Vector3(), 
+                type: 'sheep', 
+                wanderTimer: 0, 
+                wanderDir: new THREE.Vector3(),
+                panicTimer: 0 
+            };
+            scene.add(sheep);
+            mobs.push(sheep);
+        }
+
         // --- SISTEMA PARA CREAR LA tumba AL MORIR ---
         function spawnDeathChest(pos, droppedResources) {
-            // Eliminar tumba anterior si existía para evitar duplicidad infinita de objetos abandonados
             removeDeathChest();
 
-            // Guardar copia profunda de los recursos actuales para recuperarlos después
             deathChest.resources = Object.assign({}, droppedResources);
             deathChest.active = true;
-            deathChest.timer = 60.0; // 1 minuto de vida
+            deathChest.timer = 60.0; 
             deathChest.position.copy(pos);
-
-            // Ajustar posición vertical de la tumba para que no flote excesivamente o se entierre
             deathChest.position.y = Math.floor(pos.y) + 0.5;
 
-            // Grupo contenedor de la tumba
             const chestGroup = new THREE.Group();
-
-            // Cofre de madera simulado por cajas 3D de colores
-            const woodMat = new THREE.MeshLambertMaterial({ color: 0x8B4513 }); // Café Madera
-            const metalMat = new THREE.MeshLambertMaterial({ color: 0xC0C0C0 }); // Plateado
+            const woodMat = new THREE.MeshLambertMaterial({ color: 0x8B4513 }); 
+            const metalMat = new THREE.MeshLambertMaterial({ color: 0xC0C0C0 }); 
             
-            // Cuerpo del cofre
             const base = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.4, 0.5), woodMat);
             base.position.y = 0.2;
             chestGroup.add(base);
 
-            // Tapa del cofre
             const lid = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.15, 0.5), woodMat);
             lid.position.y = 0.47;
             chestGroup.add(lid);
 
-            // Pestillo plateado
             const lock = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.12, 0.08), metalMat);
             lock.position.set(0, 0.3, 0.26);
             chestGroup.add(lock);
 
-            // Halo luminoso de color dorado flotando debajo del cofre
             const ringGeo = new THREE.RingGeometry(0.3, 0.4, 8);
             const ringMat = new THREE.MeshBasicMaterial({ color: 0xffaa00, side: THREE.DoubleSide, transparent: true, opacity: 0.6 });
             const ring = new THREE.Mesh(ringGeo, ringMat);
@@ -1290,7 +1403,6 @@
             scene.add(chestGroup);
             deathChest.mesh = chestGroup;
 
-            // Mostrar indicador UI de la tumba activa
             document.getElementById('grave-hud').style.display = 'block';
             document.getElementById('grave-timer').innerText = "60s";
             
@@ -1412,7 +1524,7 @@
             worldData.forEach((voxel, key) => {
                 if (voxel.mesh) return;
                 const [x, y, z] = key.split(',').map(Number);
-                // getMaterial() ahora devuelve el array de materiales (por caras o únicos) texturizados de forma pixelada
+                // getMaterial() devuelve el conjunto de materiales optimizado con textura pixel-art de 16x16
                 const mesh = new THREE.Mesh(geometry, getMaterial(voxel.type));
                 mesh.position.set(x, y, z);
                 mesh.userData = { x, y, z, type: voxel.type };
@@ -1432,7 +1544,6 @@
                 scene.fog.color.set(0x050510);
                 scene.sun.intensity = 0.05;
                 
-                // Invocaciones al caer la noche
                 for(let i=0; i<3; i++) spawnSkeleton(player.position.x + (Math.random()-0.5)*30, 20, player.position.z + (Math.random()-0.5)*30);
                 for(let i=0; i<2; i++) spawnCreeper(player.position.x + (Math.random()-0.5)*30, 20, player.position.z + (Math.random()-0.5)*30);
                 for(let i=0; i<3; i++) spawnZombie(player.position.x + (Math.random()-0.5)*30, 20, player.position.z + (Math.random()-0.5)*30);
@@ -1442,7 +1553,6 @@
                 scene.fog.color.set(0xa3d1ff);
                 scene.sun.intensity = 0.5;
                 
-                // Despawn de monstruos al amanecer (Incluye Zombies)
                 mobs.forEach(m => {
                     if (m.userData.type === 'skeleton' || m.userData.type === 'creeper' || m.userData.type === 'zombie') {
                         scene.remove(m);
@@ -1454,7 +1564,15 @@
                     }
                 }
                 
-                for(let i=0; i<3; i++) spawnPig(player.position.x + (Math.random()-0.5)*40, 20, player.position.z + (Math.random()-0.5)*40);
+                for(let i=0; i<3; i++) {
+                    const rx = player.position.x + (Math.random()-0.5)*40;
+                    const rz = player.position.z + (Math.random()-0.5)*40;
+                    const rand = Math.random();
+                    if (rand < 0.25) spawnPig(rx, 20, rz);
+                    else if (rand < 0.5) spawnCow(rx, 20, rz);
+                    else if (rand < 0.75) spawnChicken(rx, 20, rz);
+                    else spawnSheep(rx, 20, rz);
+                }
             }
 
             respawnTimer += 0.016;
@@ -1462,7 +1580,7 @@
                 respawnTimer = 0;
                 
                 const hostileCount = mobs.filter(m => m.userData.type === 'skeleton' || m.userData.type === 'creeper' || m.userData.type === 'zombie').length;
-                const peacefulCount = mobs.filter(m => m.userData.type === 'pig').length;
+                const peacefulCount = mobs.filter(m => peacefulTypes.includes(m.userData.type)).length;
                 
                 if (isNight) {
                     if (hostileCount < 8) {
@@ -1478,10 +1596,14 @@
                         }
                     }
                 } else {
-                    if (peacefulCount < 6) {
+                    if (peacefulCount < 8) {
                         const rx = player.position.x + (Math.random() - 0.5) * 45;
                         const rz = player.position.z + (Math.random() - 0.5) * 45;
-                        spawnPig(rx, 22, rz);
+                        const rand = Math.random();
+                        if (rand < 0.25) spawnPig(rx, 22, rz);
+                        else if (rand < 0.5) spawnCow(rx, 22, rz);
+                        else if (rand < 0.75) spawnChicken(rx, 22, rz);
+                        else spawnSheep(rx, 22, rz);
                     }
                 }
             }
@@ -1496,6 +1618,7 @@
             return (voxel && voxel.type !== "water" && voxel.type !== "lava");
         }
 
+        // Efecto rojo de daño
         function triggerDamageFlash() {
             const flash = document.getElementById('damage-flash');
             flash.style.background = "rgba(255, 0, 0, 0.4)";
@@ -1506,7 +1629,6 @@
 
         function updatePlayer() {
             if(player.position.y < -20) {
-                // Caída al vacío: Se activa muerte y tumba si no es modo creativo
                 if (!isCreative) {
                     handleDeath();
                 } else {
@@ -1582,27 +1704,23 @@
             }
         }
 
-        // --- MANEJADOR DE MUERTE DEL JUGADOR ---
         function handleDeath() {
             health = 100;
             const deathPosition = player.position.clone();
             
             if (!isCreative) {
-                // Verificar si hay algún objeto en el inventario para soltar
                 let hasItems = false;
                 const droppedResources = {};
 
-                // Analizar todos los recursos que no tengan valor infinito
                 for (let key in resources) {
                     if (resources[key] > 0 && resources[key] !== Infinity) {
                         droppedResources[key] = resources[key];
-                        resources[key] = 0; // Vaciamos inventario del jugador
+                        resources[key] = 0; 
                         hasItems = true;
                     }
                 }
 
                 if (hasItems) {
-                    // Invocar tumba física con los recursos guardados
                     spawnDeathChest(deathPosition, droppedResources);
                 } else {
                     showNotification("¡HAS MUERTO! (Tu inventario estaba vacío)", "red");
@@ -1611,7 +1729,6 @@
                 showNotification("¡HAS MUERTO! (Modo Creativo - No pierdes objetos)", "red");
             }
 
-            // Reaparecer al jugador en un lugar seguro elevado
             player.position.set(0, 30, 0);
             velocity.set(0, 0, 0);
             updateInventoryUI();
@@ -1621,56 +1738,42 @@
         // --- SISTEMA DE FÍSICAS Y DETECCIÓN DE COLISIONES PARA MOBS ---
         function moveMobSafely(m, dx, dz) {
             let mobY = m.position.y;
-            
-            // Comprobación de colisión en el eje X (independiente)
             let nextX = m.position.x + dx;
-            // Evaluamos con un ligero offset vertical de seguridad (+0.1) sobre el nivel del suelo actual
             let collisionX = isBlockAt(nextX, mobY + 0.1, m.position.z) || isBlockAt(nextX, mobY + 1.1, m.position.z);
             
             if (!collisionX) {
                 m.position.x = nextX;
             } else {
-                // Inteligencia artificial: si encuentra un obstáculo de un bloque de altura y hay espacio libre encima, ¡SALTA!
                 let canJumpX = !isBlockAt(nextX, mobY + 1.1, m.position.z) && !isBlockAt(nextX, mobY + 2.1, m.position.z);
                 if (canJumpX && m.userData.velocity.y <= 0) {
-                    m.userData.velocity.y = 0.22; // Impulso de salto
+                    m.userData.velocity.y = 0.22; 
                 }
             }
 
-            // Comprobación de colisión en el eje Z (independiente)
             let nextZ = m.position.z + dz;
             let collisionZ = isBlockAt(m.position.x, mobY + 0.1, nextZ) || isBlockAt(m.position.x, mobY + 1.1, nextZ);
             
             if (!collisionZ) {
                 m.position.z = nextZ;
             } else {
-                // Inteligencia artificial de salto en eje Z
                 let canJumpZ = !isBlockAt(m.position.x, mobY + 1.1, nextZ) && !isBlockAt(m.position.x, mobY + 2.1, nextZ);
                 if (canJumpZ && m.userData.velocity.y <= 0) {
-                    m.userData.velocity.y = 0.22; // Impulso de salto
+                    m.userData.velocity.y = 0.22; 
                 }
             }
         }
 
         function updateEntities() {
-            // Actualizar lógica del cofre de muerte flotante y temporizador
             if (deathChest.active && deathChest.mesh) {
-                // Rotación leve clásica del cofre de recompensa
                 deathChest.mesh.rotation.y += 0.02;
-                
-                // Efecto flotante usando onda seno
                 deathChest.mesh.position.y = deathChest.position.y + Math.sin(Date.now() * 0.003) * 0.12;
-
-                // Reducir temporizador (corriendo a ~60 FPS)
                 deathChest.timer -= 0.016;
                 
                 const secondsLeft = Math.max(0, Math.ceil(deathChest.timer));
                 document.getElementById('grave-timer').innerText = `${secondsLeft}s`;
 
-                // Verificar colisión/proximidad del jugador para recolectar sus cosas
                 const distToPlayer = player.position.distanceTo(deathChest.mesh.position);
                 if (distToPlayer < 2.0) {
-                    // ¡Recuperación exitosa de recursos!
                     for (let key in deathChest.resources) {
                         resources[key] += deathChest.resources[key];
                     }
@@ -1680,7 +1783,6 @@
                     updateInventoryUI();
                     if (isLargeInventoryOpen) renderLargeInventory();
                 } 
-                // Si el temporizador de la tumba llega a 0, se desintegra
                 else if (deathChest.timer <= 0) {
                     removeDeathChest();
                     showNotification("La tumba se ha desintegrado. Perdiste tus cosas 😢", "#ff5555");
@@ -1741,7 +1843,6 @@
                         }
                     }
                 } else if (m.userData.type === 'zombie') {
-                    // COMPORTAMIENTO INTELIGENTE DEL ZOMBIE
                     if (dist < 20) {
                         m.lookAt(player.position.x, m.position.y, player.position.z);
                         
@@ -1749,7 +1850,6 @@
                         dir.y = 0; 
                         dir.normalize();
 
-                        // Persecución directa y veloz evitando atravesar bloques
                         let dx = dir.x * 0.042;
                         let dz = dir.z * 0.042;
                         moveMobSafely(m, dx, dz);
@@ -1758,15 +1858,14 @@
                             m.userData.attackCooldown -= 0.016;
                         }
 
-                        // Ataque cuerpo a cuerpo al jugador
                         if (dist < 1.3 && !isCreative && m.userData.attackCooldown <= 0) {
-                            health -= 15; // Quita 15 de vida por morder
+                            health -= 15; 
                             triggerDamageFlash();
                             showNotification("¡Te ha mordido un Zombie! 🧟", "red");
-                            m.userData.attackCooldown = 1.2; // Cooldown de ataque
+                            m.userData.attackCooldown = 1.2; 
                         }
                     }
-                } else if (m.userData.type === 'pig') {
+                } else if (peacefulTypes.includes(m.userData.type)) {
                     m.userData.wanderTimer -= 0.016;
                     if (m.userData.panicTimer > 0) {
                         m.userData.panicTimer -= 0.016;
@@ -1775,16 +1874,18 @@
                         escapeDir.y = 0;
                         escapeDir.normalize();
                         
-                        let dx = escapeDir.x * 0.1;
-                        let dz = escapeDir.z * 0.1;
+                        const panicSpeed = m.userData.type === 'chicken' ? 0.08 : 0.1;
+                        let dx = escapeDir.x * panicSpeed;
+                        let dz = escapeDir.z * panicSpeed;
                         moveMobSafely(m, dx, dz);
                         m.lookAt(m.position.clone().add(escapeDir));
                     } else if (m.userData.wanderTimer <= 0) {
                         m.userData.wanderDir.set(Math.random() - 0.5, 0, Math.random() - 0.5).normalize();
                         m.userData.wanderTimer = 2.0 + Math.random() * 3.0; 
                     } else {
-                        let dx = m.userData.wanderDir.x * 0.02;
-                        let dz = m.userData.wanderDir.z * 0.02;
+                        const wanderSpeed = m.userData.type === 'chicken' ? 0.015 : 0.02;
+                        let dx = m.userData.wanderDir.x * wanderSpeed;
+                        let dz = m.userData.wanderDir.z * wanderSpeed;
                         moveMobSafely(m, dx, dz);
                         if (m.userData.wanderDir.lengthSq() > 0.01) {
                             m.lookAt(m.position.clone().add(m.userData.wanderDir));
@@ -1792,7 +1893,6 @@
                     }
                 }
 
-                // Aplicar gravedad al mob
                 m.userData.velocity.y -= 0.01;
                 m.position.y += m.userData.velocity.y;
                 let ePy = Math.round(m.position.y - 0.5);
@@ -1835,25 +1935,32 @@
                                     hasBow = true;
                                     resources.arrows += 10;
                                     showNotification("¡Esqueleto derrotado! +1 Arco, +10 Flechas 🏹", "#ffff55");
-                                    updateInventoryUI();
-                                    if(isLargeInventoryOpen) renderLargeInventory();
                                 } else if (m.userData.type === 'zombie') {
                                     resources.meat += 2;
                                     showNotification("¡Zombie derrotado! +2 Carne de Zombie 🥩", "#55ff55");
-                                    updateInventoryUI();
-                                    if(isLargeInventoryOpen) renderLargeInventory();
                                 } else if (m.userData.type === 'pig') {
                                     resources.meat += 2;
                                     showNotification("¡Cerdo derrotado! +2 Filetes Crudos 🥩", "#ffaacc");
-                                    updateInventoryUI();
-                                    if(isLargeInventoryOpen) renderLargeInventory();
+                                } else if (m.userData.type === 'cow') {
+                                    resources.beef += 2;
+                                    showNotification("¡Vaca derrotada! +2 Filetes de Vaca 🥩", "#b57c50");
+                                } else if (m.userData.type === 'chicken') {
+                                    resources.chicken_meat += 2;
+                                    showNotification("¡Pollo derrotado! +2 Pollo Crudo 🍗", "#ffffaa");
+                                } else if (m.userData.type === 'sheep') {
+                                    resources.mutton += 2;
+                                    showNotification("¡Oveja derrotada! +2 Cordero Crudo 🍖", "#ffffff");
                                 } else {
                                     showNotification("¡Monstruo derrotado!", "#55ff55");
                                 }
+                                updateInventoryUI();
+                                if(isLargeInventoryOpen) renderLargeInventory();
                             } else {
-                                if (m.userData.type === 'pig') {
+                                if (peacefulTypes.includes(m.userData.type)) {
                                     m.userData.panicTimer = 3.0; 
-                                    showNotification("¡El cerdo corre asustado! 🐷💥", "#ff88a3");
+                                    const emojiMap = { pig: "🐷", cow: "🐮", chicken: "🐔", sheep: "🐑" };
+                                    const nameMap = { pig: "cerdo", cow: "vaca", chicken: "pollo", sheep: "oveja" };
+                                    showNotification(`¡El ${nameMap[m.userData.type]} corre asustado! ${emojiMap[m.userData.type]}💥`, "#ff88a3");
                                 }
                             }
                             break;
@@ -1875,7 +1982,6 @@
             }
         }
 
-        // --- MANEJADOR DE CAMBIO DE HOTBAR (CORREGIDO Y OPTIMIZADO) ---
         function handleSlotChange(nextSlot) {
             if (nextSlot < 1 || nextSlot > 9) return;
             
@@ -1921,7 +2027,7 @@
             
             const type = slotToType[selectedSlot];
 
-            if(e.button === 0) { // Romper / Atacar / Disparar
+            if(e.button === 0) { 
                 if (type === "bow") {
                     if (resources.arrows > 0 || isCreative) {
                         if (!isCreative) resources.arrows--;
@@ -1936,7 +2042,6 @@
                     return;
                 }
 
-                // Ataque cuerpo a cuerpo
                 const hits = ray.intersectObjects(mobs, true);
                 if(hits.length > 0 && hits[0].distance < 4) {
                     let entity = hits[0].object;
@@ -1953,30 +2058,37 @@
                             hasBow = true;
                             resources.arrows += 10;
                             showNotification("¡Esqueleto derrotado! +1 Arco, +10 Flechas 🏹", "#ffff55");
-                            updateInventoryUI();
                         } else if (entity.userData.type === 'zombie') {
                             resources.meat += 2;
                             showNotification("¡Zombie derrotado! +2 Carne de Zombie 🥩", "#55ff55");
-                            updateInventoryUI();
-                            if(isLargeInventoryOpen) renderLargeInventory();
                         } else if (entity.userData.type === 'pig') {
                             resources.meat += 2;
                             showNotification("¡Cerdo derrotado! +2 Filetes Crudos 🥩", "#ffaacc");
-                            updateInventoryUI();
-                            if(isLargeInventoryOpen) renderLargeInventory();
+                        } else if (entity.userData.type === 'cow') {
+                            resources.beef += 2;
+                            showNotification("¡Vaca derrotada! +2 Filetes de Vaca 🥩", "#b57c50");
+                        } else if (entity.userData.type === 'chicken') {
+                            resources.chicken_meat += 2;
+                            showNotification("¡Pollo derrotado! +2 Pollo Crudo 🍗", "#ffffaa");
+                        } else if (entity.userData.type === 'sheep') {
+                            resources.mutton += 2;
+                            showNotification("¡Oveja derrotada! +2 Cordero Crudo 🍖", "#ffffff");
                         } else {
                             showNotification("¡Creeper derrotado!", "#55ff55");
                         }
+                        updateInventoryUI();
+                        if(isLargeInventoryOpen) renderLargeInventory();
                     } else {
-                        if (entity.userData.type === 'pig') {
+                        if (peacefulTypes.includes(entity.userData.type)) {
                             entity.userData.panicTimer = 3.0; 
-                            showNotification("¡El cerdo huye asustado! 🐷💨", "#ff88a3");
+                            const emojiMap = { pig: "🐷", cow: "🐮", chicken: "🐔", sheep: "🐑" };
+                            const nameMap = { pig: "cerdo", cow: "vaca", chicken: "pollo", sheep: "oveja" };
+                            showNotification(`¡El ${nameMap[entity.userData.type]} corre asustado! ${emojiMap[entity.userData.type]}💥`, "#ff88a3");
                         }
                     }
                     return;
                 }
 
-                // Picar bloque
                 const blockHits = ray.intersectObjects(scene.children.filter(c => c.userData.type));
                 if (blockHits.length > 0 && blockHits[0].distance < 6) {
                     const obj = blockHits[0].object;
@@ -2030,30 +2142,42 @@
                         updateInventoryUI();
                     }
                 }
-            } else if (e.button === 2) { // Colocar bloque o Consumir alimento
-                if (type === "apple" || type === "meat") {
+            } else if (e.button === 2) { 
+                // Gestión inteligente de comida (Click derecho para comer)
+                if (foodValues[type]) {
+                    const food = foodValues[type];
                     if (!isCreative) {
-                        if (resources[type] > 0) {
-                            resources[type]--;
-                            health = Math.min(100, health + (type === "apple" ? 15 : 30));
-                            showNotification(type === "apple" ? "¡Comiste una Manzana! 🍎 (+15 Vida)" : "¡Comiste un Filete! 🥩 (+30 Vida)", "#55ff55");
+                        const meta = itemMetaData[type];
+                        const resName = meta.resourceName;
+                        
+                        if (resources[resName] > 0) {
+                            if (health >= 100) {
+                                showNotification("¡Tu vida ya está al máximo! ❤️", "#55ff55");
+                                return;
+                            }
+                            resources[resName]--;
+                            health = Math.min(100, health + food.heal);
+                            showNotification(`¡Comiste ${food.name}! (+${food.heal} Vida)`, "#55ff55");
                             playBlockSound(false); 
                             updateInventoryUI();
                             if(isLargeInventoryOpen) renderLargeInventory();
                         } else {
-                            showNotification("No tienes suficiente alimento 🍎🥩", "red");
+                            showNotification(`No tienes ${food.name} ❌. ¡Caza animales para conseguirla!`, "red");
                         }
                     } else {
+                        if (health >= 100) {
+                            showNotification("¡Vida al máximo! (Creativo) ❤️", "#ffcc00");
+                            return;
+                        }
                         health = 100;
-                        showNotification("¡Alimento consumido! (Modo Creativo)", "#55ff55");
+                        showNotification(`¡${food.name} consumido! (Modo Creativo)`, "#55ff55");
                     }
                     return;
                 }
 
                 const blockHits = ray.intersectObjects(scene.children.filter(c => c.userData.type));
                 if (blockHits.length > 0 && blockHits[0].distance < 6) {
-                    // Quitamos "coal" del filtro restrictivo para permitir que se coloque como un bloque físico
-                    if (type === "pickaxe" || type === "sword" || type === "bow" || type === "apple" || type === "meat") return;
+                    if (type === "pickaxe" || type === "sword" || type === "bow" || type === "apple" || type === "meat" || type === "beef" || type === "chicken_meat" || type === "mutton") return;
                     
                     if (!isCreative) {
                         const meta = itemMetaData[type];
@@ -2087,7 +2211,6 @@
             return hit.face.normal;
         }
 
-        // Animación de renderizado
         function animate() {
             requestAnimationFrame(animate);
             if (document.pointerLockElement) {
@@ -2102,10 +2225,14 @@
             init();
             generateWorld();
             
-            for(let i=0; i<6; i++) {
+            for(let i=0; i<8; i++) {
                 const sx = (Math.random() - 0.5) * VIEW_DISTANCE * 1.5;
                 const sz = (Math.random() - 0.5) * VIEW_DISTANCE * 1.5;
-                spawnPig(sx, 18, sz);
+                const rand = Math.random();
+                if (rand < 0.25) spawnPig(sx, 18, sz);
+                else if (rand < 0.5) spawnCow(sx, 18, sz);
+                else if (rand < 0.75) spawnChicken(sx, 18, sz);
+                else spawnSheep(sx, 18, sz);
             }
 
             animate();
