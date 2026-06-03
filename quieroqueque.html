@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>¡Quiero Queque!</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #fdf2f8; font-family: 'Inter', sans-serif; }
+        canvas { display: block; cursor: none; }
+        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+    </style>
+</head>
+<body>
+
+    <div id="ui-layer" class="flex flex-col justify-between p-6 text-pink-900">
+        <div class="flex justify-between items-center">
+            <h1 class="text-4xl font-black italic tracking-tighter drop-shadow-md">¡Quiero Queque!</h1>
+            <div id="score" class="text-3xl font-bold bg-white/80 px-6 py-2 rounded-full shadow-lg">Puntos: 0</div>
+        </div>
+        <div id="game-over" class="hidden absolute inset-0 bg-pink-100/90 flex flex-col items-center justify-center pointer-events-auto">
+            <h2 class="text-6xl font-bold mb-4">¡Juego Terminado!</h2>
+            <p id="final-score" class="text-2xl mb-8"></p>
+            <button onclick="resetGame()" class="px-8 py-4 bg-pink-500 text-white text-xl rounded-full font-bold hover:bg-pink-600 transition shadow-xl">Jugar de nuevo</button>
+        </div>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreEl = document.getElementById('score');
+        const gameOverEl = document.getElementById('game-over');
+        const finalScoreEl = document.getElementById('final-score');
+
+        let score = 0;
+        let gameRunning = true;
+        let basket = { x: 0, y: 0, width: 100, height: 80 };
+        let items = [];
+        let animationId;
+
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            basket.y = canvas.height - 120;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        window.addEventListener('mousemove', (e) => basket.x = e.clientX - basket.width / 2);
+        window.addEventListener('touchmove', (e) => basket.x = e.touches[0].clientX - basket.width / 2);
+
+        function createItem() {
+            if (!gameRunning) return;
+            const isCake = Math.random() > 0.2;
+            items.push({
+                x: Math.random() * (canvas.width - 50),
+                y: -50,
+                type: isCake ? '🍰' : '💣',
+                speed: 3 + Math.random() * 4,
+                size: 50
+            });
+            setTimeout(createItem, Math.max(500, 2000 - score * 10));
+        }
+
+        function update() {
+            if (!gameRunning) return;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            ctx.font = '80px Arial';
+            ctx.fillText('🧺', basket.x, basket.y + 60);
+
+            items.forEach((item, index) => {
+                item.y += item.speed;
+                ctx.font = '50px Arial';
+                ctx.fillText(item.type, item.x, item.y);
+
+                if (item.y > basket.y && item.y < basket.y + 50 && item.x > basket.x - 20 && item.x < basket.x + 80) {
+                    if (item.type === '🍰') {
+                        score += 10;
+                        scoreEl.innerText = `Puntos: ${score}`;
+                    } else {
+                        endGame();
+                    }
+                    items.splice(index, 1);
+                }
+
+                if (item.y > canvas.height) {
+                    if (item.type === '🍰') endGame();
+                    items.splice(index, 1);
+                }
+            });
+
+            animationId = requestAnimationFrame(update);
+        }
+
+        function endGame() {
+            gameRunning = false;
+            cancelAnimationFrame(animationId);
+            gameOverEl.classList.remove('hidden');
+            finalScoreEl.innerText = `Lograste ${score} puntos. ¡Qué hambre!`;
+        }
+
+        function resetGame() {
+            score = 0;
+            scoreEl.innerText = `Puntos: 0`;
+            items = [];
+            gameRunning = true;
+            gameOverEl.classList.add('hidden');
+            // Reiniciar el bucle de juego
+            update();
+            // Disparar la creación de items nuevamente
+            createItem();
+        }
+
+        // Iniciar juego
+        createItem();
+        update();
+    </script>
+</body>
+</html>
