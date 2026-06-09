@@ -23,7 +23,10 @@
     <div id="hud" class="ui-layer p-4 hidden">
         <div class="flex justify-between items-start">
             <div class="bg-gray-800/80 p-3 rounded-lg border border-gray-600">
-                <div class="text-xl font-bold text-blue-400">Nivel <span id="ui-level">1</span></div>
+                <div class="flex items-center gap-3">
+                    <div class="text-xl font-bold text-blue-400">Nivel <span id="ui-level">1</span></div>
+                    <span id="ui-diff-badge" class="px-2 py-0.5 rounded text-xs font-bold uppercase">NORMAL</span>
+                </div>
                 <div class="w-64 h-3 bg-gray-700 rounded-full mt-2 overflow-hidden">
                     <div id="ui-xp-bar" class="h-full bg-blue-500 w-0 transition-all duration-200"></div>
                 </div>
@@ -37,18 +40,30 @@
 
     <!-- UI: Menú Principal -->
     <div id="main-menu" class="ui-layer interactive items-center justify-center bg-black/80">
-        <div class="glass-panel p-10 rounded-2xl text-center max-w-lg">
-            <h1 class="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-yellow-500 mb-4 font-black">MONSTER BRAWL</h1>
-            <p class="text-gray-300 mb-8 font-medium">Sobrevive a la horda con tus monstruos favoritos. WASD o Flechas para moverte. El ataque es automático.</p>
-            <div class="flex flex-col gap-4 items-center w-full">
-                <button id="btn-start" class="w-full px-8 py-4 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl text-xl transition-transform transform hover:scale-105 shadow-lg shadow-red-500/30">
-                    Iniciar Supervivencia
+        <div class="glass-panel p-8 rounded-2xl text-center max-w-lg w-full mx-4">
+            <h1 class="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-yellow-500 mb-2 font-black tracking-wide">MONSTER BRAWL</h1>
+            <p class="text-gray-300 mb-6 font-medium">Sobrevive a la horda con tus monstruos favoritos. Usa WASD o Flechas para moverte. El ataque es automático.</p>
+            
+            <div class="text-gray-400 text-xs mb-4 font-semibold uppercase tracking-wider">Selecciona tu Dificultad</div>
+            <div class="flex flex-col gap-3 w-full mb-6">
+                <button id="btn-start-normal" class="w-full px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-500 hover:to-emerald-400 text-white font-bold rounded-xl text-lg transition-all transform hover:scale-102 shadow-lg shadow-green-900/30 border border-green-500/20 text-left pl-5">
+                    🟢 Modo Normal
+                    <span class="block text-xs font-normal opacity-85 mt-0.5">La experiencia equilibrada de supervivencia.</span>
                 </button>
-                <button id="btn-shop" class="w-full px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-lg transition-transform transform hover:scale-105 shadow-lg shadow-blue-500/30 flex items-center justify-center gap-2">
-                    <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1010 10A10 10 0 0012 2zm1 14h-2v-2h2zm0-4h-2V7h2z"/></svg>
-                    Tienda de Skins
+                <button id="btn-start-dificil" class="w-full px-6 py-3 bg-gradient-to-r from-orange-600 to-amber-500 hover:from-orange-500 hover:to-amber-400 text-white font-bold rounded-xl text-lg transition-all transform hover:scale-102 shadow-lg shadow-orange-900/30 border border-orange-500/20 text-left pl-5">
+                    🟠 Modo Difícil (x1.5 Pts)
+                    <span class="block text-xs font-normal opacity-85 mt-0.5">Enemigos más rápidos; el 25% dispara plasma (-3 HP).</span>
+                </button>
+                <button id="btn-start-experto" class="w-full px-6 py-3 bg-gradient-to-r from-red-600 to-rose-500 hover:from-red-500 hover:to-rose-400 text-white font-bold rounded-xl text-lg transition-all transform hover:scale-102 shadow-lg shadow-red-900/30 border border-red-500/20 text-left pl-5">
+                    🔴 Modo Experto (x2.0 Pts)
+                    <span class="block text-xs font-normal opacity-85 mt-0.5">Disparos constantes y embestidas rápidas y furiosas.</span>
                 </button>
             </div>
+
+            <button id="btn-shop" class="w-full px-6 py-3 bg-gray-800 hover:bg-gray-700 text-white font-bold rounded-xl text-md transition-transform transform hover:scale-105 border border-gray-600 flex items-center justify-center gap-2">
+                <svg class="w-5 h-5 fill-current text-blue-400" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1010 10A10 10 0 0012 2zm1 14h-2v-2h2zm0-4h-2V7h2z"/></svg>
+                Tienda de Skins
+            </button>
         </div>
     </div>
 
@@ -69,7 +84,7 @@
             <h2 class="text-5xl font-bold text-white mb-4">HAS CAÍDO</h2>
             <p class="text-xl text-red-200 mb-2">Sobreviviste: <span id="go-time" class="font-bold text-white"></span></p>
             <p class="text-xl text-red-200 mb-2">Nivel Alcanzado: <span id="go-level" class="font-bold text-white"></span></p>
-            <p class="text-2xl text-yellow-400 mb-8 font-bold">Puntos Obtenidos: <span id="go-points" class="text-white"></span></p>
+            <div id="go-points" class="text-2xl text-yellow-400 mb-8 font-bold">Puntos Obtenidos: </div>
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
                 <button id="btn-restart" class="px-6 py-4 bg-white text-red-900 hover:bg-gray-200 font-bold rounded-xl text-xl transition-transform transform hover:scale-105">
                     Reintentar
@@ -90,7 +105,7 @@
             <h2 class="text-4xl font-bold text-blue-400 mb-2">TIENDA DE SKINS</h2>
             <p class="text-xl text-gray-300 mb-8">Puntos Totales: <span id="shop-points" class="font-bold text-yellow-400 text-3xl">0</span></p>
             <div id="shop-items" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 mb-8">
-                <!-- Las opciones se inyectan via JS con hermosos SVGs vectoriales -->
+                <!-- Las opciones se inyectan via JS -->
             </div>
             <button id="btn-close-shop" class="px-8 py-4 bg-gray-600 hover:bg-gray-500 text-white font-bold rounded-xl text-xl transition-transform transform hover:scale-105">
                 Volver al Menú
@@ -100,8 +115,7 @@
 
 <script>
 /**
- * ARQUITECTURA DEL SISTEMA - ACTION ROGUELIKE
- * Implementación de Object Pooling, Spatial Hashing y Core Loop con skins vectoriales animadas.
+ * STREAMING_CHUNK: Initializing state variables and properties
  */
 
 const canvas = document.getElementById('gameCanvas');
@@ -127,9 +141,10 @@ const GAME_STATE = {
     SHOP: 4
 };
 let currentState = GAME_STATE.MENU;
+let currentDifficulty = 'normal'; // 'normal', 'dificil', 'experto'
 let lastTime = 0;
 let gameTimer = 0;
-let animationTime = 0; // Tiempo global para las animaciones y rebotes
+let animationTime = 0; 
 
 // --- SISTEMA DE PUNTOS Y SKINS ---
 let totalPoints = 0;
@@ -152,14 +167,12 @@ const skinsDB = [
             </defs>
             <ellipse cx="32" cy="46" rx="20" ry="6" fill="rgba(0,0,0,0.3)" />
             <path d="M12 40 C 12 18, 52 18, 52 40 C 52 48, 44 48, 32 48 C 20 48, 12 48, 12 40 Z" fill="url(#grad-verde)" />
-            <!-- Ojos -->
             <circle cx="24" cy="34" r="4.5" fill="white" />
             <circle cx="24" cy="34" r="2" fill="black" />
             <circle cx="25.5" cy="32.5" r="1" fill="white" />
             <circle cx="40" cy="34" r="4.5" fill="white" />
             <circle cx="40" cy="34" r="2" fill="black" />
             <circle cx="41.5" cy="32.5" r="1" fill="white" />
-            <!-- Sonrisa adorable -->
             <path d="M28 40 Q32 43 36 40" stroke="white" stroke-width="2" stroke-linecap="round" fill="none" />
             <ellipse cx="20" cy="37" rx="2.5" ry="1.5" fill="#f87171" opacity="0.6" />
             <ellipse cx="44" cy="37" rx="2.5" ry="1.5" fill="#f87171" opacity="0.6" />
@@ -179,16 +192,13 @@ const skinsDB = [
             </defs>
             <ellipse cx="32" cy="46" rx="22" ry="6" fill="rgba(0,0,0,0.4)" />
             <path d="M10 40 C 8 20, 56 20, 54 40 C 54 46, 44 48, 32 48 C 20 48, 10 46, 10 40 Z" fill="url(#grad-rojo)" />
-            <!-- Texturas ardientes -->
             <path d="M16 38 Q22 30 26 38" stroke="#facc15" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.8" />
             <path d="M38 38 Q42 32 46 38" stroke="#facc15" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.8" />
-            <!-- Ojos enojados -->
             <path d="M20 28 L28 32 M44 28 L36 32" stroke="#facc15" stroke-width="2" stroke-linecap="round" />
             <circle cx="24" cy="33" r="3.5" fill="#facc15" />
             <circle cx="24" cy="33" r="1.5" fill="#7f1d1d" />
             <circle cx="40" cy="33" r="3.5" fill="#facc15" />
             <circle cx="40" cy="33" r="1.5" fill="#7f1d1d" />
-            <!-- Boca enfadada -->
             <path d="M28 41 Q32 37 36 41" stroke="#facc15" stroke-width="2" fill="none" />
         </svg>`
     },
@@ -205,20 +215,15 @@ const skinsDB = [
                 </radialGradient>
             </defs>
             <ellipse cx="32" cy="46" rx="20" ry="6" fill="rgba(0,0,0,0.3)" />
-            <!-- Picos de hielo superiores -->
             <polygon points="20,18 26,26 14,28" fill="#93c5fd" />
             <polygon points="32,12 37,24 27,24" fill="#bfdbfe" />
             <polygon points="44,18 50,28 38,26" fill="#93c5fd" />
-            <!-- Cuerpo -->
             <path d="M12 40 C 12 22, 52 22, 52 40 C 52 48, 44 48, 32 48 C 20 48, 12 48, 12 40 Z" fill="url(#grad-azul)" />
-            <!-- Brillo congelado -->
             <path d="M16 32 L22 30" stroke="white" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>
-            <!-- Ojos determinados -->
             <circle cx="24" cy="34" r="4.5" fill="white" />
             <circle cx="24" cy="34" r="2" fill="#1d4ed8" />
             <circle cx="40" cy="34" r="4.5" fill="white" />
             <circle cx="40" cy="34" r="2" fill="#1d4ed8" />
-            <!-- Boca -->
             <line x1="28" y1="40" x2="36" y2="40" stroke="white" stroke-width="2" stroke-linecap="round" />
         </svg>`
     },
@@ -235,12 +240,9 @@ const skinsDB = [
                 </radialGradient>
             </defs>
             <ellipse cx="32" cy="46" rx="22" ry="6" fill="rgba(0,0,0,0.5)" />
-            <!-- Cuerpo flotante estilo vacío -->
             <path d="M10 40 C 10 16, 54 16, 54 40 C 54 49, 42 50, 32 50 C 22 50, 10 49, 10 40 Z" fill="url(#grad-purpura)" />
-            <!-- Partículas del vacío -->
             <circle cx="16" cy="20" r="2.5" fill="#d8b4fe" />
             <circle cx="48" cy="22" r="1.5" fill="#d8b4fe" />
-            <!-- Cíclope místico de Materia Oscura -->
             <circle cx="32" cy="32" r="8" fill="#f43f5e" />
             <circle cx="32" cy="32" r="3" fill="white" />
             <circle cx="34" cy="30" r="1" fill="white" />
@@ -262,39 +264,72 @@ const skinsDB = [
                 </linearGradient>
             </defs>
             <ellipse cx="32" cy="46" rx="20" ry="6" fill="rgba(0,0,0,0.3)" />
-            <!-- Corona de oro -->
             <polygon points="20,24 24,14 32,20 40,14 44,24" fill="#fbbf24" stroke="#78350f" stroke-width="1.5" />
-            <circle cx="32" cy="20" r="2.5" fill="#f43f5e" /> <!-- Rubí de la corona -->
-            <!-- Cuerpo -->
+            <circle cx="32" cy="20" r="2.5" fill="#f43f5e" />
             <path d="M12 40 C 12 18, 52 18, 52 40 C 52 48, 44 48, 32 48 C 20 48, 12 48, 12 40 Z" fill="url(#grad-dorado)" />
-            <!-- Ojos sonrientes con lentes reales -->
             <circle cx="23" cy="33" r="5" fill="none" stroke="#78350f" stroke-width="2.5" />
             <circle cx="41" cy="33" r="5" fill="none" stroke="#78350f" stroke-width="2.5" />
             <line x1="28" y1="33" x2="36" y2="33" stroke="#78350f" stroke-width="2" />
             <circle cx="24" cy="33" r="1.5" fill="black" />
             <circle cx="40" cy="33" r="1.5" fill="black" />
-            <!-- Gran sonrisa aristocrática -->
             <path d="M26 39 Q32 43 38 39" stroke="#78350f" stroke-width="2" stroke-linecap="round" fill="none" />
         </svg>`
     }
 ];
 
-function calculatePoints(level) {
-    if (level === 1) return 100;
-    if (level === 2) return 500;
-    return 500 + Math.floor(Math.pow(level - 1, 1.5) * 200); 
-}
+// --- INPUT (SOPORTE NORMALIZADO PARA MAYÚSCULAS/MINÚSCULAS) ---
+const keys = {
+    w: false, a: false, s: false, d: false,
+    arrowup: false, arrowdown: false, arrowleft: false, arrowright: false
+};
 
-// --- INPUT ---
-const keys = { w: false, a: false, s: false, d: false, ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false };
-window.addEventListener('keydown', e => { if(keys.hasOwnProperty(e.key)) keys[e.key] = true; });
-window.addEventListener('keyup', e => { if(keys.hasOwnProperty(e.key)) keys[e.key] = false; });
+window.addEventListener('keydown', e => {
+    const key = e.key.toLowerCase();
+    if (key in keys) {
+        keys[key] = true;
+    }
+});
+
+window.addEventListener('keyup', e => {
+    const key = e.key.toLowerCase();
+    if (key in keys) {
+        keys[key] = false;
+    }
+});
+
+// --- SISTEMA DE ENTRADA TÁCTIL (JOYSTICK VIRTUAL) ---
+let touchActive = false;
+let touchStartX = 0;
+let touchStartY = 0;
+let touchMoveX = 0;
+let touchMoveY = 0;
+
+window.addEventListener('touchstart', e => {
+    if (currentState !== GAME_STATE.PLAYING) return;
+    if (e.target.closest('button')) return;
+    
+    touchActive = true;
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+    touchMoveX = touchStartX;
+    touchMoveY = touchStartY;
+}, { passive: true });
+
+window.addEventListener('touchmove', e => {
+    if (!touchActive) return;
+    touchMoveX = e.touches[0].clientX;
+    touchMoveY = e.touches[0].clientY;
+}, { passive: true });
+
+window.addEventListener('touchend', e => {
+    touchActive = false;
+}, { passive: true });
 
 // --- MATEMÁTICAS Y UTILIDADES ---
 function distSq(x1, y1, x2, y2) { return (x2-x1)**2 + (y2-y1)**2; }
 function randRange(min, max) { return Math.random() * (max - min) + min; }
 
-// --- SPATIAL HASHING (Optimización de Colisiones) ---
+// --- SPATIAL HASHING ---
 class SpatialGrid {
     constructor(cellSize) {
         this.cellSize = cellSize;
@@ -336,6 +371,10 @@ class ObjectPool {
     release(obj) { this.pool.push(obj); }
 }
 
+/**
+ * STREAMING_CHUNK: Defining Player and upgraded Rogue-like elements
+ */
+
 // --- ENTIDADES ---
 class Player {
     constructor() {
@@ -344,13 +383,13 @@ class Player {
     reset() {
         this.x = width / 2;
         this.y = height / 2;
-        this.radius = 20; // Ligeramente mayor para lucir mejor los iconos
+        this.radius = 20;
         this.speed = 220;
         this.maxHp = 100;
         this.hp = 100;
         this.level = 1;
         this.xp = 0;
-        this.maxXp = 5; // REDUCIDO: Se requiere solo la mitad de XP (5) para pasar al Nivel 2
+        this.maxXp = 5; 
         
         this.baseDamageMult = 1.0;
         this.critChance = 0.05;
@@ -361,14 +400,28 @@ class Player {
 
     update(dt) {
         let dx = 0, dy = 0;
-        if (keys.w || keys.ArrowUp) dy -= 1;
-        if (keys.s || keys.ArrowDown) dy += 1;
-        if (keys.a || keys.ArrowLeft) dx -= 1;
-        if (keys.d || keys.ArrowRight) dx += 1;
 
-        if (dx !== 0 && dy !== 0) {
-            const length = Math.sqrt(dx*dx + dy*dy);
-            dx /= length; dy /= length;
+        if (touchActive) {
+            dx = touchMoveX - touchStartX;
+            dy = touchMoveY - touchStartY;
+            let dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist > 10) { 
+                dx /= dist;
+                dy /= dist;
+            } else {
+                dx = 0;
+                dy = 0;
+            }
+        } else {
+            if (keys.w || keys.arrowup) dy -= 1;
+            if (keys.s || keys.arrowdown) dy += 1;
+            if (keys.a || keys.arrowleft) dx -= 1;
+            if (keys.d || keys.arrowright) dx += 1;
+
+            if (dx !== 0 && dy !== 0) {
+                const length = Math.sqrt(dx*dx + dy*dy);
+                dx /= length; dy /= length;
+            }
         }
 
         this.x += dx * this.speed * dt;
@@ -385,7 +438,6 @@ class Player {
         const py = this.y - camY;
         const r = this.radius;
 
-        // Efecto rebote por respiración/movimiento dinámico
         const bounce = 1 + Math.sin(animationTime * 12) * 0.05;
         const widthBounce = r * (2 - bounce);
         const heightBounce = r * bounce;
@@ -399,15 +451,12 @@ class Player {
         ctx.ellipse(0, r - 2, r * 1.1, 6, 0, 0, Math.PI * 2);
         ctx.fill();
 
-        // Renderizado Dinámico de las skins de alta resolución
         if (currentSkinId === 'verde') {
-            // Slime Verde
             let grad = ctx.createRadialGradient(0, -r * 0.3, 0, 0, 0, r);
             grad.addColorStop(0, '#4ade80');
             grad.addColorStop(1, '#166534');
             ctx.fillStyle = grad;
             
-            // Cuerpo
             ctx.beginPath();
             ctx.moveTo(-widthBounce, r * 0.4);
             ctx.bezierCurveTo(-widthBounce, -heightBounce * 1.4, widthBounce, -heightBounce * 1.4, widthBounce, r * 0.4);
@@ -418,13 +467,11 @@ class Player {
             ctx.lineWidth = 2.5;
             ctx.stroke();
 
-            // Brillo
             ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
             ctx.beginPath();
             ctx.ellipse(-r * 0.3, -r * 0.4, r * 0.25, r * 0.12, Math.PI/4, 0, Math.PI*2);
             ctx.fill();
 
-            // Ojos tiernos
             const eyeOffset = r * 0.25;
             const eyeSize = r * 0.14;
             ctx.fillStyle = 'white';
@@ -435,20 +482,17 @@ class Player {
             ctx.beginPath(); ctx.arc(-eyeOffset, -r * 0.05, eyeSize * 0.5, 0, Math.PI * 2); ctx.fill();
             ctx.beginPath(); ctx.arc(eyeOffset, -r * 0.05, eyeSize * 0.5, 0, Math.PI * 2); ctx.fill();
 
-            // Sonrisa tierna
             ctx.strokeStyle = 'white';
             ctx.lineWidth = 2;
             ctx.beginPath();
             ctx.arc(0, r * 0.15, r * 0.15, 0, Math.PI);
             ctx.stroke();
 
-            // Mejillas sonrosadas
             ctx.fillStyle = 'rgba(248, 113, 113, 0.6)';
             ctx.beginPath(); ctx.arc(-r * 0.45, r * 0.1, r * 0.08, 0, Math.PI*2); ctx.fill();
             ctx.beginPath(); ctx.arc(r * 0.45, r * 0.1, r * 0.08, 0, Math.PI*2); ctx.fill();
 
         } else if (currentSkinId === 'rojo') {
-            // Lava Caliente (Rojo)
             let grad = ctx.createRadialGradient(0, -r * 0.3, 0, 0, 0, r);
             grad.addColorStop(0, '#f97316');
             grad.addColorStop(1, '#7f1d1d');
@@ -464,7 +508,6 @@ class Player {
             ctx.lineWidth = 2.5;
             ctx.stroke();
 
-            // Grietas incandescentes
             ctx.strokeStyle = '#facc15';
             ctx.lineWidth = 2;
             ctx.beginPath();
@@ -472,12 +515,10 @@ class Player {
             ctx.moveTo(r * 0.1, r * 0.2); ctx.quadraticCurveTo(r * 0.4, -r * 0.1, r * 0.6, r * 0.2);
             ctx.stroke();
 
-            // Partículas de fuego ascendentes
             if (Math.random() < 0.2) {
                 spawnFloatingText(this.x + randRange(-r, r), this.y - r, "🔥", false);
             }
 
-            // Ojos de lava encendidos
             const eyeOffset = r * 0.3;
             ctx.fillStyle = '#facc15';
             ctx.beginPath(); ctx.arc(-eyeOffset, -r * 0.1, r * 0.15, 0, Math.PI * 2); ctx.fill();
@@ -486,7 +527,6 @@ class Player {
             ctx.beginPath(); ctx.arc(-eyeOffset, -r * 0.1, r * 0.06, 0, Math.PI * 2); ctx.fill();
             ctx.beginPath(); ctx.arc(eyeOffset, -r * 0.1, r * 0.06, 0, Math.PI * 2); ctx.fill();
 
-            // Cejas enojadas
             ctx.strokeStyle = '#7f1d1d';
             ctx.lineWidth = 2.5;
             ctx.beginPath();
@@ -494,7 +534,6 @@ class Player {
             ctx.moveTo(eyeOffset + 6, -r * 0.28); ctx.lineTo(eyeOffset - 6, -r * 0.18);
             ctx.stroke();
 
-            // Boca enojada
             ctx.strokeStyle = '#facc15';
             ctx.lineWidth = 2.5;
             ctx.beginPath();
@@ -502,8 +541,6 @@ class Player {
             ctx.stroke();
 
         } else if (currentSkinId === 'azul') {
-            // Hielo Profundo
-            // Dibujar picos de hielo encima
             ctx.fillStyle = '#bfdbfe';
             ctx.beginPath();
             ctx.moveTo(-r * 0.5, -r * 0.5); ctx.lineTo(-r * 0.3, -r * 1.1); ctx.lineTo(-r * 0.1, -r * 0.6);
@@ -526,7 +563,6 @@ class Player {
             ctx.lineWidth = 2.5;
             ctx.stroke();
 
-            // Detalles brillantes cristalinos
             ctx.strokeStyle = 'white';
             ctx.lineWidth = 1.5;
             ctx.beginPath();
@@ -534,7 +570,6 @@ class Player {
             ctx.moveTo(r * 0.3, -r * 0.3); ctx.lineTo(r * 0.4, -r * 0.1);
             ctx.stroke();
 
-            // Ojos gélidos decididos
             const eyeOffset = r * 0.28;
             ctx.fillStyle = 'white';
             ctx.beginPath(); ctx.arc(-eyeOffset, -r * 0.05, r * 0.13, 0, Math.PI * 2); ctx.fill();
@@ -543,7 +578,6 @@ class Player {
             ctx.beginPath(); ctx.arc(-eyeOffset, -r * 0.05, r * 0.06, 0, Math.PI * 2); ctx.fill();
             ctx.beginPath(); ctx.arc(eyeOffset, -r * 0.05, r * 0.06, 0, Math.PI * 2); ctx.fill();
 
-            // Boca lineal de temple
             ctx.strokeStyle = 'white';
             ctx.lineWidth = 2.5;
             ctx.beginPath();
@@ -552,7 +586,6 @@ class Player {
             ctx.stroke();
 
         } else if (currentSkinId === 'purpura') {
-            // Materia Oscura (Void/Cíclope)
             let grad = ctx.createRadialGradient(0, -r * 0.2, 0, 0, 0, r * 1.15);
             grad.addColorStop(0, '#d8b4fe');
             grad.addColorStop(0.5, '#7e22ce');
@@ -569,14 +602,12 @@ class Player {
             ctx.lineWidth = 3;
             ctx.stroke();
 
-            // Anillo o partículas oscuras orbitando
             ctx.strokeStyle = 'rgba(216, 180, 254, 0.4)';
             ctx.lineWidth = 2;
             ctx.beginPath();
             ctx.ellipse(0, 0, r * 1.3, r * 0.4, Math.PI / 12, 0, Math.PI * 2);
             ctx.stroke();
 
-            // Partícula de vacío dibujada cerca
             ctx.fillStyle = '#e9d5ff';
             ctx.beginPath();
             let pX = Math.cos(animationTime * 5) * r * 1.3;
@@ -584,7 +615,6 @@ class Player {
             ctx.arc(pX, pY, 3.5, 0, Math.PI * 2);
             ctx.fill();
 
-            // Gran ojo de Cíclope del Vacío
             ctx.fillStyle = '#f43f5e';
             ctx.beginPath(); ctx.arc(0, -r * 0.1, r * 0.28, 0, Math.PI * 2); ctx.fill();
             ctx.fillStyle = 'white';
@@ -592,7 +622,6 @@ class Player {
             ctx.fillStyle = '#3b0764';
             ctx.beginPath(); ctx.arc(1.5, -r * 0.1 - 1.5, r * 0.04, 0, Math.PI * 2); ctx.fill();
 
-            // Ceño fruncido del vacío
             ctx.strokeStyle = '#3b0764';
             ctx.lineWidth = 3;
             ctx.beginPath();
@@ -600,7 +629,6 @@ class Player {
             ctx.quadraticCurveTo(0, -r * 0.45, r * 0.3, -r * 0.38);
             ctx.stroke();
 
-            // Boca misteriosa
             ctx.strokeStyle = '#f43f5e';
             ctx.lineWidth = 2;
             ctx.beginPath();
@@ -608,7 +636,6 @@ class Player {
             ctx.stroke();
 
         } else if (currentSkinId === 'dorado') {
-            // Rey Dorado (Dorado Brillante con Corona)
             let grad = ctx.createLinearGradient(-r, -r, r, r);
             grad.addColorStop(0, '#fef08a');
             grad.addColorStop(0.5, '#eab308');
@@ -625,7 +652,6 @@ class Player {
             ctx.lineWidth = 3;
             ctx.stroke();
 
-            // Corona de Oro Real
             ctx.save();
             ctx.translate(0, -r * 1.1);
             ctx.fillStyle = '#fbbf24';
@@ -643,26 +669,21 @@ class Player {
             ctx.fill();
             ctx.stroke();
 
-            // Rubí en el centro de la corona
             ctx.fillStyle = '#f43f5e';
             ctx.beginPath(); ctx.arc(0, -r * 0.4, 3, 0, Math.PI * 2); ctx.fill();
             ctx.restore();
 
-            // Gafas o Monóculo Real
             const eyeOffset = r * 0.28;
             ctx.strokeStyle = '#78350f';
             ctx.lineWidth = 2.5;
-            // Dibujar gafas doradas
             ctx.beginPath(); ctx.arc(-eyeOffset, -r * 0.1, r * 0.17, 0, Math.PI*2); ctx.stroke();
             ctx.beginPath(); ctx.arc(eyeOffset, -r * 0.1, r * 0.17, 0, Math.PI*2); ctx.stroke();
-            // Puente de las gafas
             ctx.beginPath(); ctx.moveTo(-eyeOffset + r * 0.15, -r * 0.1); ctx.lineTo(eyeOffset - r * 0.15, -r * 0.1); ctx.stroke();
 
             ctx.fillStyle = 'black';
             ctx.beginPath(); ctx.arc(-eyeOffset, -r * 0.1, r * 0.05, 0, Math.PI*2); ctx.fill();
             ctx.beginPath(); ctx.arc(eyeOffset, -r * 0.1, r * 0.05, 0, Math.PI*2); ctx.fill();
 
-            // Sonrisa elegante
             ctx.strokeStyle = '#78350f';
             ctx.lineWidth = 2;
             ctx.beginPath();
@@ -672,7 +693,6 @@ class Player {
 
         ctx.restore();
 
-        // Aura de armas si están activas
         this.weapons.forEach(w => {
             if(w.draw) w.draw(ctx, camX, camY);
         });
@@ -697,12 +717,15 @@ class Player {
 
     levelUp() {
         this.level++;
-        // REDUCIDO: Curva de escalado mucho más suave (exponente reducido a 1.2 y base a 5)
         this.maxXp = Math.floor(5 * Math.pow(this.level, 1.2));
         this.hp = Math.min(this.maxHp, this.hp + 20);
         triggerDraft();
     }
 }
+
+/**
+ * STREAMING_CHUNK: Designing Enemy class with smart AI and behavior matrices
+ */
 
 class Enemy {
     constructor() { this.active = false; }
@@ -716,43 +739,115 @@ class Enemy {
         this.active = true;
         this.knockbackX = 0;
         this.knockbackY = 0;
+
+        // Comportamientos especiales basados en dificultad
+        this.shootTimer = randRange(1.5, 4.0);
+        this.canShoot = (currentDifficulty === 'dificil' && Math.random() < 0.25) || (currentDifficulty === 'experto');
+
+        // Embestida mística (Solo modo Experto)
+        this.dashTimer = randRange(3.5, 7.0);
+        this.isDashing = false;
+        this.dashDuration = 0;
+        this.dashVx = 0;
+        this.dashVy = 0;
+        this.chargeTimer = 0;
+        this.chargeFlash = false;
     }
+
     update(dt, px, py) {
-        let dx = px - this.x;
-        let dy = py - this.y;
-        let dist = Math.sqrt(dx*dx + dy*dy);
-        
-        if (dist > 0) {
-            this.x += (dx/dist) * this.speed * dt;
-            this.y += (dy/dist) * this.speed * dt;
+        if (this.isDashing) {
+            // Embestida ultra rápida
+            this.x += this.dashVx * (this.speed * 2.8) * dt;
+            this.y += this.dashVy * (this.speed * 2.8) * dt;
+            this.dashDuration -= dt;
+            if (this.dashDuration <= 0) {
+                this.isDashing = false;
+            }
+        } else if (this.chargeTimer > 0) {
+            // Detenido mientras parpadea antes de embestir
+            this.chargeTimer -= dt;
+            this.chargeFlash = Math.floor(gameTimer * 20) % 2 === 0;
+            if (this.chargeTimer <= 0) {
+                this.isDashing = true;
+                this.dashDuration = 0.55; // Duración de embestida
+                let dx = px - this.x;
+                let dy = py - this.y;
+                let dist = Math.sqrt(dx*dx + dy*dy) || 1;
+                this.dashVx = dx / dist;
+                this.dashVy = dy / dist;
+            }
+        } else {
+            // Movimiento normal directo
+            let dx = px - this.x;
+            let dy = py - this.y;
+            let dist = Math.sqrt(dx*dx + dy*dy);
+            
+            if (dist > 0) {
+                this.x += (dx/dist) * this.speed * dt;
+                this.y += (dy/dist) * this.speed * dt;
+            }
+
+            // AI: Disparar bolas de plasma (Difícil y Experto)
+            if (this.canShoot) {
+                this.shootTimer -= dt;
+                if (this.shootTimer <= 0) {
+                    this.shootTimer = currentDifficulty === 'experto' ? randRange(1.5, 3.0) : randRange(2.5, 4.5);
+                    let dx = px - this.x;
+                    let dy = py - this.y;
+                    let d = Math.sqrt(dx*dx + dy*dy) || 1;
+                    
+                    const ep = enemyProjPool.get();
+                    // 3 de daño directo a distancia
+                    ep.spawn(this.x, this.y, dx/d, dy/d, 260, 3, 5, '#ec4899');
+                    enemyProjectiles.push(ep);
+                }
+            }
+
+            // AI: Carga de Embestida rápida (Solo Experto)
+            if (currentDifficulty === 'experto') {
+                this.dashTimer -= dt;
+                if (this.dashTimer <= 0) {
+                    this.dashTimer = randRange(4.0, 8.0);
+                    this.chargeTimer = 0.45; // Advertencia al jugador
+                }
+            }
         }
 
+        // Aplicar fricción de knockback
         this.x += this.knockbackX * dt;
         this.y += this.knockbackY * dt;
         this.knockbackX *= 0.9;
         this.knockbackY *= 0.9;
     }
+
     draw(ctx, camX, camY) {
         const px = this.x - camX;
         const py = this.y - camY;
         const r = this.radius;
 
-        // Enemigos animados (Slimes salvajes / monstruos con ojos)
         const pulse = 1 + Math.sin(animationTime * 15 + this.x) * 0.08;
 
         ctx.save();
         ctx.translate(px, py);
 
-        // Sombra
         ctx.fillStyle = 'rgba(0,0,0,0.2)';
         ctx.beginPath();
         ctx.ellipse(0, r - 1, r * 1.1, 4, 0, 0, Math.PI * 2);
         ctx.fill();
 
-        // Cuerpo con gradiente
         let grad = ctx.createRadialGradient(0, -r * 0.2, 0, 0, 0, r);
-        grad.addColorStop(0, '#f87171');
-        grad.addColorStop(1, this.color);
+        if (this.chargeTimer > 0 && this.chargeFlash) {
+            // Destello amarillo parpadeante antes de embestir
+            grad.addColorStop(0, '#facc15');
+            grad.addColorStop(1, '#eab308');
+        } else if (this.isDashing) {
+            // Destello rojizo activo en carrera
+            grad.addColorStop(0, '#ef4444');
+            grad.addColorStop(1, '#991b1b');
+        } else {
+            grad.addColorStop(0, '#f87171');
+            grad.addColorStop(1, this.color);
+        }
         ctx.fillStyle = grad;
 
         ctx.beginPath();
@@ -762,7 +857,6 @@ class Enemy {
         ctx.lineWidth = 1.5;
         ctx.stroke();
 
-        // Pequeños ojos de monstruo malvado
         ctx.fillStyle = 'white';
         ctx.beginPath(); ctx.arc(-r * 0.35, -r * 0.1, r * 0.22, 0, Math.PI*2); ctx.fill();
         ctx.beginPath(); ctx.arc(r * 0.35, -r * 0.1, r * 0.22, 0, Math.PI*2); ctx.fill();
@@ -771,7 +865,6 @@ class Enemy {
         ctx.beginPath(); ctx.arc(-r * 0.3, -r * 0.1, r * 0.1, 0, Math.PI*2); ctx.fill();
         ctx.beginPath(); ctx.arc(r * 0.4, -r * 0.1, r * 0.1, 0, Math.PI*2); ctx.fill();
 
-        // Cejas amenazantes
         ctx.strokeStyle = 'black';
         ctx.lineWidth = 1.5;
         ctx.beginPath();
@@ -781,6 +874,7 @@ class Enemy {
 
         ctx.restore();
     }
+
     takeDamage(amount, isCrit, kx, ky) {
         this.hp -= amount;
         this.knockbackX = kx * 300;
@@ -796,6 +890,10 @@ class Enemy {
         return false;
     }
 }
+
+/**
+ * STREAMING_CHUNK: Setting up projectiles and enemy plasma mechanics
+ */
 
 class Projectile {
     constructor() { this.active = false; }
@@ -822,7 +920,6 @@ class Projectile {
         ctx.save();
         ctx.translate(this.x - camX, this.y - camY);
         
-        // Estela mágica
         ctx.shadowBlur = 12;
         ctx.shadowColor = this.color;
         
@@ -831,10 +928,50 @@ class Projectile {
         ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
         ctx.fill();
         
-        // Núcleo brillante
         ctx.fillStyle = '#ffffff';
         ctx.beginPath();
         ctx.arc(0, 0, this.radius * 0.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
+    }
+}
+
+// --- PROYECTILES DE ENEMIGOS ---
+class EnemyProjectile {
+    constructor() { this.active = false; }
+    spawn(x, y, vx, vy, speed, damage, radius, color) {
+        this.x = x; this.y = y;
+        this.vx = vx; this.vy = vy;
+        this.speed = speed;
+        this.damage = damage;
+        this.radius = radius;
+        this.color = color;
+        this.active = true;
+        this.life = 3.5; // Tiempo de vida en pantalla
+    }
+    update(dt) {
+        this.x += this.vx * this.speed * dt;
+        this.y += this.vy * this.speed * dt;
+        this.life -= dt;
+        if (this.life <= 0) this.active = false;
+    }
+    draw(ctx, camX, camY) {
+        ctx.save();
+        ctx.translate(this.x - camX, this.y - camY);
+        
+        // Efecto plasma de energía
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = this.color;
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Núcleo caliente
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(0, 0, this.radius * 0.4, 0, Math.PI * 2);
         ctx.fill();
 
         ctx.restore();
@@ -856,7 +993,6 @@ class XpOrb {
         ctx.shadowBlur = 12;
         ctx.shadowColor = '#60a5fa';
         
-        // Forma de rombo mágico brillante
         ctx.beginPath();
         ctx.moveTo(0, -this.radius);
         ctx.lineTo(this.radius, 0);
@@ -865,7 +1001,6 @@ class XpOrb {
         ctx.closePath();
         ctx.fill();
 
-        // Brillo interior blanco
         ctx.fillStyle = '#ffffff';
         ctx.beginPath();
         ctx.arc(0, 0, this.radius * 0.35, 0, Math.PI * 2);
@@ -900,7 +1035,6 @@ class FloatingText {
         ctx.font = this.isCrit ? 'bold 22px sans-serif' : 'bold 15px sans-serif';
         ctx.textAlign = 'center';
         
-        // Bordes para legibilidad
         ctx.strokeStyle = '#000000';
         ctx.lineWidth = 3.5;
         ctx.strokeText(this.text, this.x - camX, this.y - camY);
@@ -909,6 +1043,10 @@ class FloatingText {
         ctx.restore();
     }
 }
+
+/**
+ * STREAMING_CHUNK: Instantiating weapons, pools, and wave scaling mechanics
+ */
 
 // --- ARMAS (Basado en el Diccionario) ---
 
@@ -993,7 +1131,6 @@ class DarkEnergyWeapon {
         ctx.save();
         ctx.translate(this.player.x - camX, this.player.y - camY);
         
-        // Aura con gradiente de poder oscuro
         let grad = ctx.createRadialGradient(0, 0, this.player.radius, 0, 0, this.radius);
         grad.addColorStop(0, 'rgba(147, 51, 234, 0.02)');
         grad.addColorStop(0.8, 'rgba(147, 51, 234, 0.15)');
@@ -1006,7 +1143,7 @@ class DarkEnergyWeapon {
         
         ctx.strokeStyle = 'rgba(168, 85, 247, 0.5)';
         ctx.lineWidth = 1.5;
-        ctx.setLineDash([4, 4]); // Borde mágico segmentado rotatorio
+        ctx.setLineDash([4, 4]); 
         ctx.rotate(animationTime);
         ctx.stroke();
         
@@ -1017,11 +1154,13 @@ class DarkEnergyWeapon {
 // --- POOLS Y COLECCIONES GLOBAL ---
 const enemyPool = new ObjectPool(() => new Enemy());
 const projectilePool = new ObjectPool(() => new Projectile());
+const enemyProjPool = new ObjectPool(() => new EnemyProjectile());
 const xpPool = new ObjectPool(() => new XpOrb());
 const textPool = new ObjectPool(() => new FloatingText());
 
 const enemies = [];
 const projectiles = [];
+const enemyProjectiles = [];
 const xpOrbs = [];
 const floatingTexts = [];
 
@@ -1034,14 +1173,34 @@ let spawnTimer = 0;
 function updateWaveSpawner(dt) {
     spawnTimer -= dt;
     
-    let spawnRate = Math.max(0.12, 0.9 - (gameTimer / 140));
+    let baseRate = 0.9 - (gameTimer / 140);
+    let spawnRate = Math.max(0.12, baseRate);
+    
+    // Escalar cantidad de monstruos por dificultad
+    if (currentDifficulty === 'dificil') spawnRate *= 0.85;
+    if (currentDifficulty === 'experto') spawnRate *= 0.70;
     
     if (spawnTimer <= 0) {
         spawnTimer = spawnRate;
         
-        let enemyHp = 5 + Math.floor(gameTimer / 9) * 2; 
-        let enemyDamage = 5 + Math.floor(gameTimer / 28) * 4;
-        let enemySpeed = 95 + Math.min(105, gameTimer / 1.8);
+        let difficultyMultHp = 1.0;
+        let difficultyMultSpeed = 1.0;
+        let difficultyMultDamage = 1.0;
+
+        // Modificadores de Atributos por Dificultad
+        if (currentDifficulty === 'dificil') {
+            difficultyMultHp = 1.25;
+            difficultyMultSpeed = 1.15;
+            difficultyMultDamage = 1.10;
+        } else if (currentDifficulty === 'experto') {
+            difficultyMultHp = 1.60;
+            difficultyMultSpeed = 1.30;
+            difficultyMultDamage = 1.25;
+        }
+
+        let enemyHp = (5 + Math.floor(gameTimer / 9) * 2) * difficultyMultHp; 
+        let enemyDamage = (5 + Math.floor(gameTimer / 28) * 4) * difficultyMultDamage;
+        let enemySpeed = (95 + Math.min(105, gameTimer / 1.8)) * difficultyMultSpeed;
 
         let angle = Math.random() * Math.PI * 2;
         let dist = Math.max(width, height) / 2 + 100;
@@ -1071,6 +1230,10 @@ function spawnFloatingText(x, y, text, isCrit) {
     ft.spawn(x, y, text, isCrit);
     floatingTexts.push(ft);
 }
+
+/**
+ * STREAMING_CHUNK: Managing Level up draft options database
+ */
 
 // --- SISTEMA DE DRAFT (Mejoras) ---
 const draftOptionsDatabase = [
@@ -1116,20 +1279,28 @@ function triggerDraft() {
     });
 }
 
+/**
+ * STREAMING_CHUNK: Running the gameLoop, collision logic and rendering
+ */
+
 // --- BUCLE PRINCIPAL ---
-function initGame() {
+function initGame(difficulty) {
+    currentDifficulty = difficulty || 'normal';
     player = new Player();
     gameTimer = 0;
     spawnTimer = 0;
     animationTime = 0;
+    touchActive = false; 
     
     enemies.forEach(e => { if(e.active) enemyPool.release(e); e.active = false; });
     projectiles.forEach(p => { if(p.active) projectilePool.release(p); p.active = false; });
+    enemyProjectiles.forEach(ep => { if(ep.active) enemyProjPool.release(ep); ep.active = false; });
     xpOrbs.forEach(o => { if(o.active) xpPool.release(o); o.active = false; });
     floatingTexts.forEach(t => { if(t.active) textPool.release(t); t.active = false; });
     
     enemies.length = 0;
     projectiles.length = 0;
+    enemyProjectiles.length = 0;
     xpOrbs.length = 0;
     floatingTexts.length = 0;
 
@@ -1155,18 +1326,43 @@ function updateHUD() {
     document.getElementById('ui-max-hp').innerText = player.maxHp;
     document.getElementById('ui-xp-bar').style.width = `${(player.xp / player.maxXp) * 100}%`;
     document.getElementById('ui-time').innerText = formatTime(gameTimer);
+
+    // Actualizar estilo del badge en HUD
+    const badge = document.getElementById('ui-diff-badge');
+    badge.innerText = currentDifficulty;
+    if (currentDifficulty === 'normal') {
+        badge.className = 'px-2 py-0.5 rounded text-xs font-bold uppercase bg-green-500/30 text-green-400 border border-green-500/50';
+    } else if (currentDifficulty === 'dificil') {
+        badge.className = 'px-2 py-0.5 rounded text-xs font-bold uppercase bg-orange-500/30 text-orange-400 border border-orange-500/50';
+    } else if (currentDifficulty === 'experto') {
+        badge.className = 'px-2 py-0.5 rounded text-xs font-bold uppercase bg-red-500/30 text-red-400 border border-red-500/50';
+    }
 }
 
 function gameOver() {
     currentState = GAME_STATE.GAME_OVER;
-    const pointsEarned = calculatePoints(player.level);
+    const basePoints = calculatePoints(player.level);
+    
+    // Multiplicador de puntos según dificultad
+    let difficultyMultiplier = 1.0;
+    if (currentDifficulty === 'dificil') difficultyMultiplier = 1.5;
+    if (currentDifficulty === 'experto') difficultyMultiplier = 2.0;
+
+    const pointsEarned = Math.floor(basePoints * difficultyMultiplier);
     totalPoints += pointsEarned;
+    touchActive = false;
     
     document.getElementById('hud').classList.add('hidden');
     document.getElementById('game-over-screen').classList.remove('hidden');
     document.getElementById('go-time').innerText = formatTime(gameTimer);
     document.getElementById('go-level').innerText = player.level;
-    document.getElementById('go-points').innerText = `+${pointsEarned} (Total: ${totalPoints})`;
+
+    let diffText = currentDifficulty === 'normal' ? 'Normal' : currentDifficulty === 'dificil' ? 'Difícil (Bonus x1.5)' : 'Experto (Bonus x2.0)';
+    document.getElementById('go-points').innerHTML = `
+        <div class="text-xl text-gray-300">Puntos Obtenidos: <span class="text-yellow-400 font-extrabold text-3xl">+${pointsEarned}</span></div>
+        <div class="text-xs text-gray-400 mt-2 uppercase tracking-widest font-semibold">Dificultad de la partida: ${diffText}</div>
+        <div class="text-md text-gray-200 mt-3 font-semibold">Total Acumulado: ${totalPoints}</div>
+    `;
 }
 
 function cleanPools() {
@@ -1180,6 +1376,12 @@ function cleanPools() {
         if (!projectiles[i].active) {
             projectilePool.release(projectiles[i]);
             projectiles.splice(i, 1);
+        }
+    }
+    for (let i = enemyProjectiles.length - 1; i >= 0; i--) {
+        if (!enemyProjectiles[i].active) {
+            enemyProjPool.release(enemyProjectiles[i]);
+            enemyProjectiles.splice(i, 1);
         }
     }
     for (let i = xpOrbs.length - 1; i >= 0; i--) {
@@ -1208,7 +1410,7 @@ function gameLoop(timestamp) {
     const dt = Math.min((timestamp - lastTime) / 1000, 0.1);
     lastTime = timestamp;
     gameTimer += dt;
-    animationTime += dt; // Actualizar animaciones de rebote
+    animationTime += dt;
 
     if (Math.floor(gameTimer) > Math.floor(gameTimer - dt)) updateHUD();
 
@@ -1225,7 +1427,7 @@ function gameLoop(timestamp) {
         }
     }
 
-    // Update Proyectiles y Colisiones
+    // Update Proyectiles y Colisiones del Jugador
     for (let i = 0; i < projectiles.length; i++) {
         let p = projectiles[i];
         if (!p.active) continue;
@@ -1249,7 +1451,22 @@ function gameLoop(timestamp) {
         }
     }
 
-    // Colisión Jugador-Enemigo & Recolección XP
+    // Update Proyectiles de Enemigos & Colisiones con el Jugador
+    for (let i = enemyProjectiles.length - 1; i >= 0; i--) {
+        let ep = enemyProjectiles[i];
+        if (!ep.active) continue;
+        ep.update(dt);
+        
+        let dSq = distSq(ep.x, ep.y, player.x, player.y);
+        let rSum = ep.radius + player.radius;
+        if (dSq < rSum * rSum) {
+            player.takeDamage(ep.damage);
+            spawnFloatingText(player.x, player.y, `-${Math.floor(ep.damage)}`, false);
+            ep.active = false;
+        }
+    }
+
+    // Colisión Directa Jugador-Enemigo & Recolección XP
     const nearbyToPlayer = enemyGrid.getNearby(player.x, player.y, player.radius + 30);
     for (let e of nearbyToPlayer) {
         if (!e.active) continue;
@@ -1302,15 +1519,49 @@ function gameLoop(timestamp) {
     for (let y = startY; y < height; y += gridSize) { ctx.moveTo(0, y); ctx.lineTo(width, y); }
     ctx.stroke();
 
-    // Dibujar entidades ordenadas por eje Y para efecto de profundidad (pseudo-3D)
+    // Dibujar entidades ordenadas
     xpOrbs.forEach(o => { if(o.active) o.draw(ctx, camX, camY); });
     enemies.forEach(e => { if(e.active) e.draw(ctx, camX, camY); });
     player.draw(ctx, camX, camY);
     projectiles.forEach(p => { if(p.active) p.draw(ctx, camX, camY); });
+    enemyProjectiles.forEach(ep => { if(ep.active) ep.draw(ctx, camX, camY); });
     floatingTexts.forEach(ft => { if(ft.active) ft.draw(ctx, camX, camY); });
+
+    // RENDER DE JOYSTICK VIRTUAL TÁCTIL (Si está activo)
+    if (touchActive) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(touchStartX, touchStartY, 45, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+        ctx.lineWidth = 3;
+        ctx.fill();
+        ctx.stroke();
+
+        let dx = touchMoveX - touchStartX;
+        let dy = touchMoveY - touchStartY;
+        let dist = Math.sqrt(dx * dx + dy * dy);
+        let maxDist = 45;
+        if (dist > maxDist) {
+            dx = (dx / dist) * maxDist;
+            dy = (dy / dist) * maxDist;
+        }
+
+        ctx.beginPath();
+        ctx.arc(touchStartX + dx, touchStartY + dy, 20, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = 'rgba(255,255,255,0.5)';
+        ctx.fill();
+        ctx.restore();
+    }
 
     requestAnimationFrame(gameLoop);
 }
+
+/**
+ * STREAMING_CHUNK: Managing Shop operations and skin purchases
+ */
 
 // --- LÓGICA DE LA TIENDA ---
 function openShop() {
@@ -1337,7 +1588,7 @@ function renderShop() {
         const isEquipped = currentSkinId === skin.id;
         
         const btn = document.createElement('button');
-        btn.className = `glass-panel p-6 rounded-xl flex flex-col items-center transition-all transform hover:scale-105 border-2 ${isEquipped ? 'border-green-400 bg-green-950/30' : 'border-transparent hover:border-gray-500'}`;
+        btn.className = `glass-panel p-6 rounded-xl flex flex-col items-center transition-all transform hover:scale-105 border-2 ${isEquipped ? 'border-green-400 bg-green-900/30' : 'border-transparent hover:border-gray-400'}`;
         
         let btnAction = '';
         if (isEquipped) {
@@ -1375,9 +1626,12 @@ function renderShop() {
     });
 }
 
-// Inicializar eventos de botones UI
-document.getElementById('btn-start').addEventListener('click', initGame);
-document.getElementById('btn-restart').addEventListener('click', initGame);
+// Inicializar eventos de botones de dificultad UI
+document.getElementById('btn-start-normal').addEventListener('click', () => initGame('normal'));
+document.getElementById('btn-start-dificil').addEventListener('click', () => initGame('dificil'));
+document.getElementById('btn-start-experto').addEventListener('click', () => initGame('experto'));
+
+document.getElementById('btn-restart').addEventListener('click', () => initGame(currentDifficulty));
 document.getElementById('btn-to-menu').addEventListener('click', () => {
     document.getElementById('game-over-screen').classList.add('hidden');
     document.getElementById('main-menu').classList.remove('hidden');
