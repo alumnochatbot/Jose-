@@ -425,7 +425,8 @@
             netherrack: { name: "Netherrack", emoji: "🧱", resourceName: "netherrack" },
             soul_sand: { name: "Arena de Almas", emoji: "⌛", resourceName: "soul_sand" },
             glowstone: { name: "Piedra Luminosa", emoji: "💡", resourceName: "glowstone" },
-            gravel: { name: "Grava", emoji: "🪨", resourceName: "gravel" },
+            fire: { name: "Fuego", emoji: "🔥", resourceName: "fire" },
+            gravel: { name: "Grava", emoji: "🏜️", resourceName: "gravel" },
             flint: { name: "Pedernal", emoji: "☄️", resourceName: "flint" }
         };
 
@@ -737,6 +738,9 @@
                 case 'portal':
                     applyNoise('#6b21a8', ['#a855f7', '#d8b4fe', '#581c87'], 0.65);
                     break;
+                case 'fire':
+                    applyNoise('#ef4444', ['#f97316', '#facc15', '#ea580c'], 0.6);
+                    break;
                 default:
                     ctx.fillStyle = '#888888';
                     ctx.fillRect(0, 0, 16, 16);
@@ -848,6 +852,13 @@
                     opacity: 0.8,
                     emissive: 0x6b21a8,
                     emissiveIntensity: 0.5
+                });
+            } else if (type === 'fire') {
+                mat = new THREE.MeshBasicMaterial({
+                    map: generateProceduralTexture('fire'),
+                    transparent: true,
+                    opacity: 0.8,
+                    side: THREE.DoubleSide
                 });
             } else {
                 mat = new THREE.MeshLambertMaterial({ map: generateProceduralTexture(type) });
@@ -1402,6 +1413,7 @@
             sheep.add(legFL, legFR, legBL, legBR);
 
             sheep.position.set(x, y, z);
+            
             sheep.userData = { 
                 health: 3, 
                 velocity: new THREE.Vector3(), 
@@ -2358,18 +2370,43 @@
                     const blockHits = ray.intersectObjects(scene.children.filter(c => c.userData.type));
                     if (blockHits.length > 0 && blockHits[0].distance < 6) {
                         const target = blockHits[0].object;
-                        if (target.userData.type === "obsidian") {
-                            const normal = blockHits[0].face.normal;
-                            const placePos = target.position.clone().add(normal);
-                            const rx = Math.round(placePos.x), ry = Math.round(placePos.y), rz = Math.round(placePos.z);
-                            
-                            const activated = checkAndCreatePortal(rx, ry, rz);
-                            if (activated) {
-                                playPortalSound();
-                                showNotification("¡Portal del Nether activado! 🔮🌀", "#a855f7");
-                            } else {
-                                playBlockSound(false);
-                            }
+                        const normal = blockHits[0].face.normal;
+                        const placePos = target.position.clone().add(normal);
+                        const rx = Math.round(placePos.x), ry = Math.round(placePos.y), rz = Math.round(placePos.z);
+                        const posKey = `${rx},${ry},${rz}`;
+
+                        if (isSolid(rx, ry, rz)) return;
+
+                        const activated = checkAndCreatePortal(rx, ry, rz);
+                        if (activated) {
+                            playPortalSound();
+                            showNotification("¡Portal del Nether activado! 🔮🌀", "#a855f7");
+                        } else {
+                            worldData.set(posKey, { type: 'fire', mesh: null });
+                            renderWorld();
+                            playBlockSound(false);
+                            showNotification("¡Fuego encendido! 🔥", "#ef4444");
+
+                            setTimeout(() => {
+                                const fVoxel = worldData.get(posKey);
+                                if (fVoxel && fVoxel.type === 'fire') {
+                                    if (fVoxel.mesh) scene.remove(fVoxel.mesh);
+                                    worldData.delete(posKey);
+                                    
+                                    const belowKey = `${rx},${ry - 1},${rz}`;
+                                    const belowVoxel = worldData.get(belowKey);
+                                    const flammable = ["wood", "leaves", "planks", "grass", "soul_sand", "dirt"];
+                                    
+                                    if (belowVoxel && flammable.includes(belowVoxel.type)) {
+                                        if (belowVoxel.mesh) scene.remove(belowVoxel.mesh);
+                                        worldData.delete(belowKey);
+                                        exposeNeighbors(rx, ry - 1, rz);
+                                        showNotification("¡Se quemó un bloque! 🔥🗑️", "orange");
+                                        playSizzleSound();
+                                    }
+                                    exposeNeighbors(rx, ry, rz);
+                                }
+                            }, 5000);
                         }
                     }
                     return;
@@ -2770,6 +2807,14 @@
                 
                 if (itemKey) {
                     const meta = itemMetaData[itemKey];
+                    
+                    // VALIDACIÓN DE SEGURIDAD: Evita un error TypeError en caso de que meta esté indefinido
+                    if (!meta) {
+                        slotEl.innerHTML = '';
+                        grid.appendChild(slotEl);
+                        continue;
+                    }
+
                     let isAvailable = isCreative;
                     let countLabel = "";
                     
