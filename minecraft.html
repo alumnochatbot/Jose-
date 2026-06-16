@@ -295,7 +295,7 @@
         </div>
 
         <div class="recipe">
-            <div><b>Mechero (Pedernal y Hierro)</b> 🔥<br><span style="font-size:11px; color:#aaa;">Costo: 1 Hierro, 1 Piedra</span></div>
+            <div><b>Mechero (Pedernal y Hierro)</b> 🔥<br><span style="font-size:11px; color:#aaa;">Costo: 1 Hierro, 1 Pedernal</span></div>
             <button onclick="craft('flint_and_steel')">Craftear</button>
         </div>
 
@@ -356,7 +356,8 @@
             planks: 0, arrows: 0, grass: Infinity, coal: 0, emerald: 0, apple: 0, meat: 0,
             beef: 0, chicken_meat: 0, mutton: 0,
             bucket_empty: 1, bucket_water: 0, bucket_lava: 0, flint_and_steel: 1,
-            obsidian: 0, netherrack: 0, soul_sand: 0, glowstone: 0
+            obsidian: 0, netherrack: 0, soul_sand: 0, glowstone: 0,
+            gravel: 0, flint: 0
         };
         let history = []; 
 
@@ -423,7 +424,9 @@
             obsidian: { name: "Obsidiana", emoji: "🌑", resourceName: "obsidian" },
             netherrack: { name: "Netherrack", emoji: "🧱", resourceName: "netherrack" },
             soul_sand: { name: "Arena de Almas", emoji: "⌛", resourceName: "soul_sand" },
-            glowstone: { name: "Piedra Luminosa", emoji: "💡", resourceName: "glowstone" }
+            glowstone: { name: "Piedra Luminosa", emoji: "💡", resourceName: "glowstone" },
+            gravel: { name: "Grava", emoji: "🪨", resourceName: "gravel" },
+            flint: { name: "Pedernal", emoji: "☄️", resourceName: "flint" }
         };
 
         const foodValues = {
@@ -439,9 +442,9 @@
         const inventoryItemKeys = [
             'grass', 'stone', 'wood', 'planks', 'coal', 
             'iron', 'gold', 'diamond', 'emerald', 'obsidian', 
-            'netherrack', 'soul_sand', 'glowstone', 'apple', 'meat', 
-            'beef', 'chicken_meat', 'mutton', 'bucket_empty', 'bucket_water', 
-            'bucket_lava', 'flint_and_steel', 'pickaxe', 'sword', 'bow'
+            'netherrack', 'soul_sand', 'glowstone', 'gravel', 'flint',
+            'apple', 'meat', 'beef', 'chicken_meat', 'mutton', 'bucket_empty', 
+            'bucket_water', 'bucket_lava', 'flint_and_steel', 'pickaxe', 'sword', 'bow'
         ];
 
         const audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -632,6 +635,9 @@
             switch (type) {
                 case 'stone':
                     applyNoise('#737373', ['#616161', '#525252', '#838383', '#5a5a5a'], 0.45);
+                    break;
+                case 'gravel':
+                    applyNoise('#948b81', ['#7a7065', '#aa9c8f', '#5c534a', '#857a6e'], 0.5);
                     break;
                 case 'dirt':
                     applyNoise('#866043', ['#573d26', '#9c7253', '#6b4c35'], 0.4);
@@ -1528,8 +1534,14 @@
                         
                         if (y < h) {
                             if (y === h - 1) {
-                                type = (h <= WATER_LEVEL + 1) ? "dirt" : "grass";
-                                if (h > WATER_LEVEL + 1 && Math.random() < 0.005) spawnTree(x, h, z);
+                                if (h <= WATER_LEVEL + 1) {
+                                    type = (Math.random() < 0.5) ? "gravel" : "dirt";
+                                } else if (h === WATER_LEVEL + 2) {
+                                    type = (Math.random() < 0.3) ? "gravel" : "grass";
+                                } else {
+                                    type = "grass";
+                                }
+                                if (type === "grass" && Math.random() < 0.005) spawnTree(x, h, z);
                             }
                             else if (y > h - 4) {
                                 type = "dirt";
@@ -1553,7 +1565,6 @@
                         } else {
                             continue;
                         }
-                        worldData.set(`${x},y,${z}`, { type, mesh: null });
                         worldData.set(`${x},${y},${z}`, { type, mesh: null });
                     }
                 }
@@ -1749,8 +1760,8 @@
 
             if (isCreative && isFlying) {
                 velocity.y = 0;
-                if (keys['Space']) player.position.y += 0.2; 
-                if (keys['ShiftLeft']) player.position.y -= 0.2; 
+                if (keys['Space'] || keys['ArrowUp']) player.position.y += 0.2; 
+                if (keys['ShiftLeft'] || keys['ArrowDown']) player.position.y -= 0.2; 
             } else {
                 velocity.y -= gravity; 
                 player.position.y += velocity.y;
@@ -2165,7 +2176,7 @@
                 const hits = ray.intersectObjects(mobs, true);
                 if(hits.length > 0 && hits[0].distance < 4) {
                     let entity = hits[0].object;
-                    while(entity.parent && entity.parent !== scene && !entity.userData.velocity) entity = entity.parent;
+                    while(entity.parent && !entity.userData.velocity) entity = entity.parent;
                     const damage = (type === "sword") ? (swordLevel + 1) * 3 : 1;
                     if (entity.userData.health) entity.userData.health -= damage;
                     
@@ -2255,6 +2266,13 @@
                             if (Math.random() < 0.15) {
                                 resources.coal += 1 + Math.floor(Math.random() * 2);
                                 showNotification("+Carbón ⚫", "#bbb");
+                            }
+                        } else if (blockType === "gravel") {
+                            if (Math.random() < 0.35) {
+                                resources.flint++;
+                                showNotification("¡Encontraste Pedernal! ☄️", "#eab308");
+                            } else {
+                                resources.gravel++;
                             }
                         } else if (blockType === "iron") {
                             resources.iron++;
@@ -2359,7 +2377,7 @@
 
                 const blockHits = ray.intersectObjects(scene.children.filter(c => c.userData.type));
                 if (blockHits.length > 0 && blockHits[0].distance < 6) {
-                    if (type === "pickaxe" || type === "sword" || type === "bow" || type === "apple" || type === "meat" || type === "beef" || type === "chicken_meat" || type === "mutton" || type === "bucket_empty" || type === "flint_and_steel") return;
+                    if (type === "pickaxe" || type === "sword" || type === "bow" || type === "apple" || type === "meat" || type === "beef" || type === "chicken_meat" || type === "mutton" || type === "bucket_empty" || type === "flint_and_steel" || type === "flint") return;
                     
                     if (!isCreative) {
                         const meta = itemMetaData[type];
@@ -2596,7 +2614,7 @@
         function updateCraftingMenuUI() {
             const resEl = document.getElementById('craft-res');
             if (resEl) {
-                resEl.innerHTML = `Recursos: Madera (${resources.wood}) | Hierro (${resources.iron}) | Oro (${resources.gold}) | Diamante (${resources.diamond}) | Piedra (${resources.stone})`;
+                resEl.innerHTML = `Recursos: Madera (${resources.wood}) | Hierro (${resources.iron}) | Oro (${resources.gold}) | Diamante (${resources.diamond}) | Piedra (${resources.stone}) | Pedernal (${resources.flint})`;
             }
 
             const canCraftPlanks = resources.wood >= 1;
@@ -2607,7 +2625,7 @@
             const btnBucket = document.querySelector('button[onclick="craft(\'bucket_empty\')"]');
             if (btnBucket) btnBucket.disabled = !canCraftBucket;
 
-            const canCraftFlint = resources.iron >= 1 && resources.stone >= 1;
+            const canCraftFlint = resources.iron >= 1 && resources.flint >= 1;
             const btnFlint = document.querySelector('button[onclick="craft(\'flint_and_steel\')"]');
             if (btnFlint) btnFlint.disabled = !canCraftFlint;
 
@@ -2670,9 +2688,9 @@
                     showNotification("¡Crafteaste un Balde de Hierro! 🪣", "#55ffaa");
                 }
             } else if (item === 'flint_and_steel') {
-                if (resources.iron >= 1 && resources.stone >= 1) {
+                if (resources.iron >= 1 && resources.flint >= 1) {
                     resources.iron -= 1;
-                    resources.stone -= 1;
+                    resources.flint -= 1;
                     resources.flint_and_steel += 1;
                     showNotification("¡Crafteaste un Mechero! 🔥", "#55ffaa");
                 }
