@@ -274,7 +274,7 @@
         <div id="slot-6" class="slot" onclick="selectSlotByClick(6)">💎<span class="qty" id="qty-diamond">0</span></div>
         <div id="slot-7" class="slot locked" onclick="selectSlotByClick(7)">⛏️<span id="pick-tier" style="font-size:9px; display:block;">Ninguno</span></div>
         <div id="slot-8" class="slot locked" onclick="selectSlotByClick(8)">⚔️<span id="sword-tier" style="font-size:9px; display:block;">Ninguno</span></div>
-        <div id="slot-9" class="slot locked" onclick="selectSlotByClick(9)">🏹<span class="qty" id="qty-arrows">0</span></div>
+        <div id="slot-9" class="slot" onclick="selectSlotByClick(9)">🔥<span class="qty" id="qty-flint-steel">1</span></div>
     </div>
 
     <!-- Crafteo -->
@@ -352,11 +352,11 @@
         let isCreative = false; 
         let isFlying = false;
         let resources = { 
-            wood: 0, stone: 0, iron: 0, gold: 0, diamond: 0, 
+            wood: 0, stone: 0, iron: 0, gold: 0, diamond: 3, 
             planks: 0, arrows: 0, grass: Infinity, coal: 0, emerald: 0, apple: 0, meat: 0,
             beef: 0, chicken_meat: 0, mutton: 0,
             bucket_empty: 1, bucket_water: 0, bucket_lava: 0, flint_and_steel: 1,
-            obsidian: 0, netherrack: 0, soul_sand: 0, glowstone: 0,
+            obsidian: 14, netherrack: 0, soul_sand: 0, glowstone: 0,
             gravel: 0, flint: 0
         };
         let history = []; 
@@ -364,6 +364,7 @@
         let pickaxeLevel = 0; 
         let swordLevel = 0;
         let hasBow = false; 
+        let portalCooldown = 0; // Controla el tiempo de espera al teletransportarse para evitar bucles
         
         const tiers = [
             { name: "Ninguno", cost: null },
@@ -396,7 +397,7 @@
         const geometry = new THREE.BoxGeometry(1, 1, 1);
         
         let slotToType = { 
-            1: "grass", 2: "stone", 3: "wood", 4: "iron", 5: "gold", 6: "diamond", 7: "pickaxe", 8: "sword", 9: "bow" 
+            1: "grass", 2: "stone", 3: "wood", 4: "iron", 5: "gold", 6: "diamond", 7: "pickaxe", 8: "sword", 9: "flint_and_steel" 
         };
 
         const itemMetaData = {
@@ -907,64 +908,50 @@
         }
 
         function updateInventoryUI() {
-            const setSafeText = (id, text) => {
-                const el = document.getElementById(id);
-                if (el) el.innerText = text;
-            };
-
-            setSafeText('qty-stone', isCreative ? "∞" : resources.stone);
-            setSafeText('qty-wood', isCreative ? "∞" : resources.wood);
-            setSafeText('qty-iron', isCreative ? "∞" : resources.iron);
-            setSafeText('qty-gold', isCreative ? "∞" : resources.gold);
-            setSafeText('qty-diamond', isCreative ? "∞" : resources.diamond);
-            setSafeText('qty-planks', isCreative ? "∞" : resources.planks);
-            setSafeText('qty-arrows', isCreative ? "∞" : resources.arrows);
-            
-            const pickTier = document.getElementById('pick-tier');
-            if (pickTier) pickTier.innerText = tiers[pickaxeLevel].name;
-
-            const swordTier = document.getElementById('sword-tier');
-            if (swordTier) swordTier.innerText = tiers[swordLevel].name;
-
-            const slot7 = document.getElementById('slot-7');
-            if (slot7) {
-                if (isCreative || pickaxeLevel > 0) slot7.classList.remove('locked');
-                else slot7.classList.add('locked');
-            }
-            
-            const slot8 = document.getElementById('slot-8');
-            if (slot8) {
-                if (isCreative || swordLevel > 0) slot8.classList.remove('locked');
-                else slot8.classList.add('locked');
-            }
-
-            const slot9 = document.getElementById('slot-9');
-            if (slot9) {
-                if (isCreative || hasBow) slot9.classList.remove('locked');
-                else slot9.classList.add('locked');
-            }
-
             for (let i = 1; i <= 9; i++) {
                 const slotEl = document.getElementById(`slot-${i}`);
                 if (slotEl) {
                     if (i === selectedSlot) {
                         slotEl.classList.add('active');
-                        const currentType = slotToType[i];
-                        const meta = itemMetaData[currentType];
-                        if (meta) {
-                            if (meta.isTool) {
-                                let label = meta.emoji;
-                                if (currentType === "pickaxe") label += `<span id="pick-tier" style="font-size:9px; display:block;">${tiers[pickaxeLevel].name}</span>`;
-                                else if (currentType === "sword") label += `<span id="sword-tier" style="font-size:9px; display:block;">${tiers[swordLevel].name}</span>`;
-                                else if (currentType === "bow") label += `<span class="qty">${isCreative ? "∞" : resources.arrows}</span>`;
-                                slotEl.innerHTML = label;
-                            } else {
-                                const count = isCreative ? "∞" : resources[meta.resourceName];
-                                slotEl.innerHTML = `${meta.emoji}<span class="qty">${count}</span>`;
-                            }
-                        }
                     } else {
                         slotEl.classList.remove('active');
+                    }
+
+                    const currentType = slotToType[i];
+                    const meta = itemMetaData[currentType];
+                    
+                    // Manejar estados bloqueados/desbloqueados de herramientas
+                    let isLocked = false;
+                    if (!isCreative) {
+                        if (currentType === "pickaxe" && pickaxeLevel === 0) isLocked = true;
+                        if (currentType === "sword" && swordLevel === 0) isLocked = true;
+                        if (currentType === "bow" && !hasBow) isLocked = true;
+                    }
+
+                    if (isLocked) {
+                        slotEl.classList.add('locked');
+                    } else {
+                        slotEl.classList.remove('locked');
+                    }
+
+                    if (meta) {
+                        if (meta.isTool) {
+                            let label = meta.emoji;
+                            if (currentType === "pickaxe") {
+                                label += `<span id="pick-tier" style="font-size:9px; display:block;">${tiers[pickaxeLevel].name}</span>`;
+                            } else if (currentType === "sword") {
+                                label += `<span id="sword-tier" style="font-size:9px; display:block;">${tiers[swordLevel].name}</span>`;
+                            } else if (currentType === "bow") {
+                                const count = isCreative ? "∞" : resources.arrows;
+                                label += `<span class="qty">${count}</span>`;
+                            }
+                            slotEl.innerHTML = label;
+                        } else {
+                            const count = isCreative ? "∞" : resources[meta.resourceName];
+                            slotEl.innerHTML = `${meta.emoji}<span class="qty">${count}</span>`;
+                        }
+                    } else {
+                        slotEl.innerHTML = '';
                     }
                 }
             }
@@ -973,12 +960,14 @@
 
         function isBlockAt(x, y, z) {
             const voxel = worldData.get(`${Math.round(x)},${Math.round(y)},${Math.round(z)}`);
-            return (voxel && voxel.type !== "water" && voxel.type !== "lava");
+            // Permitir el paso físico a través del agua, lava, portales y fuego
+            return (voxel && voxel.type !== "water" && voxel.type !== "lava" && voxel.type !== "portal" && voxel.type !== "fire");
         }
 
         function isSolid(x, y, z) {
             const voxel = worldData.get(`${x},${y},${z}`);
-            return (voxel && voxel.type !== "water" && voxel.type !== "lava");
+            // Permitir el paso de luz y renderizado a través de fluidos, portales y fuego
+            return (voxel && voxel.type !== "water" && voxel.type !== "lava" && voxel.type !== "portal" && voxel.type !== "fire");
         }
 
         function exposeNeighbors(x, y, z) {
@@ -1096,7 +1085,8 @@
             player.toolVisuals = {
                 pick: new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.7, 0.1), new THREE.MeshLambertMaterial({ color: 0x888888 })),
                 sword: new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.9, 0.2), new THREE.MeshLambertMaterial({ color: 0xdddddd })),
-                bow: new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.8, 0.15), new THREE.MeshLambertMaterial({ color: 0x8B4513 })) 
+                bow: new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.8, 0.15), new THREE.MeshLambertMaterial({ color: 0x8B4513 })),
+                flint_and_steel: new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.18, 0.08), new THREE.MeshLambertMaterial({ color: 0xaaaaaa })) 
             };
             player.toolVisuals.pick.position.set(0, -0.6, 0.2);
             player.toolVisuals.pick.rotation.x = Math.PI/2;
@@ -1109,9 +1099,13 @@
             player.toolVisuals.bow.position.set(0, -0.5, 0.2);
             player.toolVisuals.bow.visible = false;
 
+            player.toolVisuals.flint_and_steel.position.set(0, -0.5, 0.2);
+            player.toolVisuals.flint_and_steel.visible = false;
+
             rightArm.add(player.toolVisuals.pick);
             rightArm.add(player.toolVisuals.sword);
             rightArm.add(player.toolVisuals.bow);
+            rightArm.add(player.toolVisuals.flint_and_steel);
 
             rightArm.position.set(0.35, 1.3, 0);
             player.add(rightArm);
@@ -1216,6 +1210,7 @@
             mobs.push(zombie);
         }
 
+        // --- SPAWNEO DE MOBS EN EL NETHER ---
         function spawnZombiePigman(x, y, z) {
             const pigman = new THREE.Group();
             const skinMat = getMobMaterial('zombie_pigman', 'skin');
@@ -1801,11 +1796,16 @@
                 player.bodyParts.forEach(p => p.visible = false);
             }
 
+            // Reducir cooldown del portal si está activo
+            if (portalCooldown > 0) {
+                portalCooldown -= 0.016;
+            }
+
             const standingVoxel = worldData.get(`${px},${py},${pz}`)?.type;
             const headVoxel = worldData.get(`${px},${py + 1},${pz}`)?.type;
             const inPortal = (standingVoxel === 'portal' || headVoxel === 'portal');
             
-            if (inPortal) {
+            if (inPortal && portalCooldown <= 0) {
                 portalTransitionTimer += 0.016;
                 const overlay = document.getElementById('damage-flash');
                 if (overlay) {
@@ -1813,7 +1813,6 @@
                 }
                 if (portalTransitionTimer >= 1.5) {
                     swapDimensions();
-                    portalTransitionTimer = 0;
                 }
             } else {
                 if (portalTransitionTimer > 0) {
@@ -1834,7 +1833,7 @@
 
         function handleDeath() {
             health = 100;
-            const deathPosition = player.position.clone();
+            const deathPosition = player.position.clone().add(new THREE.Vector3(0, 1, 0));
             
             if (!isCreative) {
                 let hasItems = false;
@@ -2472,8 +2471,9 @@
         }
 
         function checkAndCreatePortal(px, py, pz) {
-            for (let dx = -3; dx <= 1; dx++) {
-                for (let dy = -4; dy <= 1; dy++) {
+            // Plano XY (bz es constante) - Búsqueda ampliada a 9x11 bloques
+            for (let dx = -4; dx <= 4; dx++) {
+                for (let dy = -5; dy <= 5; dy++) {
                     const bx = px + dx;
                     const by = py + dy;
                     const bz = pz;
@@ -2496,8 +2496,9 @@
                 }
             }
             
-            for (let dz = -3; dz <= 1; dz++) {
-                for (let dy = -4; dy <= 1; dy++) {
+            // Plano ZY (bx es constante) - Búsqueda ampliada a 9x11 bloques
+            for (let dz = -4; dz <= 4; dz++) {
+                for (let dy = -5; dy <= 5; dy++) {
                     const bx = px;
                     const by = py + dy;
                     const bz = pz + dz;
@@ -2563,26 +2564,51 @@
             const pz = Math.round(player.position.z);
             let py = Math.round(player.position.y);
             
-            let hasPlatform = false;
-            for (let x = -1; x <= 1; x++) {
-                for (let z = -1; z <= 1; z++) {
-                    const key = `${px+x},${py-1},${pz+z}`;
-                    if (worldData.has(key)) {
-                        hasPlatform = true;
+            // Comprobar si existe un portal de destino cerca de la llegada
+            let portalExists = false;
+            for (let dx = -3; dx <= 3; dx++) {
+                for (let dy = -3; dy <= 3; dy++) {
+                    for (let dz = -3; dz <= 3; dz++) {
+                        if (worldData.get(`${px+dx},${py+dy},${pz+dz}`)?.type === 'portal') {
+                            portalExists = true;
+                            break;
+                        }
+                    }
+                    if (portalExists) break;
+                }
+                if (portalExists) break;
+            }
+
+            // Si no existe, creamos un portal de retorno en el destino para que el jugador pueda volver
+            if (!portalExists) {
+                // Despejar espacio para el nuevo portal
+                for (let x = -2; x <= 3; x++) {
+                    for (let y = -1; y <= 4; y++) {
+                        for (let z = -1; z <= 1; z++) {
+                            worldData.delete(`${px+x},${py+y},${pz+z}`);
+                        }
                     }
                 }
-            }
-            
-            if (!hasPlatform) {
-                for (let x = -1; x <= 1; x++) {
-                    for (let z = -1; z <= 1; z++) {
-                        worldData.set(`${px+x},${py-1},${pz+z}`, { type: "obsidian", mesh: null });
+                
+                // Construir estructura de Obsidiana con Portal activo
+                for (let x = -1; x <= 2; x++) {
+                    for (let y = -1; y <= 3; y++) {
+                        const isFrame = (x === -1 || x === 2 || y === -1 || y === 3);
+                        const key = `${px+x},${py+y},${pz}`;
+                        if (isFrame) {
+                            worldData.set(key, { type: 'obsidian', mesh: null });
+                        } else {
+                            worldData.set(key, { type: 'portal', mesh: null });
+                        }
                     }
                 }
             }
 
             renderWorld();
             
+            // Establecer cooldown de 3 segundos para evitar teletransportación instantánea inversa
+            portalCooldown = 3.0;
+
             if (currentDimension === "nether") {
                 for (let i = 0; i < 5; i++) {
                     spawnZombiePigman(player.position.x + (Math.random()-0.5)*30, 20, player.position.z + (Math.random()-0.5)*30);
@@ -2610,8 +2636,8 @@
                 showNotification("Espada Bloqueada. ¡Craftea una Espada de Madera primero!", "orange");
                 return;
             }
-            if (slot === 9 && !isCreative && !hasBow) {
-                showNotification("Arco Bloqueado. ¡Derrota a un Esqueleto para obtener un arco!", "orange");
+            if (slot === 9 && !isCreative && resources.flint_and_steel <= 0) {
+                showNotification("Mechero bloqueado o sin combustible.", "orange");
                 return;
             }
             selectedSlot = slot;
@@ -2625,6 +2651,9 @@
             player.toolVisuals.pick.visible = (type === "pickaxe" && (isCreative || pickaxeLevel > 0));
             player.toolVisuals.sword.visible = (type === "sword" && (isCreative || swordLevel > 0));
             player.toolVisuals.bow.visible = (type === "bow" && (isCreative || hasBow));
+            if (player.toolVisuals.flint_and_steel) {
+                player.toolVisuals.flint_and_steel.visible = (type === "flint_and_steel");
+            }
         }
 
         const swordTiers = [
@@ -2808,7 +2837,7 @@
                 if (itemKey) {
                     const meta = itemMetaData[itemKey];
                     
-                    // VALIDACIÓN DE SEGURIDAD: Evita un error TypeError en caso de que meta esté indefinido
+                    // VALIDACIÓN DE SEGURIDAD
                     if (!meta) {
                         slotEl.innerHTML = '';
                         grid.appendChild(slotEl);
