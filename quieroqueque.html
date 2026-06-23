@@ -56,6 +56,9 @@
             <div id="wind-alert" class="hidden bg-blue-600/90 text-white font-bold px-4 py-2 rounded-lg text-lg animate-bounce flex items-center gap-2 shadow-lg">
                 <span>💨 ¡VIENTO FUERTE EN CAMINO!</span>
             </div>
+            <div id="advincula-alert" class="hidden bg-yellow-500 text-black font-extrabold px-5 py-2.5 rounded-lg text-lg animate-pulse flex items-center gap-2 shadow-2xl border-2 border-black">
+                <span>⚽ ¡ADVÍNCULA HA ENTRADO AL CAMPO! ¡ESQUIVA EL BRÓCOLI!</span>
+            </div>
             <div id="effect-alert" class="hidden bg-purple-600/90 text-white font-bold px-4 py-2 rounded-lg text-lg animate-pulse flex items-center gap-2 shadow-lg">
                 <span id="effect-text">🌶️ ¡CONTROLES INVERTIDOS!</span>
             </div>
@@ -63,10 +66,11 @@
 
         <!-- Leyenda rápida para sobrevivir -->
         <div class="hidden md:flex justify-around bg-black/50 backdrop-blur-sm py-2 px-4 rounded-xl text-xs gap-6 w-max mx-auto border border-white/10 mb-2">
-            <span class="flex items-center gap-1">🍰 / 🧁 Queques: +10 / +50 pts (¡No los dejes caer!)</span>
+            <span class="flex items-center gap-1">🍰 Queque: +10 pts (¡No lo dejes caer!)</span>
+            <span class="flex items-center gap-1 text-yellow-400">🧁 Súper Queque: +50 pts (No quita vidas al caer)</span>
             <span class="flex items-center gap-1 text-green-400">🥦 Brócoli: -20 pts y te achica</span>
             <span class="flex items-center gap-1 text-red-400">🌶️ Chile: ¡Controles invertidos!</span>
-            <span class="flex items-center gap-1 text-yellow-400">💣 Bomba: Game Over</span>
+            <span class="flex items-center gap-1 text-yellow-500">🏃🏿‍♂️ Advíncula: ¡Cada 10s!</span>
         </div>
 
         <!-- Pantalla de Inicio / Game Over -->
@@ -99,6 +103,7 @@
         const finalScoreEl = document.getElementById('final-score');
         const livesContainer = document.getElementById('lives-container');
         const windAlert = document.getElementById('wind-alert');
+        const advinculaAlert = document.getElementById('advincula-alert');
         const effectAlert = document.getElementById('effect-alert');
         const effectText = document.getElementById('effect-text');
         
@@ -128,9 +133,23 @@
             targetX: 0
         };
 
+        // Súper Enemigo: Advíncula
+        let advincula = {
+            active: false,
+            x: 0,
+            y: 100,
+            width: 120,
+            height: 120,
+            speed: 5,
+            dir: 1,
+            shootTimer: 0,
+            duration: 0, // duración activo en frames (5 segundos = 300 frames a 60fps)
+            spawnTimer: 180 // ¡Aparece rápido la primera vez (3 segundos) para que el jugador lo vea de inmediato!
+        };
+
         // Efectos del Jugador
         let effects = {
-            dizzy: 0,     // Duración de controles invertidos (frames o ticks)
+            dizzy: 0,     // Duración de controles invertidos (frames)
             shrunk: 0     // Duración de tamaño reducido
         };
 
@@ -139,16 +158,25 @@
         let particles = [];
 
         // Viento dinámico
-        let wind = 0; // Fuerza horizontal
+        let wind = 0; 
         let windTarget = 0;
         let windTimer = 100;
 
-        // Carga de la Imagen de "La Cobra Gordo"
+        // Carga de la Imagen de "La Cobra Gordo" procesada por un proxy CORS ultrarrápido
         const playerImg = new Image();
-        playerImg.src = "https://i.pinimg.com/345x/c8/fd/2f/c8fd2fae706955493dbd7a31c7f24657.jpg";
+        playerImg.crossOrigin = "Anonymous";
+        playerImg.src = "https://images.weserv.nl/?url=i.pinimg.com/345x/c8/fd/2f/c8fd2fae706955493dbd7a31c7f24657.jpg";
         let isImgLoaded = false;
         playerImg.onload = () => { isImgLoaded = true; };
-        playerImg.onerror = () => { isImgLoaded = false; }; // Fallback en caso de que falle la carga
+        playerImg.onerror = () => { isImgLoaded = false; };
+
+        // Carga de la Imagen de "Advíncula" a través del proxy CORS weserv.nl para evitar bloqueos en el iFrame
+        const advinculaImg = new Image();
+        advinculaImg.crossOrigin = "Anonymous";
+        advinculaImg.src = "https://images.weserv.nl/?url=drive.google.com/uc?id=1fZjpAbwjE8Q4yuG5IS0zkMMskPSaLZ5L";
+        let isAdvinculaLoaded = false;
+        advinculaImg.onload = () => { isAdvinculaLoaded = true; };
+        advinculaImg.onerror = () => { isAdvinculaLoaded = false; };
 
         function resize() {
             canvas.width = window.innerWidth;
@@ -159,13 +187,11 @@
         window.addEventListener('resize', resize);
         resize();
 
-        // Control del movimiento
         function handleMove(clientX) {
             if (!gameRunning) return;
             
             // Si tiene efecto picante, los controles se invierten
             if (effects.dizzy > 0) {
-                // Invertir posición respecto al centro del canvas
                 const relativeX = clientX - canvas.width / 2;
                 player.targetX = (canvas.width / 2 - relativeX) - player.width / 2;
             } else {
@@ -180,7 +206,6 @@
             }
         }, { passive: true });
 
-        // Crear partículas bonitas para las colisiones
         function spawnParticles(x, y, color, count = 12) {
             for (let i = 0; i < count; i++) {
                 particles.push({
@@ -196,7 +221,6 @@
             }
         }
 
-        // Generar items con dificultad progresiva
         function createItem() {
             if (!gameRunning) return;
 
@@ -205,8 +229,6 @@
             let speedModifier = 1;
             let size = 52;
             
-            // Tabla de probabilidad según puntuación
-            // A más puntuación, más bombas y verduras
             const difficultyMultiplier = Math.min(2.5, 1 + score / 150);
 
             if (rand < 0.45) {
@@ -219,7 +241,7 @@
                 type = '🥦'; // Brócoli
                 speedModifier = 1.1;
             } else if (rand < 0.80) {
-                type = '🌶️'; // Chile Picante (¡Efecto loco!)
+                type = '🌶️'; // Chile Picante (¡Controles locos!)
                 speedModifier = 1.3;
             } else {
                 type = '💣'; // Bomba
@@ -243,11 +265,10 @@
             spawnTimeout = setTimeout(createItem, nextSpawn);
         }
 
-        // Bucle de física, lógica y dibujo
         function update() {
             if (!gameRunning) return;
 
-            // 1. Fondo dinámico (se vuelve más rojo/infernal a medida que hay más dificultad)
+            // 1. Fondo dinámico
             const redIntensity = Math.min(100, Math.floor(score / 5));
             ctx.fillStyle = `rgb(${17 + redIntensity}, 15, 30)`;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -265,7 +286,7 @@
             windTimer--;
             if (windTimer <= 0) {
                 if (Math.random() > 0.6) {
-                    windTarget = (Math.random() - 0.5) * 5; // Viento hacia izq o der
+                    windTarget = (Math.random() - 0.5) * 5;
                     windAlert.classList.remove('hidden');
                     setTimeout(() => windAlert.classList.add('hidden'), 3000);
                 } else {
@@ -273,8 +294,84 @@
                 }
                 windTimer = 300 + Math.random() * 300;
             }
-            // Interpolación de viento suave
             wind += (windTarget - wind) * 0.05;
+
+            if (!advincula.active) {
+                advincula.spawnTimer--;
+                if (advincula.spawnTimer <= 0) {
+                    advincula.active = true;
+                    // Aparece exactamente en el medio horizontal del canvas
+                    advincula.x = canvas.width / 2 - advincula.width / 2;
+                    advincula.dir = Math.random() > 0.5 ? 1 : -1; // Dirección inicial aleatoria
+                    advincula.duration = 300; // Se queda por 5 segundos (300 frames a 60fps) lanzando brócolis continuamente
+                    advincula.shootTimer = 15; // Comienza a disparar de inmediato
+                    advinculaAlert.classList.remove('hidden');
+                    setTimeout(() => advinculaAlert.classList.add('hidden'), 4000);
+                }
+            } else {
+                // Movimiento horizontal de Advíncula
+                advincula.x += advincula.speed * advincula.dir;
+                if (advincula.x > canvas.width - advincula.width || advincula.x < 0) {
+                    advincula.dir *= -1;
+                }
+
+                // Ataque continuo: Lanzar brócolis de manera fluida y retadora (cada 0.6s)
+                advincula.shootTimer--;
+                if (advincula.shootTimer <= 0) {
+                    items.push({
+                        x: advincula.x + advincula.width / 2 - 20,
+                        y: advincula.y + advincula.height,
+                        type: '🥦',
+                        speed: 5 + Math.random() * 3,
+                        size: 44,
+                        angle: 0,
+                        rotSpeed: (Math.random() - 0.5) * 0.1,
+                        zigzag: 0,
+                        zigzagDir: 0
+                    });
+                    advincula.shootTimer = 40; // Dispara brócolis de forma normal durante su estancia
+                }
+
+                advincula.duration--;
+                if (advincula.duration <= 0) {
+                    advincula.active = false;
+                    advincula.spawnTimer = 600; // Reaparece exactamente cada 10 segundos (600 frames) de haber desaparecido
+                }
+
+                // Dibujar a Advíncula en un círculo perfecto idéntico al estilo de La Cobra
+                ctx.save();
+                
+                // Brillo y sombra dorados de peligro
+                ctx.shadowBlur = 25;
+                ctx.shadowColor = '#eab308'; // Amarillo brillante
+                
+                // Dibujar contorno dorado
+                ctx.strokeStyle = '#eab308';
+                ctx.lineWidth = 6;
+                ctx.beginPath();
+                ctx.arc(advincula.x + advincula.width / 2, advincula.y + advincula.height / 2, advincula.width / 2, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.closePath();
+                
+                // Recortar la imagen en círculo
+                ctx.beginPath();
+                ctx.arc(advincula.x + advincula.width / 2, advincula.y + advincula.height / 2, advincula.width / 2 - 3, 0, Math.PI * 2);
+                ctx.closePath();
+                ctx.clip();
+                
+                if (isAdvinculaLoaded) {
+                    ctx.drawImage(advinculaImg, advincula.x, advincula.y, advincula.width, advincula.height);
+                } else {
+                    ctx.fillStyle = '#eab308';
+                    ctx.fillRect(advincula.x, advincula.y, advincula.width, advincula.height);
+                    ctx.fillStyle = '#000000';
+                    ctx.font = `${advincula.width * 0.6}px Arial`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText('🏃🏿‍♂️', advincula.x + advincula.width / 2, advincula.y + advincula.height / 2);
+                }
+                ctx.restore();
+            }
 
             // Actualizar efectos de estado activos en el jugador
             if (effects.dizzy > 0) {
@@ -289,39 +386,50 @@
                 }
             }
 
-            // 3. Mover jugador suavemente hacia el targetX (suavizado elástico)
+            // Mover jugador suavemente hacia el targetX
             player.x += (player.targetX - player.x) * 0.25;
-            // Limitar dentro de la pantalla
             if (player.x < 0) player.x = 0;
             if (player.x > canvas.width - player.width) player.x = canvas.width - player.width;
 
-            // 4. Dibujar Jugador ("La Cobra")
+            // Dibujar Jugador ("La Cobra")
             ctx.save();
-            // Si el control está invertido, vibra
             if (effects.dizzy > 0) {
                 ctx.translate((Math.random() - 0.5) * 6, (Math.random() - 0.5) * 6);
             }
 
+            // Añadir borde rosa brillante para La Cobra
+            ctx.shadowBlur = 25;
+            ctx.shadowColor = '#f43f5e';
+            ctx.strokeStyle = '#f43f5e';
+            ctx.lineWidth = 6;
+            ctx.beginPath();
+            ctx.arc(player.x + player.width / 2, player.y + player.height / 2, player.width / 2, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.closePath();
+
+            // Recortar en forma de círculo perfecto para la foto
+            ctx.beginPath();
+            ctx.arc(player.x + player.width / 2, player.y + player.height / 2, player.width / 2 - 3, 0, Math.PI * 2);
+            ctx.closePath();
+            ctx.clip();
+
             if (isImgLoaded) {
-                // Dibujar imagen redondeada con un borde luminoso
-                ctx.beginPath();
-                ctx.arc(player.x + player.width / 2, player.y + player.height / 2, player.width / 2, 0, Math.PI * 2);
-                ctx.closePath();
-                ctx.clip();
-                
                 ctx.drawImage(playerImg, player.x, player.y, player.width, player.height);
             } else {
-                // Fallback divertido: Cara de cobra desesperada comiendo
-                ctx.font = `${player.width * 0.8}px Arial`;
-                ctx.fillText('🐍', player.x, player.y + player.height * 0.8);
+                ctx.fillStyle = '#db2777';
+                ctx.fillRect(player.x, player.y, player.width, player.height);
+                ctx.font = `${player.width * 0.6}px Arial`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('🐍', player.x + player.width / 2, player.y + player.height / 2);
             }
             ctx.restore();
 
-            // Dibujar boca o indicador de atrape
+            // Dibujar boca indicadora de atrape
             ctx.fillStyle = 'rgba(236, 72, 153, 0.3)';
-            ctx.fillRect(player.x, player.y, player.width, 10); // Línea indicadora de colisión arriba
+            ctx.fillRect(player.x, player.y, player.width, 10);
 
-            // 5. Partículas
+            // Partículas
             particles.forEach((p, index) => {
                 p.x += p.vx;
                 p.y += p.vy;
@@ -339,22 +447,29 @@
                 }
             });
 
-            // 6. Actualizar y Dibujar Items cayendo
             items.forEach((item, index) => {
-                // Aplicar viento a todos los items
+                // Aplicar empuje horizontal de viento
                 item.x += wind;
-                // Efecto de zigzag para el queque dorado
+
+                // Aplicar movimiento de zigzag si corresponde
                 if (item.zigzag > 0) {
                     item.x += item.zigzagDir * item.zigzag;
-                    if (item.x < 20 || item.x > canvas.width - 60) {
-                        item.zigzagDir *= -1;
-                    }
                 }
 
+                // SOLUCIÓN EXTREMA: Clampear la posición X para que NUNCA se salgan de los bordes laterales por viento
+                if (item.x < 10) {
+                    item.x = 10;
+                    item.zigzagDir = 1; // Invertir zigzag al colisionar con la pared izquierda
+                } else if (item.x > canvas.width - item.size - 10) {
+                    item.x = canvas.width - item.size - 10;
+                    item.zigzagDir = -1; // Invertir zigzag al colisionar con la pared derecha
+                }
+
+                // Caída vertical
                 item.y += item.speed;
                 item.angle += item.rotSpeed;
 
-                // Rotación cosmética de emojis
+                // Renderizar elemento
                 ctx.save();
                 ctx.translate(item.x + item.size / 2, item.y + item.size / 2);
                 ctx.rotate(item.angle);
@@ -364,39 +479,36 @@
                 ctx.fillText(item.type, 0, 0);
                 ctx.restore();
 
-                // Detección de colisión sofisticada (Alineación superior de la cobra)
+                // Colisión con la boca / área superior de La Cobra
                 const isColliding = item.y + item.size >= player.y &&
                                     item.y <= player.y + 30 &&
                                     item.x + item.size >= player.x &&
                                     item.x <= player.x + player.width;
 
                 if (isColliding) {
-                    // Acciones según el objeto atrapado
                     if (item.type === '🍰') {
                         score += 10;
                         stats.cakes++;
-                        spawnParticles(item.x + 25, item.y + 25, '#f43f5e'); // Chispas rosas
+                        spawnParticles(item.x + 25, item.y + 25, '#f43f5e');
                     } else if (item.type === '🧁') {
                         score += 50;
                         stats.gold++;
-                        spawnParticles(item.x + 25, item.y + 25, '#fbbf24', 25); // Chispas doradas explosivas
+                        spawnParticles(item.x + 25, item.y + 25, '#fbbf24', 25);
                     } else if (item.type === '🥦') {
                         score = Math.max(0, score - 20);
                         stats.broccoli++;
-                        // Achicar cobra temporalmente
                         player.width = player.baseWidth * 0.55;
                         player.height = player.baseHeight * 0.55;
-                        effects.shrunk = 300; // ~5 segundos
-                        spawnParticles(item.x + 25, item.y + 25, '#22c55e', 15); // Humo verde
+                        effects.shrunk = 300;
+                        spawnParticles(item.x + 25, item.y + 25, '#22c55e', 15);
                     } else if (item.type === '🌶️') {
-                        effects.dizzy = 240; // ~4 segundos invertidos
+                        effects.dizzy = 240;
                         effectText.innerText = "🌶️ ¡CONTROLES INVERTIDOS!";
                         effectAlert.classList.remove('hidden');
-                        spawnParticles(item.x + 25, item.y + 25, '#ef4444', 15); // Chispas rojas
+                        spawnParticles(item.x + 25, item.y + 25, '#ef4444', 15);
                     } else if (item.type === '💣') {
-                        // ¡Explosión letal!
                         spawnParticles(item.x + 25, item.y + 25, '#ffffff', 40);
-                        endGame(true); // Termina por bomba
+                        endGame(true);
                         return;
                     }
 
@@ -404,10 +516,10 @@
                     items.splice(index, 1);
                 }
 
-                // Si cae al vacío (suelo)
+                // Cuando cae abajo (suelo)
                 if (item.y > canvas.height) {
-                    // Si dejamos caer comida nutritiva de queque, perdemos vida
-                    if (item.type === '🍰' || item.type === '🧁') {
+                    // SOLUCIÓN: Únicamente el queque normal (🍰) quita vidas. El Súper Queque (🧁) ya no penaliza.
+                    if (item.type === '🍰') {
                         loseLife();
                     }
                     items.splice(index, 1);
@@ -417,17 +529,15 @@
             animationId = requestAnimationFrame(update);
         }
 
-        // Sistema de perder vidas
         function loseLife() {
             lives--;
             updateLivesUI();
             
-            // Efecto de parpadeo rojo de alerta en pantalla
             ctx.fillStyle = 'rgba(239, 68, 68, 0.4)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
             if (lives <= 0) {
-                endGame(false); // Termina por quedarse sin vidas
+                endGame(false);
             }
         }
 
@@ -459,14 +569,12 @@
                 finalScoreEl.innerText = `Dejaste caer demasiados queques deliciosos. Conseguiste ${score} puntos.`;
             }
 
-            // Llenar estadísticas de la ronda
             statCakes.innerText = stats.cakes;
             statGold.innerText = stats.gold;
             statBroccoli.innerText = stats.broccoli;
         }
 
         function resetGame() {
-            // Reiniciar estados del juego
             score = 0;
             lives = 3;
             items = [];
@@ -479,6 +587,10 @@
             windTarget = 0;
             windTimer = 100;
             
+            // Resetear Advíncula
+            advincula.active = false;
+            advincula.spawnTimer = 180; // Volver a poner a los 3 segundos para el reintento rápido
+
             stats = { cakes: 0, gold: 0, broccoli: 0 };
 
             scoreEl.innerText = `Puntos: 0`;
@@ -486,15 +598,14 @@
             
             gameOverEl.classList.add('hidden');
             windAlert.classList.add('hidden');
+            advinculaAlert.classList.add('hidden');
             effectAlert.classList.add('hidden');
             
             gameRunning = true;
             
-            // Cancelar procesos previos por si acaso
             cancelAnimationFrame(animationId);
             clearTimeout(spawnTimeout);
 
-            // Iniciar de nuevo
             createItem();
             update();
         }
