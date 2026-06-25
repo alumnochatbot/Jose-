@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Monster Brawl - Web Prototype</title>
-    <!-- Cargando Tailwind CSS de forma externa -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #1a1a1a; color: white; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
@@ -115,6 +114,9 @@
     </div>
 
 <script>
+/**
+ * STREAMING_CHUNK: Initializing state variables and properties
+ */
 
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
@@ -143,40 +145,6 @@ let currentDifficulty = 'normal'; // 'normal', 'dificil', 'experto'
 let lastTime = 0;
 let gameTimer = 0;
 let animationTime = 0; 
-
-// --- SISTEMA DE SINERGIAS / COMBINACIONES ---
-let unlockedSynergiesList = [];
-
-function hasSynergy(playerRef, w1, w2) {
-    if (!playerRef) return false;
-    return playerRef.weapons.some(w => w.name === w1) && playerRef.weapons.some(w => w.name === w2);
-}
-
-function checkNewSynergies(playerRef) {
-    const potentialSynergies = [
-        { name: "Flechas Rebotadoras", w1: "Speeding Arrows", w2: "Bouncy Slime", desc: "¡Flechas verdes extra salen de ti y de cada slime!" },
-        { name: "Pollitos de Corral", w1: "Rapid Eggs", w2: "Flying Feathers", desc: "¡Los pájaros se convierten en pollos que disparan huevos!" },
-        { name: "Burbujas Oscuras", w1: "Dark Energy", w2: "Booming Bubbles", desc: "¡Las burbujas dejan campos de energía oscura al estallar!" },
-        { name: "Colmenas Melosas", w1: "Sticky Syrup", w2: "Buzzing Bees", desc: "¡Colmenas que disparan abejas aliadas y miel ralentizante!" },
-        { name: "Láseres Asesinos", w1: "Rapid-Fire Lasers", w2: "Slicing Cards", desc: "¡Láseres con cartas cortantes que viajan y atraviesan todo!" }
-    ];
-
-    potentialSynergies.forEach(syn => {
-        if (hasSynergy(playerRef, syn.w1, syn.w2)) {
-            if (!unlockedSynergiesList.includes(syn.name)) {
-                unlockedSynergiesList.push(syn.name);
-                spawnFloatingText(playerRef.x, playerRef.y - 50, `🔥 ¡COMBO: ${syn.name}!`, true);
-                
-                // Mostrar banner de sinergia en UI de forma temporal
-                const log = document.createElement('div');
-                log.className = "fixed bottom-12 left-1/2 -translate-x-1/2 bg-yellow-500 text-black px-6 py-3 rounded-2xl font-black shadow-2xl border-4 border-black text-center z-50 animate-bounce pointer-events-none";
-                log.innerHTML = `<span class="text-xs uppercase block tracking-widest text-red-700 font-bold">Sinergia Activada</span>${syn.name}<span class="block text-xs font-semibold opacity-90">${syn.desc}</span>`;
-                document.body.appendChild(log);
-                setTimeout(() => log.remove(), 4000);
-            }
-        }
-    });
-}
 
 // --- SISTEMA DE PUNTOS Y SKINS ---
 let totalPoints = 0;
@@ -418,6 +386,9 @@ function getClosestEnemy(source, maxRange = 600) {
     return closest;
 }
 
+/**
+ * STREAMING_CHUNK: Instantiating weapons, pools, and custom class upgrades
+ */
 
 // --- CLASES DE ARMAS Y SISTEMA DE MEJORAS DE NIVEL ---
 
@@ -693,39 +664,6 @@ function triggerBubblePop(proj) {
         x: proj.x, y: proj.y, radius: 10, maxRadius: aoeRadius, life: 0.2, maxLife: 0.2, color: 'rgba(96, 165, 250, 0.5)'
     });
 
-    // Combo 3: Dark Energy + Booming Bubbles -> Las burbujas se transforman en campos de energía oscura
-    if (hasSynergy(player, "Dark Energy", "Booming Bubbles")) {
-        visualEffects.push({
-            x: proj.x,
-            y: proj.y,
-            radius: aoeRadius * 0.8,
-            life: 3.0,
-            maxLife: 3.0,
-            baseDamage: popDmg * 0.4,
-            draw: function(ctxCanvas, camX, camY) {
-                ctxCanvas.save();
-                let grad = ctxCanvas.createRadialGradient(this.x - camX, this.y - camY, 5, this.x - camX, this.y - camY, this.radius);
-                grad.addColorStop(0, 'rgba(147, 51, 234, 0.45)');
-                grad.addColorStop(1, 'rgba(59, 130, 246, 0.0)');
-                ctxCanvas.fillStyle = grad;
-                ctxCanvas.beginPath();
-                ctxCanvas.arc(this.x - camX, this.y - camY, this.radius, 0, Math.PI * 2);
-                ctxCanvas.fill();
-                ctxCanvas.restore();
-            },
-            updateSlows: function(enemiesList, playerRef, dtSec) {
-                for (let e of enemiesList) {
-                    if (!e.active) continue;
-                    let dSq = distSq(this.x, this.y, e.x, e.y);
-                    if (dSq <= this.radius * this.radius) {
-                        e.speed *= 0.5; // Ralentiza
-                        e.takeDamage(this.baseDamage * dtSec, false, 0, 0);
-                    }
-                }
-            }
-        });
-    }
-
     for (let e of enemies) {
         if (!e.active) continue;
         let dSq = distSq(proj.x, proj.y, e.x, e.y);
@@ -793,42 +731,10 @@ class BouncySlimeWeapon {
             proj.spawn(this.player.x, this.player.y, vx, vy, this.speed, damage, 10, '#22c55e', isCrit, 1);
             proj.bouncesLeft = 2 + this.bonusBounces;
             proj.life = this.life;
-            proj.playerRef = this.player;
 
             proj.customUpdate = function(dtSec) {
                 proj.x += proj.vx * proj.speed * dtSec;
                 proj.y += proj.vy * proj.speed * dtSec;
-
-                // Combo 1: Speeding Arrows + Bouncy Slime -> Flechas verdes extra salen de cada slime
-                if (hasSynergy(proj.playerRef, "Speeding Arrows", "Bouncy Slime")) {
-                    proj.arrowTimer = (proj.arrowTimer || 0) - dtSec;
-                    if (proj.arrowTimer <= 0) {
-                        proj.arrowTimer = 0.5; // Dispara cada 0.5s
-                        let target = getClosestEnemy(proj, 400);
-                        if (target) {
-                            let adx = target.x - proj.x;
-                            let ady = target.y - proj.y;
-                            let adist = Math.sqrt(adx*adx + ady*ady) || 1;
-                            const greenArrow = projectilePool.get();
-                            greenArrow.spawn(proj.x, proj.y, adx/adist, ady/adist, 600, proj.damage * 0.8, 6, '#22c55e', false, 2);
-                            greenArrow.life = 1.0;
-                            greenArrow.customDraw = function(ctxCanvas, camX, camY) {
-                                ctxCanvas.save();
-                                ctxCanvas.translate(greenArrow.x - camX, greenArrow.y - camY);
-                                ctxCanvas.rotate(Math.atan2(greenArrow.vy, greenArrow.vx));
-                                ctxCanvas.strokeStyle = '#22c55e';
-                                ctxCanvas.lineWidth = 3;
-                                ctxCanvas.beginPath();
-                                ctxCanvas.moveTo(-10, 0);
-                                ctxCanvas.lineTo(8, 0);
-                                ctxCanvas.stroke();
-                                ctxCanvas.restore();
-                            };
-                            projectiles.push(greenArrow);
-                        }
-                    }
-                }
-
                 proj.life -= dtSec;
                 if (proj.life <= 0) proj.active = false;
             };
@@ -1078,7 +984,7 @@ class CurvingBananaWeapon {
         if (lvl === 2) this.bananaCount = 2; // +banana
         else if (lvl === 3) this.baseDamage += 3; // +daño
         else if (lvl === 4) this.bananaCount = 3; // +banana
-        else if (lvl === 5) this.bananaCount = 3; // 3 bananas (forzado a asegurar la salida exacta)
+        else if (lvl === 5) this.bananaCount = 3; // 3 bananas
         else if (lvl === 6) this.pierce = 999; // atraviesa enemigos
         else if (lvl === 7) this.baseDamage += 5; // +daño
         else if (lvl === 8) this.speed += 120; // +velocidad
@@ -1262,70 +1168,6 @@ class FlyingFeathersWeapon {
         }
     }
     fire() {
-        let isSynergy = hasSynergy(this.player, "Rapid Eggs", "Flying Feathers");
-        let isCrit = Math.random() < this.player.critChance;
-        let damage = this.baseDamage * this.player.baseDamageMult;
-        if (isCrit) damage *= this.player.critMult;
-
-        if (isSynergy) {
-            // Combo 2: Rapid Eggs + Flying Feathers -> Los pájaros se convierten en pollos que disparan huevos
-            for (let i = 0; i < this.feathersCount; i++) {
-                let ang = (i / this.feathersCount) * Math.PI * 2;
-                const proj = projectilePool.get();
-                proj.spawn(this.player.x, this.player.y, Math.cos(ang), Math.sin(ang), this.speed * 0.7, damage, 14, '#ffffff', isCrit, 3);
-                proj.life = 2.5;
-                proj.angle = ang;
-                proj.eggTimer = 0.4;
-                proj.customUpdate = function(dtSec) {
-                    proj.x += proj.vx * proj.speed * dtSec;
-                    proj.y += proj.vy * proj.speed * dtSec;
-                    proj.life -= dtSec;
-
-                    proj.eggTimer -= dtSec;
-                    if (proj.eggTimer <= 0) {
-                        proj.eggTimer = 0.4;
-                        let target = getClosestEnemy(proj, 350);
-                        if (target) {
-                            let edx = target.x - proj.x;
-                            let edy = target.y - proj.y;
-                            let edist = Math.sqrt(edx*edx + edy*edy) || 1;
-                            const egg = projectilePool.get();
-                            egg.spawn(proj.x, proj.y, edx/edist, edy/edist, 400, proj.damage * 0.6, 6, '#fbbf24', false, 1);
-                            projectiles.push(egg);
-                        }
-                    }
-                    if (proj.life <= 0) proj.active = false;
-                };
-                proj.customDraw = function(ctxCanvas, camX, camY) {
-                    ctxCanvas.save();
-                    ctxCanvas.translate(proj.x - camX, proj.y - camY);
-                    
-                    // Cuerpo del pollo
-                    ctxCanvas.fillStyle = '#f3f4f6';
-                    ctxCanvas.beginPath();
-                    ctxCanvas.arc(0, 0, proj.radius, 0, Math.PI*2);
-                    ctxCanvas.fill();
-                    
-                    // Cresta roja
-                    ctxCanvas.fillStyle = '#ef4444';
-                    ctxCanvas.beginPath();
-                    ctxCanvas.arc(0, -proj.radius + 2, 4, 0, Math.PI*2);
-                    ctxCanvas.fill();
-                    
-                    // Pico naranja
-                    ctxCanvas.fillStyle = '#f59e0b';
-                    ctxCanvas.beginPath();
-                    ctxCanvas.moveTo(proj.radius - 2, -2);
-                    ctxCanvas.lineTo(proj.radius + 4, 0);
-                    ctxCanvas.lineTo(proj.radius - 2, 2);
-                    ctxCanvas.fill();
-                    ctxCanvas.restore();
-                };
-                projectiles.push(proj);
-            }
-            return;
-        }
-
         if (this.coolCockatoo) {
             for (let i = 0; i < 8; i++) {
                 let ang = (i / 8) * Math.PI * 2;
@@ -1346,8 +1188,8 @@ class FlyingFeathersWeapon {
             return;
         }
 
-        isCrit = Math.random() < this.player.critChance;
-        damage = this.baseDamage * this.player.baseDamageMult;
+        let isCrit = Math.random() < this.player.critChance;
+        let damage = this.baseDamage * this.player.baseDamageMult;
         if (isCrit) damage *= this.player.critMult;
 
         for (let i = 0; i < this.feathersCount; i++) {
@@ -1580,11 +1422,8 @@ class RapidFireLasersWeapon {
         let dy = closest.y - this.player.y;
         let dist = Math.sqrt(dx*dx + dy*dy) || 1;
 
-        let isSynergy = hasSynergy(this.player, "Rapid-Fire Lasers", "Slicing Cards");
-
         let damage = this.baseDamage * this.player.baseDamageMult;
         if (this.laserCannon) damage *= 3;
-        if (isSynergy) damage *= 2.5; // Daño aumentado por combo de cartas
 
         let shots = this.doubleLaser ? 2 : 1;
         for (let i = 0; i < shots; i++) {
@@ -1595,12 +1434,8 @@ class RapidFireLasersWeapon {
             let vy = (dx/dist)*s + (dy/dist)*c;
 
             const proj = projectilePool.get();
-            let size = this.laserCannon ? 15 : (isSynergy ? 14 : 4);
-            let pierceCount = isSynergy ? 999 : this.pierce; // Las cartas cortan de forma infinita
-            proj.spawn(this.player.x, this.player.y, vx, vy, this.speed, damage, size, '#ef4444', false, pierceCount);
+            proj.spawn(this.player.x, this.player.y, vx, vy, this.speed, damage, this.laserCannon ? 15 : 4, '#ef4444', false, this.pierce);
             proj.life = 1.0;
-            proj.isLaserSynergy = isSynergy;
-            proj.cardOffset = 0;
 
             proj.customDraw = function(ctxCanvas, camX, camY) {
                 ctxCanvas.save();
@@ -1611,23 +1446,6 @@ class RapidFireLasersWeapon {
                 ctxCanvas.moveTo(-proj.vx * 20, -proj.vy * 20);
                 ctxCanvas.lineTo(0, 0);
                 ctxCanvas.stroke();
-
-                if (proj.isLaserSynergy) {
-                    // Animación de una carta deslizándose dentro del láser continuo
-                    proj.cardOffset = (proj.cardOffset || 0) + 1.2;
-                    if (proj.cardOffset > 15) proj.cardOffset = -15;
-
-                    ctxCanvas.save();
-                    ctxCanvas.translate(proj.vx * proj.cardOffset, proj.vy * proj.cardOffset);
-                    ctxCanvas.rotate(Math.atan2(proj.vy, proj.vx) + Math.PI/4);
-                    ctxCanvas.fillStyle = '#ffffff';
-                    ctxCanvas.strokeStyle = '#ef4444';
-                    ctxCanvas.lineWidth = 1.5;
-                    ctxCanvas.fillRect(-4, -6, 8, 12);
-                    ctxCanvas.strokeRect(-4, -6, 8, 12);
-                    ctxCanvas.restore();
-                }
-
                 ctxCanvas.restore();
             };
             projectiles.push(proj);
@@ -1810,7 +1628,6 @@ class RevolvingHorseshoesWeapon {
                 if (proj.life <= 0) proj.active = false;
             };
 
-            ctxCanvas = ctx; // Guardrail temporal para asegurar contexto correcto de dibujo
             proj.customDraw = function(ctxCanvas, camX, camY) {
                 ctxCanvas.save();
                 ctxCanvas.translate(proj.x - camX, proj.y - camY);
@@ -1839,7 +1656,7 @@ class SlicingCardsWeapon {
         this.speed = 410;
         this.fourSuits = false;
         this.cardShuffle = false;
-        this.textRepresentation = "♠";
+        this.texturize = false;
         this.pierce = 1;
     }
     applyUpgrade(lvl) {
@@ -1891,7 +1708,6 @@ class SlicingCardsWeapon {
         let shots = this.fourSuits ? 4 : 1;
         for (let i = 0; i < shots; i++) {
             let angOffset = this.fourSuits ? (i * Math.PI / 2) : 0;
-            // CORRECCIÓN: Se cambia offsetAngle por angOffset que es la variable declarada
             let c = Math.cos(angOffset);
             let s = Math.sin(angOffset);
             let vx = (dx/dist)*c - (dy/dist)*s;
@@ -1964,13 +1780,8 @@ class SpeedingArrowsWeapon {
         let dy = closest.y - this.player.y;
         let dist = Math.sqrt(dx*dx + dy*dy) || 1;
 
-        // Combo 1: Speeding Arrows + Bouncy Slime -> Flechas dobles y verdes saliendo del jugador
-        let activeSynergy = hasSynergy(this.player, "Speeding Arrows", "Bouncy Slime");
-        let arrowColor = activeSynergy ? '#22c55e' : '#b45309';
-        let arrowCount = activeSynergy ? this.arrowsCount * 2 : this.arrowsCount;
-
-        for (let i = 0; i < arrowCount; i++) {
-            let offsetAngle = (i - (arrowCount - 1) / 2) * (activeSynergy ? 0.12 : 0.2);
+        for (let i = 0; i < this.arrowsCount; i++) {
+            let offsetAngle = (i - (this.arrowsCount - 1) / 2) * 0.2;
             let ang = Math.atan2(dy, dx) + offsetAngle;
 
             let isCrit = Math.random() < (this.glowingUpgrade ? 0.5 : this.player.critChance);
@@ -1978,7 +1789,7 @@ class SpeedingArrowsWeapon {
             if (isCrit) damage *= this.player.critMult;
 
             const proj = projectilePool.get();
-            proj.spawn(this.player.x, this.player.y, Math.cos(ang), Math.sin(ang), this.speed, damage, 8, arrowColor, isCrit, this.pierce);
+            proj.spawn(this.player.x, this.player.y, Math.cos(ang), Math.sin(ang), this.speed, damage, 8, '#b45309', isCrit, this.pierce);
             proj.life = 1.4;
             proj.angle = ang;
             proj.enchanted = this.enchanted;
@@ -2000,8 +1811,8 @@ class SpeedingArrowsWeapon {
                 ctxCanvas.save();
                 ctxCanvas.translate(proj.x - camX, proj.y - camY);
                 ctxCanvas.rotate(proj.angle);
-                ctxCanvas.strokeStyle = arrowColor;
-                ctxCanvas.lineWidth = activeSynergy ? 3.5 : 2;
+                ctxCanvas.strokeStyle = '#78350f';
+                ctxCanvas.lineWidth = 2;
                 ctxCanvas.beginPath();
                 ctxCanvas.moveTo(-15, 0);
                 ctxCanvas.lineTo(10, 0);
@@ -2047,89 +1858,6 @@ class StickySyrupWeapon {
         }
     }
     fire() {
-        let isSynergy = hasSynergy(this.player, "Sticky Syrup", "Buzzing Bees");
-
-        if (isSynergy) {
-            // Combo 4: Sticky Syrup + Buzzing Bees -> En vez de jarabe, colmenas que lanzan abejas y miel
-            let maxCount = this.puddlesCount;
-            let finalRadius = this.radius * 1.5;
-            for (let i = 0; i < maxCount; i++) {
-                let rx = this.player.x + (i > 0 ? randRange(-150, 150) : 0);
-                let ry = this.player.y + (i > 0 ? randRange(-150, 150) : 0);
-
-                visualEffects.push({
-                    x: rx,
-                    y: ry,
-                    radius: finalRadius,
-                    life: this.duration,
-                    maxLife: this.duration,
-                    baseDamage: this.baseDamage * 1.5,
-                    slowFactor: 0.4,
-                    spawnBeeTimer: 0.8,
-                    draw: function(ctxCanvas, camX, camY) {
-                        ctxCanvas.save();
-                        // Charco de miel circular
-                        ctxCanvas.fillStyle = 'rgba(245, 158, 11, 0.35)';
-                        ctxCanvas.beginPath();
-                        ctxCanvas.arc(this.x - camX, this.y - camY, this.radius, 0, Math.PI * 2);
-                        ctxCanvas.fill();
-
-                        // Colmena central
-                        ctxCanvas.fillStyle = '#b45309';
-                        ctxCanvas.strokeStyle = '#f59e0b';
-                        ctxCanvas.lineWidth = 3;
-                        ctxCanvas.beginPath();
-                        ctxCanvas.arc(this.x - camX, this.y - camY, 18, 0, Math.PI*2);
-                        ctxCanvas.fill();
-                        ctxCanvas.stroke();
-                        
-                        // Entrada oscura colmena
-                        ctxCanvas.fillStyle = '#1e1b4b';
-                        ctxCanvas.beginPath();
-                        ctxCanvas.arc(this.x - camX, this.y - camY, 6, 0, Math.PI*2);
-                        ctxCanvas.fill();
-                        ctxCanvas.restore();
-                    },
-                    updateSlows: function(enemiesList, playerRef, dtSec) {
-                        for (let e of enemiesList) {
-                            if (!e.active) continue;
-                            let dSq = distSq(this.x, this.y, e.x, e.y);
-                            if (dSq <= this.radius * this.radius) {
-                                e.speed = Math.max(25, e.speed * this.slowFactor);
-                                e.takeDamage(this.baseDamage * dtSec, false, 0, 0);
-                            }
-                        }
-
-                        // Disparar abejas centinelas periódicas
-                        this.spawnBeeTimer -= dtSec;
-                        if (this.spawnBeeTimer <= 0) {
-                            this.spawnBeeTimer = 0.8;
-                            let target = getClosestEnemy(this, 400);
-                            if (target) {
-                                let bdx = target.x - this.x;
-                                let bdy = target.y - this.y;
-                                let bdist = Math.sqrt(bdx*bdx + bdy*bdy) || 1;
-                                const hiveBee = projectilePool.get();
-                                hiveBee.spawn(this.x, this.y, bdx/bdist, bdy/bdist, 320, this.baseDamage * 2.0, 6, '#f59e0b', false, 1);
-                                hiveBee.life = 1.5;
-                                hiveBee.customDraw = function(ctxCanvas, camX, camY) {
-                                    ctxCanvas.save();
-                                    ctxCanvas.translate(hiveBee.x - camX, hiveBee.y - camY);
-                                    ctxCanvas.fillStyle = '#fbbf24';
-                                    ctxCanvas.beginPath();
-                                    ctxCanvas.ellipse(0, 0, 6, 4, Math.atan2(hiveBee.vy, hiveBee.vx), 0, Math.PI*2);
-                                    ctxCanvas.fill();
-                                    ctxCanvas.restore();
-                                };
-                                projectiles.push(hiveBee);
-                            }
-                        }
-                    }
-                });
-            }
-            return;
-        }
-
         let maxCount = this.puddlesCount;
         let finalRadius = this.dropzone ? this.radius * 2.5 : this.radius;
         let finalSlow = this.dropzone ? 0.15 : 0.5; // 85% slow
@@ -2346,6 +2074,9 @@ function spawnFloatingText(x, y, text, isCrit) {
     floatingTexts.push(ft);
 }
 
+/**
+ * STREAMING_CHUNK: Setting up weapon progress database dictionary
+ */
 
 function getWeaponUpgradeDesc(name, lvl) {
     if (lvl === 1) {
@@ -2458,7 +2189,7 @@ function getWeaponUpgradeDesc(name, lvl) {
             7: "+velocidad (Proyectiles veloces)",
             8: "+10 daño (Suma +10 daño plano a la ráfaga)",
             9: "+velocidad (Velocidad de plumas aumentada)",
-            10: "Feathers Excellence (Ráfaga majestic circular en todas direcciones)"
+            10: "Feathers Excellence (Ráfaga majestuosa circular en todas direcciones)"
         },
         "Rapid Eggs": {
             2: "+huevo (Lanza una ráfaga de 2 huevos directos)",
@@ -2491,13 +2222,13 @@ function getWeaponUpgradeDesc(name, lvl) {
             7: "+daño (Daño base incrementado)",
             8: "más rebotes (Suma 5 rebotes más)",
             9: "+10 daño (Suma daño explosivo al impactar)",
-            10: "Destruction Shells (Caparazones giants de espinas que dejan fuego en el suelo)"
+            10: "Destruction Shells (Caparazones gigantes de espinas que dejan fuego en el suelo)"
         },
         "Revolving Horseshoes": {
             2: "+herradura (Lanza 3 herraduras magnéticas)",
             3: "+daño (Daño base incrementado)",
             4: "+herradura (Lanza 4 herraduras)",
-            5: "Steel Upgrade (Herraduras gigantes reforzadas: más tamaño y daño)",
+            5: "Steel Upgrade (Herraduras gigantes de acero: escala de tamaño x1.4 y daño)",
             6: "+duración (Giran durante más tiempo en pantalla)",
             7: "+herradura (Lanza 5 herraduras místicas)",
             8: "+10 daño (Aumenta el daño plano considerablemente)",
@@ -2506,12 +2237,12 @@ function getWeaponUpgradeDesc(name, lvl) {
         },
         "Slicing Cards": {
             2: "+daño (La potencia base de las cartas aumenta)",
-            3: "atraviesa enemigos (Las cartas perforan de forma infinita)",
+            3: "atraviesa enemigos (Las cartas perforan de forma de forma infinita)",
             4: "+velocidad (Velocidad de viaje mística aumentada)",
             5: "Four Suits (Dispara 4 cartas en cruz con efectos únicos de trébol, diamante y corazón)",
             6: "+daño (Fuerza base incrementada)",
             7: "más penetración (Daño continuo sin merma tras cada impacto)",
-            8: "+velocidad (Las cartas vuelan con gran acelaración)",
+            8: "+velocidad (Las cartas vuelan con gran aceleración)",
             9: "+daño (Multiplicador final de daño)",
             10: "Card Shuffle (Un tornado salvaje giratorio de cartas te envuelve de forma permanente)"
         },
@@ -2556,6 +2287,9 @@ function getWeaponUpgradeDesc(name, lvl) {
     return `Mejora de rendimiento para tu poder místico de ${name}.`;
 }
 
+/**
+ * STREAMING_CHUNK: Setting up the draft level selection overlay logic
+ */
 
 function triggerDraft() {
     currentState = GAME_STATE.LEVEL_UP;
@@ -2648,7 +2382,6 @@ function triggerDraft() {
         `;
         btn.onclick = () => {
             choice.apply();
-            checkNewSynergies(player); // Verifica si se acaba de activar un combo
             updateHUD();
             document.getElementById('level-up-screen').classList.add('hidden');
             currentState = GAME_STATE.PLAYING;
@@ -2658,6 +2391,9 @@ function triggerDraft() {
     });
 }
 
+/**
+ * STREAMING_CHUNK: Managing player and upgraded enemy logic
+ */
 
 class Player {
     constructor() {
@@ -2705,112 +2441,269 @@ class Player {
         const px = this.x - camX;
         const py = this.y - camY;
         const r = this.radius;
+
         const bounce = 1 + Math.sin(animationTime * 12) * 0.05;
-        const widthBounce = r * (2 - bounce);
-        const heightBounce = r * bounce;
 
         ctxCanvas.save();
         ctxCanvas.translate(px, py);
 
-        // Sombra
-        ctxCanvas.fillStyle = 'rgba(0,0,0,0.3)';
+        // Sombra de personaje (Estática e independiente de las oscilaciones de rebote del cuerpo)
+        ctxCanvas.fillStyle = 'rgba(0, 0, 0, 0.35)';
         ctxCanvas.beginPath();
         ctxCanvas.ellipse(0, r - 2, r * 1.1, 6, 0, 0, Math.PI * 2);
         ctxCanvas.fill();
 
-        // Renderizado del Monstruo con la Skin seleccionada
+        // Escalar la matriz de transformación para que encaje con el radio y aplicar efecto squash/stretch
+        ctxCanvas.scale((r / 20) * (2 - bounce), (r / 20) * bounce);
+        
+        // Trasladar el origen al centro del modelo de diseño vectorial de la tienda (dimensiones fijas de 64x64)
+        // El cuerpo del slime abarca x=12..52 e y=18..48, por lo que su centro geométrico aproximado es (32, 34)
+        ctxCanvas.translate(-32, -34);
+
         if (currentSkinId === 'verde') {
-            let grad = ctxCanvas.createRadialGradient(0, -r * 0.3, 0, 0, 0, r);
+            let grad = ctxCanvas.createRadialGradient(32, 30, 0, 32, 30, 20);
             grad.addColorStop(0, '#4ade80');
             grad.addColorStop(1, '#166534');
             ctxCanvas.fillStyle = grad;
+            
             ctxCanvas.beginPath();
-            ctxCanvas.ellipse(0, 0, widthBounce, heightBounce, 0, 0, Math.PI * 2);
+            ctxCanvas.moveTo(12, 40);
+            ctxCanvas.bezierCurveTo(12, 18, 52, 18, 52, 40);
+            ctxCanvas.bezierCurveTo(52, 48, 44, 48, 32, 48);
+            ctxCanvas.bezierCurveTo(20, 48, 12, 48, 12, 40);
+            ctxCanvas.closePath();
             ctxCanvas.fill();
 
-            // Ojos
+            // Ojos con brillo místico
             ctxCanvas.fillStyle = 'white';
-            ctxCanvas.beginPath(); ctxCanvas.arc(-r * 0.25, -r * 0.05, r * 0.14, 0, Math.PI * 2); ctxCanvas.fill();
-            ctxCanvas.beginPath(); ctxCanvas.arc(r * 0.25, -r * 0.05, r * 0.14, 0, Math.PI * 2); ctxCanvas.fill();
+            ctxCanvas.beginPath(); ctxCanvas.arc(24, 34, 4.5, 0, Math.PI * 2); ctxCanvas.fill();
+            ctxCanvas.beginPath(); ctxCanvas.arc(40, 34, 4.5, 0, Math.PI * 2); ctxCanvas.fill();
             ctxCanvas.fillStyle = 'black';
-            ctxCanvas.beginPath(); ctxCanvas.arc(-r * 0.25, -r * 0.05, r * 0.07, 0, Math.PI * 2); ctxCanvas.fill();
-            ctxCanvas.beginPath(); ctxCanvas.arc(r * 0.25, -r * 0.07, r * 0.07, 0, Math.PI * 2); ctxCanvas.fill(); // Corrección menor de ojos descentrados
+            ctxCanvas.beginPath(); ctxCanvas.arc(24, 34, 2, 0, Math.PI * 2); ctxCanvas.fill();
+            ctxCanvas.beginPath(); ctxCanvas.arc(40, 34, 2, 0, Math.PI * 2); ctxCanvas.fill();
+            ctxCanvas.fillStyle = 'white';
+            ctxCanvas.beginPath(); ctxCanvas.arc(25.5, 32.5, 1, 0, Math.PI * 2); ctxCanvas.fill();
+            ctxCanvas.beginPath(); ctxCanvas.arc(41.5, 32.5, 1, 0, Math.PI * 2); ctxCanvas.fill();
+
+            // Sonrisa
+            ctxCanvas.strokeStyle = 'white';
+            ctxCanvas.lineWidth = 2;
+            ctxCanvas.lineCap = 'round';
+            ctxCanvas.beginPath();
+            ctxCanvas.moveTo(28, 40);
+            ctxCanvas.quadraticCurveTo(32, 43, 36, 40);
+            ctxCanvas.stroke();
+
+            // Rubor adorable en mejillas
+            ctxCanvas.save();
+            ctxCanvas.globalAlpha = 0.6;
+            ctxCanvas.fillStyle = '#f87171';
+            ctxCanvas.beginPath(); ctxCanvas.ellipse(20, 37, 2.5, 1.5, 0, 0, Math.PI * 2); ctxCanvas.fill();
+            ctxCanvas.beginPath(); ctxCanvas.ellipse(44, 37, 2.5, 1.5, 0, 0, Math.PI * 2); ctxCanvas.fill();
+            ctxCanvas.restore();
 
         } else if (currentSkinId === 'rojo') {
-            let grad = ctxCanvas.createRadialGradient(0, -r * 0.3, 0, 0, 0, r);
+            let grad = ctxCanvas.createRadialGradient(32, 30, 0, 32, 30, 22);
             grad.addColorStop(0, '#f97316');
             grad.addColorStop(1, '#7f1d1d');
             ctxCanvas.fillStyle = grad;
+
             ctxCanvas.beginPath();
-            ctxCanvas.ellipse(0, 0, widthBounce, heightBounce, 0, 0, Math.PI * 2);
+            ctxCanvas.moveTo(10, 40);
+            ctxCanvas.bezierCurveTo(8, 20, 56, 20, 54, 40);
+            ctxCanvas.bezierCurveTo(54, 46, 44, 48, 32, 48);
+            ctxCanvas.bezierCurveTo(20, 48, 10, 46, 10, 40);
+            ctxCanvas.closePath();
             ctxCanvas.fill();
 
-            // Ojos de lava
+            // Cejas y marcos enfurecidos
+            ctxCanvas.strokeStyle = '#facc15';
+            ctxCanvas.lineWidth = 2;
+            ctxCanvas.lineCap = 'round';
+            ctxCanvas.beginPath();
+            ctxCanvas.moveTo(16, 38); ctxCanvas.quadraticCurveTo(22, 30, 26, 38);
+            ctxCanvas.moveTo(38, 38); ctxCanvas.quadraticCurveTo(42, 32, 46, 38);
+            ctxCanvas.stroke();
+
+            // Cuernos magmáticos
+            ctxCanvas.beginPath();
+            ctxCanvas.moveTo(20, 28); ctxCanvas.lineTo(28, 32);
+            ctxCanvas.moveTo(44, 28); ctxCanvas.lineTo(36, 32);
+            ctxCanvas.stroke();
+
+            // Ojos de fuego ardiente
             ctxCanvas.fillStyle = '#facc15';
-            ctxCanvas.beginPath(); ctxCanvas.arc(-r * 0.25, -r * 0.05, r * 0.14, 0, Math.PI * 2); ctxCanvas.fill();
-            ctxCanvas.beginPath(); ctxCanvas.arc(r * 0.25, -r * 0.05, r * 0.14, 0, Math.PI * 2); ctxCanvas.fill();
+            ctxCanvas.beginPath(); ctxCanvas.arc(24, 33, 3.5, 0, Math.PI * 2); ctxCanvas.fill();
+            ctxCanvas.beginPath(); ctxCanvas.arc(40, 33, 3.5, 0, Math.PI * 2); ctxCanvas.fill();
             ctxCanvas.fillStyle = '#7f1d1d';
-            ctxCanvas.beginPath(); ctxCanvas.arc(-r * 0.25, -r * 0.05, r * 0.07, 0, Math.PI * 2); ctxCanvas.fill();
-            ctxCanvas.beginPath(); ctxCanvas.arc(r * 0.25, -r * 0.05, r * 0.07, 0, Math.PI * 2); ctxCanvas.fill();
+            ctxCanvas.beginPath(); ctxCanvas.arc(24, 33, 1.5, 0, Math.PI * 2); ctxCanvas.fill();
+            ctxCanvas.beginPath(); ctxCanvas.arc(40, 33, 1.5, 0, Math.PI * 2); ctxCanvas.fill();
+
+            // Boca ardiente
+            ctxCanvas.strokeStyle = '#facc15';
+            ctxCanvas.lineWidth = 2;
+            ctxCanvas.beginPath();
+            ctxCanvas.moveTo(28, 41); ctxCanvas.quadraticCurveTo(32, 37, 36, 41);
+            ctxCanvas.stroke();
 
         } else if (currentSkinId === 'azul') {
-            let grad = ctxCanvas.createRadialGradient(0, -r * 0.3, 0, 0, 0, r);
+            // Picos de hielo traseros congelados
+            ctxCanvas.fillStyle = '#93c5fd';
+            ctxCanvas.beginPath();
+            ctxCanvas.moveTo(20, 18); ctxCanvas.lineTo(26, 26); ctxCanvas.lineTo(14, 28);
+            ctxCanvas.closePath();
+            ctxCanvas.fill();
+
+            ctxCanvas.fillStyle = '#bfdbfe';
+            ctxCanvas.beginPath();
+            ctxCanvas.moveTo(32, 12); ctxCanvas.lineTo(37, 24); ctxCanvas.lineTo(27, 24);
+            ctxCanvas.closePath();
+            ctxCanvas.fill();
+
+            ctxCanvas.fillStyle = '#93c5fd';
+            ctxCanvas.beginPath();
+            ctxCanvas.moveTo(44, 18); ctxCanvas.lineTo(50, 28); ctxCanvas.lineTo(38, 26);
+            ctxCanvas.closePath();
+            ctxCanvas.fill();
+
+            // Cuerpo de hielo
+            let grad = ctxCanvas.createRadialGradient(32, 30, 0, 32, 30, 20);
             grad.addColorStop(0, '#60a5fa');
             grad.addColorStop(1, '#1e3a8a');
             ctxCanvas.fillStyle = grad;
+
             ctxCanvas.beginPath();
-            ctxCanvas.ellipse(0, 0, widthBounce, heightBounce, 0, 0, Math.PI * 2);
+            ctxCanvas.moveTo(12, 40);
+            ctxCanvas.bezierCurveTo(12, 22, 52, 22, 52, 40);
+            ctxCanvas.bezierCurveTo(52, 48, 44, 48, 32, 48);
+            ctxCanvas.bezierCurveTo(20, 48, 12, 48, 12, 40);
+            ctxCanvas.closePath();
             ctxCanvas.fill();
 
-            // Ojos de hielo
+            // Línea de brillo helada
+            ctxCanvas.save();
+            ctxCanvas.globalAlpha = 0.6;
+            ctxCanvas.strokeStyle = 'white';
+            ctxCanvas.lineWidth = 1.5;
+            ctxCanvas.lineCap = 'round';
+            ctxCanvas.beginPath();
+            ctxCanvas.moveTo(16, 32); ctxCanvas.lineTo(22, 30);
+            ctxCanvas.stroke();
+            ctxCanvas.restore();
+
+            // Ojos gélidos
             ctxCanvas.fillStyle = 'white';
-            ctxCanvas.beginPath(); ctxCanvas.arc(-r * 0.25, -r * 0.05, r * 0.14, 0, Math.PI * 2); ctxCanvas.fill();
-            ctxCanvas.beginPath(); ctxCanvas.arc(r * 0.25, -r * 0.05, r * 0.14, 0, Math.PI * 2); ctxCanvas.fill();
+            ctxCanvas.beginPath(); ctxCanvas.arc(24, 34, 4.5, 0, Math.PI * 2); ctxCanvas.fill();
+            ctxCanvas.beginPath(); ctxCanvas.arc(40, 34, 4.5, 0, Math.PI * 2); ctxCanvas.fill();
             ctxCanvas.fillStyle = '#1d4ed8';
-            ctxCanvas.beginPath(); ctxCanvas.arc(-r * 0.25, -r * 0.05, r * 0.07, 0, Math.PI * 2); ctxCanvas.fill();
-            ctxCanvas.beginPath(); ctxCanvas.arc(r * 0.25, -r * 0.05, r * 0.07, 0, Math.PI * 2); ctxCanvas.fill();
+            ctxCanvas.beginPath(); ctxCanvas.arc(24, 34, 2, 0, Math.PI * 2); ctxCanvas.fill();
+            ctxCanvas.beginPath(); ctxCanvas.arc(40, 34, 2, 0, Math.PI * 2); ctxCanvas.fill();
+
+            // Cicatriz fría / Expresión seria
+            ctxCanvas.strokeStyle = 'white';
+            ctxCanvas.lineWidth = 2;
+            ctxCanvas.lineCap = 'round';
+            ctxCanvas.beginPath();
+            ctxCanvas.moveTo(28, 40); ctxCanvas.lineTo(36, 33);
+            ctxCanvas.stroke();
 
         } else if (currentSkinId === 'purpura') {
-            let grad = ctxCanvas.createRadialGradient(0, -r * 0.3, 0, 0, 0, r);
+            let grad = ctxCanvas.createRadialGradient(32, 30, 0, 32, 30, 22);
             grad.addColorStop(0, '#c084fc');
             grad.addColorStop(1, '#3b0764');
             ctxCanvas.fillStyle = grad;
+
             ctxCanvas.beginPath();
-            ctxCanvas.ellipse(0, 0, widthBounce, heightBounce, 0, 0, Math.PI * 2);
+            ctxCanvas.moveTo(10, 40);
+            ctxCanvas.bezierCurveTo(10, 16, 54, 16, 54, 40);
+            ctxCanvas.bezierCurveTo(54, 49, 42, 50, 32, 50);
+            ctxCanvas.bezierCurveTo(22, 50, 10, 49, 10, 40);
+            ctxCanvas.closePath();
             ctxCanvas.fill();
 
-            // Ojo cósmico único gigante
+            // Constelaciones / Estrellas
+            ctxCanvas.fillStyle = '#d8b4fe';
+            ctxCanvas.beginPath(); ctxCanvas.arc(16, 20, 2.5, 0, Math.PI * 2); ctxCanvas.fill();
+            ctxCanvas.beginPath(); ctxCanvas.arc(48, 22, 1.5, 0, Math.PI * 2); ctxCanvas.fill();
+
+            // Ojo gigante del vacío estelar
             ctxCanvas.fillStyle = '#f43f5e';
-            ctxCanvas.beginPath(); ctxCanvas.arc(0, -r * 0.05, r * 0.25, 0, Math.PI * 2); ctxCanvas.fill();
+            ctxCanvas.beginPath(); ctxCanvas.arc(32, 32, 8, 0, Math.PI * 2); ctxCanvas.fill();
             ctxCanvas.fillStyle = 'white';
-            ctxCanvas.beginPath(); ctxCanvas.arc(0, -r * 0.05, r * 0.10, 0, Math.PI * 2); ctxCanvas.fill();
+            ctxCanvas.beginPath(); ctxCanvas.arc(32, 32, 3, 0, Math.PI * 2); ctxCanvas.fill();
+            ctxCanvas.fillStyle = '#3b0764';
+            ctxCanvas.beginPath(); ctxCanvas.arc(34, 30, 1, 0, Math.PI * 2); ctxCanvas.fill();
+
+            // Ceja misteriosa
+            ctxCanvas.strokeStyle = '#3b0764';
+            ctxCanvas.lineWidth = 3;
+            ctxCanvas.lineCap = 'round';
+            ctxCanvas.beginPath();
+            ctxCanvas.moveTo(24, 26); ctxCanvas.quadraticCurveTo(32, 23, 40, 26);
+            ctxCanvas.stroke();
+
+            // Boca cósmica
+            ctxCanvas.strokeStyle = '#f43f5e';
+            ctxCanvas.lineWidth = 2;
+            ctxCanvas.lineCap = 'round';
+            ctxCanvas.beginPath();
+            ctxCanvas.moveTo(26, 41); ctxCanvas.quadraticCurveTo(32, 44, 38, 41);
+            ctxCanvas.stroke();
 
         } else if (currentSkinId === 'dorado') {
-            let grad = ctxCanvas.createLinearGradient(-r, -r, r, r);
+            // Corona real del soberano (Detrás del cuerpo)
+            ctxCanvas.fillStyle = '#fbbf24';
+            ctxCanvas.strokeStyle = '#78350f';
+            ctxCanvas.lineWidth = 1.5;
+            ctxCanvas.lineJoin = 'round';
+            ctxCanvas.beginPath();
+            ctxCanvas.moveTo(20, 24);
+            ctxCanvas.lineTo(24, 14);
+            ctxCanvas.lineTo(32, 20);
+            ctxCanvas.lineTo(40, 14);
+            ctxCanvas.lineTo(44, 24);
+            ctxCanvas.closePath();
+            ctxCanvas.fill();
+            ctxCanvas.stroke();
+
+            ctxCanvas.fillStyle = '#f43f5e';
+            ctxCanvas.beginPath(); ctxCanvas.arc(32, 20, 2.5, 0, Math.PI*2); ctxCanvas.fill();
+
+            // Cuerpo dorado reluciente
+            let grad = ctxCanvas.createLinearGradient(12, 18, 52, 48);
             grad.addColorStop(0, '#fef08a');
             grad.addColorStop(0.5, '#eab308');
             grad.addColorStop(1, '#854d0e');
             ctxCanvas.fillStyle = grad;
-            ctxCanvas.beginPath();
-            ctxCanvas.ellipse(0, 0, widthBounce, heightBounce, 0, 0, Math.PI * 2);
-            ctxCanvas.fill();
 
-            // Corona
-            ctxCanvas.fillStyle = '#fbbf24';
             ctxCanvas.beginPath();
-            ctxCanvas.moveTo(-r * 0.5, -r * 0.8);
-            ctxCanvas.lineTo(-r * 0.6, -r * 1.3);
-            ctxCanvas.lineTo(-r * 0.2, -r * 1.0);
-            ctxCanvas.lineTo(0, -r * 1.5);
-            ctxCanvas.lineTo(r * 0.2, -r * 1.0);
-            ctxCanvas.lineTo(r * 0.6, -r * 1.3);
-            ctxCanvas.lineTo(r * 0.5, -r * 0.8);
+            ctxCanvas.moveTo(12, 40);
+            ctxCanvas.bezierCurveTo(12, 18, 52, 18, 52, 40);
+            ctxCanvas.bezierCurveTo(52, 48, 44, 48, 32, 48);
+            ctxCanvas.bezierCurveTo(20, 48, 12, 48, 12, 40);
             ctxCanvas.closePath();
             ctxCanvas.fill();
 
-            // Ojos con gafas geniales de sol
+            // Gafas de sol negras del Rey
+            ctxCanvas.strokeStyle = '#78350f';
+            ctxCanvas.lineWidth = 2.5;
+            ctxCanvas.beginPath(); ctxCanvas.arc(23, 33, 5, 0, Math.PI*2); ctxCanvas.stroke();
+            ctxCanvas.beginPath(); ctxCanvas.arc(41, 33, 5, 0, Math.PI*2); ctxCanvas.stroke();
+            ctxCanvas.lineWidth = 2;
+            ctxCanvas.beginPath(); ctxCanvas.moveTo(28, 33); ctxCanvas.lineTo(36, 33); ctxCanvas.stroke();
+
+            // Ojos negros detrás de los lentes
             ctxCanvas.fillStyle = 'black';
-            ctxCanvas.fillRect(-r * 0.45, -r * 0.2, r * 0.9, r * 0.25);
+            ctxCanvas.beginPath(); ctxCanvas.arc(24, 33, 1.5, 0, Math.PI*2); ctxCanvas.fill();
+            ctxCanvas.beginPath(); ctxCanvas.arc(40, 33, 1.5, 0, Math.PI*2); ctxCanvas.fill();
+
+            // Sonrisa del Soberano
+            ctxCanvas.strokeStyle = '#78350f';
+            ctxCanvas.lineWidth = 2;
+            ctxCanvas.lineCap = 'round';
+            ctxCanvas.beginPath();
+            ctxCanvas.moveTo(26, 39); ctxCanvas.quadraticCurveTo(32, 43, 38, 39);
+            ctxCanvas.stroke();
         }
 
         ctxCanvas.restore();
@@ -2884,6 +2777,9 @@ class Enemy {
     }
 }
 
+/**
+ * STREAMING_CHUNK: Running main game rendering loop and collision detection
+ */
 
 class Projectile {
     constructor() { this.active = false; }
@@ -2911,7 +2807,7 @@ class Projectile {
     draw(ctxCanvas, camX, camY) {
         if (this.customDraw) { this.customDraw(ctxCanvas, camX, camY); } else {
             ctxCanvas.save();
-            ctxCanvas.translate(this.x - camX, this.y - camY);
+            ctxCanvas.translate(this.x - camX, this.y - camY); // FIXED: proj.y replaced with this.y to prevent ReferenceError
             ctxCanvas.fillStyle = this.color;
             ctxCanvas.beginPath();
             ctxCanvas.arc(0, 0, this.radius, 0, Math.PI * 2);
@@ -2924,10 +2820,8 @@ class Projectile {
 class EnemyProjectile {
     constructor() { this.active = false; }
     spawn(x, y, vx, vy, speed, damage, radius, color) {
-        this.x = x; this.y = y;
-        this.vx = vx; this.vy = vy;
-        this.speed = speed; this.damage = damage;
-        this.radius = radius; this.color = color;
+        this.x = x; this.y = y; this.vx = vx; this.vy = vy;
+        this.speed = speed; this.damage = damage; this.radius = radius; this.color = color;
         this.active = true; this.life = 3.5;
     }
     update(dt) {
@@ -2952,8 +2846,7 @@ class XpOrb {
     spawn(x, y, value) { this.x = x; this.y = y; this.value = value; this.radius = 5; this.active = true; }
     draw(ctxCanvas, camX, camY) {
         ctxCanvas.save();
-        // CORRECCIÓN: Se cambió "sy - camY" por "this.y - camY" para resolver el error ReferenceError: sy is not defined
-        ctxCanvas.translate(this.x - camX, this.y - camY); 
+        ctxCanvas.translate(this.x - camX, this.y - camY);
         ctxCanvas.fillStyle = '#3b82f6';
         ctxCanvas.beginPath();
         ctxCanvas.arc(0, 0, this.radius, 0, Math.PI * 2);
