@@ -119,7 +119,6 @@
             z-index: 20;
         }
 
-        /* Menú de Crafteo */
         #crafting-menu {
             position: absolute;
             top: 50%; left: 50%;
@@ -150,7 +149,6 @@
         .recipe button:hover { background: #33ee99; }
         .recipe button:disabled { background: #444; color: #888; cursor: not-allowed; }
 
-        /* Inventario Grande de 3x9 */
         #large-inventory-menu {
             position: absolute;
             top: 50%; left: 50%;
@@ -219,7 +217,6 @@
             transition: background 0.1s;
         }
 
-        /* Indicador de tumba/cofre activo */
         #grave-hud {
             position: absolute;
             top: 100px;
@@ -233,20 +230,65 @@
             display: none;
             z-index: 10;
         }
+
+        /* --- ESTILOS DEL NUEVO MENÚ DE CONTROLES / PAUSA --- */
+        #controls-modal {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(15, 15, 25, 0.95);
+            border: 3px solid #ffaa00;
+            border-radius: 15px;
+            padding: 25px;
+            color: white;
+            display: none;
+            z-index: 150;
+            backdrop-filter: blur(12px);
+            width: 440px;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.9);
+        }
+        .control-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            padding-bottom: 6px;
+            font-size: 13px;
+        }
+        .key-badge {
+            background: linear-gradient(#eee, #ccc);
+            color: #111;
+            padding: 3px 7px;
+            border-radius: 5px;
+            font-family: 'Courier New', Courier, monospace;
+            font-weight: bold;
+            box-shadow: 0 2px 0 #999;
+            text-shadow: none;
+            display: inline-block;
+            margin-left: 3px;
+            font-size: 11px;
+        }
+        .action-highlight {
+            color: #44ffaa;
+            font-weight: bold;
+            font-size: 12px;
+        }
     </style>
 </head>
 <body>
 
     <div id="damage-flash"></div>
     <div id="ui">
-        <div class="stats">
+        <div class="stats" style="pointer-events: auto;">
             <b style="color: #44ffaa;">Voxel Engine v15.2</b> <span style="font-size:10px; color:#ffcc00; background:rgba(0,0,0,0.4); padding: 2px 4px; border-radius:4px;">NETHER UPDATE</span><br>
-            • <b>Teclas del 1 al 9</b>: Seleccionar objeto del Hotbar 📱<br>
-            • <b>H</b>: Activar/Silenciar Música Personalizada 🎵<br>
-            • <b>I</b>: Abrir Inventario Grande 🎒<br>
-            • <b>G</b>: Modo Juego | <b>E</b>: Crafteos | <b>V</b>: Vuelo (Creativo)<br>
-            • <b>Z</b>: Deshacer Bloque<br>
-            <div id="mode-display" style="font-weight: bold; margin-top: 5px;">Modo: Supervivencia</div>
+            <div id="mode-display" style="font-weight: bold; margin-top: 5px; margin-bottom: 10px;">Modo: Supervivencia</div>
+            <!-- Botón para ver controles y pausar el juego -->
+            <button onclick="openControlsModal()" style="background: #ffaa00; color: #111; border: none; padding: 8px 12px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
+                ⌨️ Ver Controles / Pausa
+            </button>
         </div>
     </div>
     
@@ -255,7 +297,6 @@
         <div id="mode-badge" style="display:none;">INVENCIBLE</div>
     </div>
 
-    <!-- Indicador de recuperación de tumba -->
     <div id="grave-hud">
         ⏳ Tumba activa: <span id="grave-timer">60s</span> restante<br>
         <span style="font-size: 10px; color: #ccc;">Regresa rápido a donde moriste.</span>
@@ -326,6 +367,76 @@
         <button onclick="toggleLargeInventory()" style="width: 100%; background: #ffd700; color: #111; border: none; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer;">Cerrar Inventario</button>
     </div>
 
+    <!-- Menú de Controles y Pausa -->
+    <div id="controls-modal">
+        <h2 style="margin-top:0; text-align:center; color:#ffaa00; text-shadow: 2px 2px 0 #000;">Juego Pausado ⏸️</h2>
+        <p style="font-size: 12px; color: #bbb; text-align: center; margin-top: -10px; margin-bottom: 20px;">Presiona el botón de abajo o haz clic en el mundo para continuar.</p>
+        
+        <div style="display: flex; flex-direction: column; gap: 3px;">
+            <div class="control-row">
+                <span>Moverse por el mapa</span>
+                <div>
+                    <span class="key-badge">W</span>
+                    <span class="key-badge">A</span>
+                    <span class="key-badge">S</span>
+                    <span class="key-badge">D</span>
+                </div>
+            </div>
+            <div class="control-row">
+                <span>Saltar / Nadar / Ascender</span>
+                <span class="key-badge" style="padding: 3px 15px;">Espacio</span>
+            </div>
+            <div class="control-row">
+                <span>Descender (Modo Vuelo)</span>
+                <span class="key-badge">Shift Izq</span>
+            </div>
+            <div class="control-row">
+                <span>Romper Bloque / Atacar Mobs</span>
+                <span class="action-highlight" style="color: #ff5555;">Click Izquierdo</span>
+            </div>
+            <div class="control-row">
+                <span>Colocar Bloque / Comer / Encender</span>
+                <span class="action-highlight" style="color: #55ff55;">Click Derecho</span>
+            </div>
+            <div class="control-row">
+                <span>Seleccionar del Hotbar</span>
+                <span class="key-badge">1 a 9</span>
+            </div>
+            <div class="control-row">
+                <span>Abrir Inventario Grande 3x9</span>
+                <span class="key-badge">I</span>
+            </div>
+            <div class="control-row">
+                <span>Menú de Crafteo y Mejoras</span>
+                <span class="key-badge">E</span>
+            </div>
+            <div class="control-row">
+                <span>Alternar Creativo / Supervivencia</span>
+                <span class="key-badge">G</span>
+            </div>
+            <div class="control-row">
+                <span>Volar (Modo Creativo activo)</span>
+                <span class="key-badge">V</span>
+            </div>
+            <div class="control-row">
+                <span>Cambiar de Cámara (1ra/3ra Persona)</span>
+                <span class="key-badge">C</span>
+            </div>
+            <div class="control-row">
+                <span>Deshacer última colocación/rotura</span>
+                <span class="key-badge">Z</span>
+            </div>
+            <div class="control-row">
+                <span>Alternar Música de Fondo</span>
+                <span class="key-badge">H</span>
+            </div>
+        </div>
+
+        <button onclick="resumeGame()" style="width: 100%; background: #ffaa00; color: #111; border: none; padding: 12px; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; margin-top: 20px; transition: 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
+            Continuar Juego ▶️
+        </button>
+    </div>
+
     <audio id="drive-audio-player" loop style="display:none;"></audio>
 
     <script>
@@ -364,7 +475,7 @@
         let pickaxeLevel = 0; 
         let swordLevel = 0;
         let hasBow = false; 
-        let portalCooldown = 0; // Controla el tiempo de espera al teletransportarse para evitar bucles
+        let portalCooldown = 0; 
         
         const tiers = [
             { name: "Ninguno", cost: null },
@@ -376,8 +487,8 @@
 
         let isCraftingOpen = false;
         let isLargeInventoryOpen = false;
+        let isControlsOpen = false; // Estado para controlar el nuevo modal de pausa
 
-        // --- SISTEMA MULTI-DIMENSIONAL ---
         let currentDimension = "overworld";
         let overworldWorldData = new Map();
         let netherWorldData = new Map();
@@ -781,7 +892,7 @@
             createCharacter();
 
             document.body.addEventListener('click', (e) => {
-                if (!isCraftingOpen && !isLargeInventoryOpen) {
+                if (!isCraftingOpen && !isLargeInventoryOpen && !isControlsOpen) {
                     if (!e.target.closest('#inventory') && !e.target.closest('#ui') && !e.target.closest('#cycle-info')) {
                         document.body.requestPointerLock();
                         if (!audioStarted) {
@@ -792,8 +903,15 @@
                 }
             });
 
+            // Escuchar cambios de Pointer Lock para manejar pausa de manera nativa
             document.addEventListener('pointerlockchange', () => {
-                if (document.pointerLockElement !== document.body) {
+                if (document.pointerLockElement === document.body) {
+                    hideControlsModal();
+                } else {
+                    // Si el puntero se libera y no hay otros menús abiertos, mostramos la pausa con controles
+                    if (!isCraftingOpen && !isLargeInventoryOpen) {
+                        showControlsModal();
+                    }
                 }
             });
 
@@ -812,6 +930,29 @@
             });
 
             window.addEventListener('contextmenu', e => e.preventDefault());
+        }
+
+        // Funciones para manejar el Modal de Controles / Pausa
+        function openControlsModal() {
+            document.exitPointerLock();
+            showControlsModal();
+        }
+
+        function showControlsModal() {
+            isControlsOpen = true;
+            const modal = document.getElementById('controls-modal');
+            if (modal) modal.style.display = 'block';
+        }
+
+        function hideControlsModal() {
+            isControlsOpen = false;
+            const modal = document.getElementById('controls-modal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        function resumeGame() {
+            hideControlsModal();
+            document.body.requestPointerLock();
         }
 
         function getMaterial(type) {
@@ -920,7 +1061,6 @@
                     const currentType = slotToType[i];
                     const meta = itemMetaData[currentType];
                     
-                    // Manejar estados bloqueados/desbloqueados de herramientas
                     let isLocked = false;
                     if (!isCreative) {
                         if (currentType === "pickaxe" && pickaxeLevel === 0) isLocked = true;
@@ -960,13 +1100,11 @@
 
         function isBlockAt(x, y, z) {
             const voxel = worldData.get(`${Math.round(x)},${Math.round(y)},${Math.round(z)}`);
-            // Permitir el paso físico a través del agua, lava, portales y fuego
             return (voxel && voxel.type !== "water" && voxel.type !== "lava" && voxel.type !== "portal" && voxel.type !== "fire");
         }
 
         function isSolid(x, y, z) {
             const voxel = worldData.get(`${x},${y},${z}`);
-            // Permitir el paso de luz y renderizado a través de fluidos, portales y fuego
             return (voxel && voxel.type !== "water" && voxel.type !== "lava" && voxel.type !== "portal" && voxel.type !== "fire");
         }
 
@@ -1210,7 +1348,6 @@
             mobs.push(zombie);
         }
 
-        // --- SPAWNEO DE MOBS EN EL NETHER ---
         function spawnZombiePigman(x, y, z) {
             const pigman = new THREE.Group();
             const skinMat = getMobMaterial('zombie_pigman', 'skin');
@@ -1796,7 +1933,6 @@
                 player.bodyParts.forEach(p => p.visible = false);
             }
 
-            // Reducir cooldown del portal si está activo
             if (portalCooldown > 0) {
                 portalCooldown -= 0.016;
             }
@@ -2471,7 +2607,6 @@
         }
 
         function checkAndCreatePortal(px, py, pz) {
-            // Plano XY (bz es constante) - Búsqueda ampliada a 9x11 bloques
             for (let dx = -4; dx <= 4; dx++) {
                 for (let dy = -5; dy <= 5; dy++) {
                     const bx = px + dx;
@@ -2496,7 +2631,6 @@
                 }
             }
             
-            // Plano ZY (bx es constante) - Búsqueda ampliada a 9x11 bloques
             for (let dz = -4; dz <= 4; dz++) {
                 for (let dy = -5; dy <= 5; dy++) {
                     const bx = px;
@@ -2564,7 +2698,6 @@
             const pz = Math.round(player.position.z);
             let py = Math.round(player.position.y);
             
-            // Comprobar si existe un portal de destino cerca de la llegada
             let portalExists = false;
             for (let dx = -3; dx <= 3; dx++) {
                 for (let dy = -3; dy <= 3; dy++) {
@@ -2579,9 +2712,7 @@
                 if (portalExists) break;
             }
 
-            // Si no existe, creamos un portal de retorno en el destino para que el jugador pueda volver
             if (!portalExists) {
-                // Despejar espacio para el nuevo portal
                 for (let x = -2; x <= 3; x++) {
                     for (let y = -1; y <= 4; y++) {
                         for (let z = -1; z <= 1; z++) {
@@ -2590,7 +2721,6 @@
                     }
                 }
                 
-                // Construir estructura de Obsidiana con Portal activo
                 for (let x = -1; x <= 2; x++) {
                     for (let y = -1; y <= 3; y++) {
                         const isFrame = (x === -1 || x === 2 || y === -1 || y === 3);
@@ -2606,7 +2736,6 @@
 
             renderWorld();
             
-            // Establecer cooldown de 3 segundos para evitar teletransportación instantánea inversa
             portalCooldown = 3.0;
 
             if (currentDimension === "nether") {
@@ -2672,8 +2801,11 @@
             }
             if (isCraftingOpen) {
                 if (isLargeInventoryOpen) toggleLargeInventory();
+                hideControlsModal();
                 document.exitPointerLock();
                 updateCraftingMenuUI();
+            } else {
+                document.body.requestPointerLock();
             }
         }
 
@@ -2819,8 +2951,11 @@
             }
             if (isLargeInventoryOpen) {
                 if (isCraftingOpen) toggleCrafting();
+                hideControlsModal();
                 document.exitPointerLock();
                 renderLargeInventory();
+            } else {
+                document.body.requestPointerLock();
             }
         }
 
@@ -2837,7 +2972,6 @@
                 if (itemKey) {
                     const meta = itemMetaData[itemKey];
                     
-                    // VALIDACIÓN DE SEGURIDAD
                     if (!meta) {
                         slotEl.innerHTML = '';
                         grid.appendChild(slotEl);
@@ -2853,10 +2987,10 @@
                         if (itemKey === 'bow' && (isCreative || hasBow)) isAvailable = true;
                     } else {
                         const count = resources[meta.resourceName];
-                        if (count > 0 || count === Infinity) {
+                        if (count > 0 || count === Infinity || isCreative) {
                             isAvailable = true;
                         }
-                        countLabel = count === Infinity ? "∞" : count;
+                        countLabel = (isCreative || count === Infinity) ? "∞" : count;
                     }
 
                     if (isAvailable) {
