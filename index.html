@@ -57,7 +57,7 @@
                         Hola, soy <span class="text-white font-medium">Jose Enrique</span> de la Unidad Educativa Cambridge. Estudiante apasionado por la inteligencia artificial y el diseño de experiencias digitales únicas.
                     </p>
                     <div class="flex flex-wrap justify-center gap-4">
-                        <button onclick="switchTab('proyectos')" class="px-8 py-4 bg-blue-600 hover:bg-blue-700 rounded-xl font-bold transition-all transform hover:scale-105 flex items-center gap-2">
+        <button onclick="document.getElementById('inicio-proyectos').scrollIntoView({ behavior: 'smooth' })" class="px-8 py-4 bg-blue-600 hover:bg-blue-700 rounded-xl font-bold transition-all transform hover:scale-105 flex items-center gap-2">
                             Ver Proyectos <i class="fa-solid fa-chevron-down text-xs"></i>
                         </button>
                         <button onclick="switchTab('ayuda')" class="px-8 py-4 bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-xl font-bold transition-all flex items-center gap-2">
@@ -102,6 +102,57 @@
                             <p class="text-blue-400 text-sm mb-4 font-medium uppercase tracking-wider">Especialista</p>
                             <p class="text-slate-400 text-sm leading-relaxed">Creación de mundos procedurales y assets mediante ingeniería de prompts.</p>
                         </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Sección de proyectos integrada en inicio -->
+            <section id="inicio-proyectos" class="py-10 px-6">
+                <div class="max-w-6xl mx-auto">
+                    <h2 class="text-3xl font-bold mb-12 text-center">Mis Proyectos y Juegos</h2>
+                    <div class="grid md:grid-cols-3 gap-6">
+                        <!-- Minecraft -->
+                        <a href="minecraft.html" target="_blank" rel="noopener noreferrer" class="p-6 rounded-2xl bg-slate-900 border border-slate-800 hover:border-blue-500 transition-all group block text-center">
+                            <div class="text-4xl mb-4 group-hover:scale-110 transition-transform">🧱</div>
+                            <h3 class="font-bold text-lg mb-2">Minecraft</h3>
+                            <p class="text-slate-400 text-xs">Juego sandbox creativo</p>
+                        </a>
+                        <!-- Ajedrez 3d -->
+                        <a href="ajedrez3d.html" target="_blank" rel="noopener noreferrer" class="p-6 rounded-2xl bg-slate-900 border border-slate-800 hover:border-blue-500 transition-all group block text-center">
+                            <div class="text-4xl mb-4 group-hover:scale-110 transition-transform">♟️</div>
+                            <h3 class="font-bold text-lg mb-2">Ajedrez 3D</h3>
+                            <p class="text-slate-400 text-xs">Desafío estratégico</p>
+                        </a>
+                        <!-- Angry bird -->
+                        <a href="angrybird.html" target="_blank" rel="noopener noreferrer" class="p-6 rounded-2xl bg-slate-900 border border-slate-800 hover:border-blue-500 transition-all group block text-center">
+                            <div class="text-4xl mb-4 group-hover:scale-110 transition-transform">🐦</div>
+                            <h3 class="font-bold text-lg mb-2">Angry Bird</h3>
+                            <p class="text-slate-400 text-xs">Juego de física</p>
+                        </a>
+                        <!-- Blooket -->
+                        <a href="blooket.html" target="_blank" rel="noopener noreferrer" class="p-6 rounded-2xl bg-slate-900 border border-slate-800 hover:border-blue-500 transition-all group block text-center">
+                            <div class="text-4xl mb-4 group-hover:scale-110 transition-transform">🎮</div>
+                            <h3 class="font-bold text-lg mb-2">Blooket</h3>
+                            <p class="text-slate-400 text-xs">Aprendizaje interactivo</p>
+                        </a>
+                        <!-- Roblox -->
+                        <a href="roblox.html" target="_blank" rel="noopener noreferrer" class="p-6 rounded-2xl bg-slate-900 border border-slate-800 hover:border-blue-500 transition-all group block text-center">
+                            <div class="text-4xl mb-4 group-hover:scale-110 transition-transform">🚀</div>
+                            <h3 class="font-bold text-lg mb-2">Roblox</h3>
+                            <p class="text-slate-400 text-xs">Mundos compartidos</p>
+                        </a>
+                        <!-- Quiero queque -->
+                        <a href="quieroqueque.html" target="_blank" rel="noopener noreferrer" class="p-6 rounded-2xl bg-slate-900 border border-slate-800 hover:border-blue-500 transition-all group block text-center">
+                            <div class="text-4xl mb-4 group-hover:scale-110 transition-transform">🍰</div>
+                            <h3 class="font-bold text-lg mb-2">Quiero Queque</h3>
+                            <p class="text-slate-400 text-xs">Juego de cocina</p>
+                        </a>
+                        <!-- Serpiente -->
+                        <a href="serpiente.html" target="_blank" rel="noopener noreferrer" class="p-6 rounded-2xl bg-slate-900 border border-slate-800 hover:border-blue-500 transition-all group block text-center">
+                            <div class="text-4xl mb-4 group-hover:scale-110 transition-transform">🐍</div>
+                            <h3 class="font-bold text-lg mb-2">Serpiente</h3>
+                            <p class="text-slate-400 text-xs">Juego de agilidad mental</p>
+                        </a>
                     </div>
                 </div>
             </section>
