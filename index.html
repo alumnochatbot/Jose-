@@ -3,33 +3,66 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jose Enrique | Portafolio Personal</title>
+    <title>Jose Enrique | Desarrollador de Aplicaciones Web & Mobile</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; }
+        .font-mono-code { font-family: 'Fira Code', monospace; }
         .bg-grid {
-            background-image: radial-gradient(circle at 2px 2px, rgba(255,255,255,0.05) 1px, transparent 0);
-            background-size: 40px 40px;
+            background-image: radial-gradient(circle at 2px 2px, rgba(59, 130, 246, 0.08) 1px, transparent 0);
+            background-size: 32px 32px;
         }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
         .faq-answer { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; }
         .faq-item.active .faq-answer { max-height: 200px; padding-bottom: 1.25rem; }
         .faq-item.active .faq-icon { transform: rotate(180deg); }
+
+        /* Estilos de Vista Previa */
+        .preview-container {
+            position: fixed;
+            pointer-events: none;
+            z-index: 100;
+            opacity: 0;
+            transform: scale(0.9) translateY(10px);
+            transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            width: 320px;
+            height: 240px;
+        }
+        .preview-container.visible {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+        }
+        /* Envolver e iframe para escalado interno */
+        .iframe-wrapper {
+            position: relative;
+            width: 1280px; /* Ancho virtual grande para renderizar completo */
+            height: 960px; /* Alto virtual grande */
+            transform: scale(0.25); /* Escalar a 25% para que encaje exacto en 320x240 */
+            transform-origin: top left;
+        }
+        .iframe-wrapper iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
     </style>
 </head>
-<body class="bg-slate-950 text-slate-100 bg-grid">
+<body class="bg-slate-950 text-slate-100 bg-grid min-h-screen flex flex-col justify-between">
 
     <!-- Navegación -->
     <nav id="navbar" class="fixed top-0 w-full z-50 transition-all duration-300 py-6">
         <div class="max-w-6xl mx-auto px-6 flex justify-between items-center">
-            <div class="flex items-center gap-2">
-                <div class="w-10 h-10 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-lg flex items-center justify-center font-bold text-xl shadow-lg shadow-blue-500/20">JE</div>
-                <span class="hidden sm:block font-semibold tracking-tight">Jose Enrique</span>
+            <div class="flex items-center gap-2.5">
+                <div class="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-500 rounded-xl flex items-center justify-center font-extrabold text-lg text-white shadow-lg shadow-blue-500/20">JE</div>
+                <div>
+                    <span class="block font-bold tracking-tight text-white leading-none">Jose Enrique</span>
+                    <span class="text-[10px] text-blue-400 font-medium tracking-wider uppercase font-mono-code">Web & Mobile Dev</span>
+                </div>
             </div>
-            <div class="flex gap-4 md:gap-8 text-xs md:text-sm font-medium">
+            <div class="flex gap-4 md:gap-8 text-xs md:text-sm font-semibold">
                 <button onclick="switchTab('inicio')" class="nav-link text-blue-400 capitalize hover:text-white transition-colors" data-tab="inicio">Inicio</button>
                 <button onclick="switchTab('proyectos')" class="nav-link text-slate-400 capitalize hover:text-white transition-colors" data-tab="proyectos">Proyectos</button>
                 <button onclick="switchTab('hobbies')" class="nav-link text-slate-400 capitalize hover:text-white transition-colors" data-tab="hobbies">Hobbies</button>
@@ -39,120 +72,85 @@
     </nav>
 
     <!-- Contenido Principal -->
-    <main class="min-h-screen">
+    <main class="flex-grow">
         
         <!-- PESTAÑA: INICIO -->
         <div id="inicio" class="tab-content active pt-32 animate-fade-in">
-            <header class="relative pb-20 px-6 overflow-hidden">
-                <div class="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full bg-[radial-gradient(circle_at_50%_10%,#1e40af33,transparent_50%)] pointer-events-none"></div>
+            <header class="relative pb-16 px-6 overflow-hidden">
+                <div class="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full bg-[radial-gradient(circle_at_50%_10%,#1e3a8a35,transparent_50%)] pointer-events-none"></div>
                 <div class="max-w-4xl mx-auto text-center relative z-10">
-                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold mb-6">
+                    <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold mb-8">
                         <span class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
-                        DISPONIBLE PARA PROYECTOS
+                        ESTUDIANTE DE APLICACIONES WEB & MOBILE
                     </div>
-                    <h1 class="text-5xl md:text-7xl font-extrabold mb-6 tracking-tight bg-clip-text text-transparent bg-gradient-to-b from-white to-slate-400">
-                        Diseñando el Futuro <br>con <span class="text-blue-500">IA y Creatividad</span>
+                    <h1 class="text-4xl md:text-6xl font-extrabold mb-6 tracking-tight leading-tight text-white">
+                        Construyendo Experiencias <br>Digitales <span class="bg-gradient-to-r from-blue-500 to-indigo-400 bg-clip-text text-transparent">Web y Móviles</span>
                     </h1>
-                    <p class="text-lg text-slate-400 mb-10 max-w-2xl mx-auto leading-relaxed">
-                        Hola, soy <span class="text-white font-medium">Jose Enrique</span> de la Unidad Educativa Cambridge. Estudiante apasionado por la inteligencia artificial y el diseño de experiencias digitales únicas.
+                    <p class="text-base md:text-lg text-slate-400 mb-10 max-w-2xl mx-auto leading-relaxed">
+                        Hola, soy <span class="text-white font-semibold">Jose Enrique</span>, estudiante de la Unidad Educativa Cambridge. Me apasiona el diseño de interfaces modernas, la interactividad 3D y el desarrollo de arquitecturas de software robustas y responsivas.
                     </p>
                     <div class="flex flex-wrap justify-center gap-4">
-        <button onclick="document.getElementById('inicio-proyectos').scrollIntoView({ behavior: 'smooth' })" class="px-8 py-4 bg-blue-600 hover:bg-blue-700 rounded-xl font-bold transition-all transform hover:scale-105 flex items-center gap-2">
-                            Ver Proyectos <i class="fa-solid fa-chevron-down text-xs"></i>
+                        <button onclick="document.getElementById('inicio-proyectos').scrollIntoView({ behavior: 'smooth' })" class="px-7 py-3.5 bg-blue-600 hover:bg-blue-700 rounded-xl font-bold transition-all transform hover:scale-105 flex items-center gap-2 shadow-lg shadow-blue-500/15">
+                            Explorar Portafolio <i class="fa-solid fa-arrow-down text-xs"></i>
                         </button>
-                        <button onclick="switchTab('ayuda')" class="px-8 py-4 bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-xl font-bold transition-all flex items-center gap-2">
-                            Contactar <i class="fa-solid fa-envelope"></i>
+                        <button onclick="switchTab('ayuda')" class="px-7 py-3.5 bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-xl font-bold transition-all flex items-center gap-2">
+                            Contactar <i class="fa-solid fa-paper-plane text-xs text-blue-400"></i>
                         </button>
                     </div>
                 </div>
             </header>
 
-            <!-- Habilidades -->
-            <section class="py-20 px-6 bg-slate-900/30">
+            <!-- Habilidades Core Rediseñadas -->
+            <section class="py-16 px-6 bg-slate-900/30 border-y border-slate-900">
                 <div class="max-w-6xl mx-auto">
                     <div class="flex items-center gap-4 mb-12">
-                        <h2 class="text-3xl font-bold">Habilidades Core</h2>
-                        <div class="h-px flex-1 bg-slate-800"></div>
+                        <h2 class="text-2xl md:text-3xl font-bold text-white">Habilidades de Ingeniería</h2>
+                        <div class="h-px flex-1 bg-slate-800/60"></div>
                     </div>
                     <div class="grid md:grid-cols-3 gap-6">
                         <!-- Card 1 -->
-                        <div class="p-8 rounded-2xl bg-slate-950 border border-slate-800 hover:border-blue-500/50 transition-all group">
-                            <div class="w-12 h-12 bg-blue-500/10 rounded-xl flex items-center justify-center text-blue-500 mb-6 group-hover:bg-blue-500 group-hover:text-white transition-all">
-                                <i class="fa-solid fa-layer-group text-xl"></i>
+                        <div class="p-8 rounded-2xl bg-slate-950/80 border border-slate-900 hover:border-blue-500/40 transition-all group">
+                            <div class="w-12 h-12 bg-blue-500/10 rounded-xl flex items-center justify-center text-blue-400 mb-6 group-hover:bg-blue-600 group-hover:text-white transition-all">
+                                <i class="fa-solid fa-mobile-screen-button text-xl"></i>
                             </div>
-                            <h3 class="text-xl font-bold mb-2">Diseño Web</h3>
-                            <p class="text-blue-400 text-sm mb-4 font-medium uppercase tracking-wider">Avanzado</p>
-                            <p class="text-slate-400 text-sm leading-relaxed">Creación de interfaces modernas, responsivas y centradas en el usuario.</p>
+                            <h3 class="text-xl font-bold mb-2 text-white">Mobile-First & UI/UX</h3>
+                            <p class="text-blue-400 text-xs font-mono-code mb-4 uppercase tracking-wider">Avanzado</p>
+                            <p class="text-slate-400 text-sm leading-relaxed">Maquetación responsiva avanzada, adaptabilidad a pantallas móviles y optimización de interacción táctil.</p>
                         </div>
                         <!-- Card 2 -->
-                        <div class="p-8 rounded-2xl bg-slate-950 border border-slate-800 hover:border-blue-500/50 transition-all group">
-                            <div class="w-12 h-12 bg-blue-500/10 rounded-xl flex items-center justify-center text-blue-500 mb-6 group-hover:bg-blue-500 group-hover:text-white transition-all">
-                                <i class="fa-solid fa-microchip text-xl"></i>
+                        <div class="p-8 rounded-2xl bg-slate-950/80 border border-slate-900 hover:border-blue-500/40 transition-all group">
+                            <div class="w-12 h-12 bg-blue-500/10 rounded-xl flex items-center justify-center text-blue-400 mb-6 group-hover:bg-blue-600 group-hover:text-white transition-all">
+                                <i class="fa-solid fa-cubes text-xl"></i>
                             </div>
-                            <h3 class="text-xl font-bold mb-2">Inteligencia Artificial</h3>
-                            <p class="text-blue-400 text-sm mb-4 font-medium uppercase tracking-wider">En formación</p>
-                            <p class="text-slate-400 text-sm leading-relaxed">Exploración de modelos LLM, agentes autónomos y automatización de procesos.</p>
+                            <h3 class="text-xl font-bold mb-2 text-white">Gráficos 3D & Canvas</h3>
+                            <p class="text-blue-400 text-xs font-mono-code mb-4 uppercase tracking-wider">Especialista</p>
+                            <p class="text-slate-400 text-sm leading-relaxed">Modelado tridimensional interactivo con Three.js, WebGL y desarrollo de motores gráficos 2D en Canvas.</p>
                         </div>
                         <!-- Card 3 -->
-                        <div class="p-8 rounded-2xl bg-slate-950 border border-slate-800 hover:border-blue-500/50 transition-all group">
-                            <div class="w-12 h-12 bg-blue-500/10 rounded-xl flex items-center justify-center text-blue-500 mb-6 group-hover:bg-blue-500 group-hover:text-white transition-all">
-                                <i class="fa-solid fa-gamepad text-xl"></i>
+                        <div class="p-8 rounded-2xl bg-slate-950/80 border border-slate-900 hover:border-blue-500/40 transition-all group">
+                            <div class="w-12 h-12 bg-blue-500/10 rounded-xl flex items-center justify-center text-blue-400 mb-6 group-hover:bg-blue-600 group-hover:text-white transition-all">
+                                <i class="fa-solid fa-gauge-high text-xl"></i>
                             </div>
-                            <h3 class="text-xl font-bold mb-2">Generación IA Minecraft</h3>
-                            <p class="text-blue-400 text-sm mb-4 font-medium uppercase tracking-wider">Especialista</p>
-                            <p class="text-slate-400 text-sm leading-relaxed">Creación de mundos procedurales y assets mediante ingeniería de prompts.</p>
+                            <h3 class="text-xl font-bold mb-2 text-white">Rendimiento y Lógica</h3>
+                            <p class="text-blue-400 text-xs font-mono-code mb-4 uppercase tracking-wider">Sólido</p>
+                            <p class="text-slate-400 text-sm leading-relaxed">Optimización a través de Object Pooling, Spatial Hashing, físicas avanzadas y Web Audio API.</p>
                         </div>
                     </div>
                 </div>
             </section>
 
             <!-- Sección de proyectos integrada en inicio -->
-            <section id="inicio-proyectos" class="py-10 px-6">
+            <section id="inicio-proyectos" class="py-16 px-6">
                 <div class="max-w-6xl mx-auto">
-                    <h2 class="text-3xl font-bold mb-12 text-center">Mis Proyectos y Juegos</h2>
-                    <div class="grid md:grid-cols-3 gap-6">
-                        <!-- Minecraft -->
-                        <a href="minecraft.html" target="_blank" rel="noopener noreferrer" class="p-6 rounded-2xl bg-slate-900 border border-slate-800 hover:border-blue-500 transition-all group block text-center">
-                            <div class="text-4xl mb-4 group-hover:scale-110 transition-transform">🧱</div>
-                            <h3 class="font-bold text-lg mb-2">Minecraft</h3>
-                            <p class="text-slate-400 text-xs">Juego sandbox creativo</p>
-                        </a>
-                        <!-- Ajedrez 3d -->
-                        <a href="ajedrez3d.html" target="_blank" rel="noopener noreferrer" class="p-6 rounded-2xl bg-slate-900 border border-slate-800 hover:border-blue-500 transition-all group block text-center">
-                            <div class="text-4xl mb-4 group-hover:scale-110 transition-transform">♟️</div>
-                            <h3 class="font-bold text-lg mb-2">Ajedrez 3D</h3>
-                            <p class="text-slate-400 text-xs">Desafío estratégico</p>
-                        </a>
-                        <!-- Angry bird -->
-                        <a href="angrybird.html" target="_blank" rel="noopener noreferrer" class="p-6 rounded-2xl bg-slate-900 border border-slate-800 hover:border-blue-500 transition-all group block text-center">
-                            <div class="text-4xl mb-4 group-hover:scale-110 transition-transform">🐦</div>
-                            <h3 class="font-bold text-lg mb-2">Angry Bird</h3>
-                            <p class="text-slate-400 text-xs">Juego de física</p>
-                        </a>
-                        <!-- Blooket -->
-                        <a href="blooket.html" target="_blank" rel="noopener noreferrer" class="p-6 rounded-2xl bg-slate-900 border border-slate-800 hover:border-blue-500 transition-all group block text-center">
-                            <div class="text-4xl mb-4 group-hover:scale-110 transition-transform">🎮</div>
-                            <h3 class="font-bold text-lg mb-2">Blooket</h3>
-                            <p class="text-slate-400 text-xs">Aprendizaje interactivo</p>
-                        </a>
-                        <!-- Roblox -->
-                        <a href="roblox.html" target="_blank" rel="noopener noreferrer" class="p-6 rounded-2xl bg-slate-900 border border-slate-800 hover:border-blue-500 transition-all group block text-center">
-                            <div class="text-4xl mb-4 group-hover:scale-110 transition-transform">🚀</div>
-                            <h3 class="font-bold text-lg mb-2">Roblox</h3>
-                            <p class="text-slate-400 text-xs">Mundos compartidos</p>
-                        </a>
-                        <!-- Quiero queque -->
-                        <a href="quieroqueque.html" target="_blank" rel="noopener noreferrer" class="p-6 rounded-2xl bg-slate-900 border border-slate-800 hover:border-blue-500 transition-all group block text-center">
-                            <div class="text-4xl mb-4 group-hover:scale-110 transition-transform">🍰</div>
-                            <h3 class="font-bold text-lg mb-2">Quiero Queque</h3>
-                            <p class="text-slate-400 text-xs">Juego de cocina</p>
-                        </a>
-                        <!-- Serpiente -->
-                        <a href="serpiente.html" target="_blank" rel="noopener noreferrer" class="p-6 rounded-2xl bg-slate-900 border border-slate-800 hover:border-blue-500 transition-all group block text-center">
-                            <div class="text-4xl mb-4 group-hover:scale-110 transition-transform">🐍</div>
-                            <h3 class="font-bold text-lg mb-2">Serpiente</h3>
-                            <p class="text-slate-400 text-xs">Juego de agilidad mental</p>
-                        </a>
+                    <div class="text-center mb-12">
+                        <h2 class="text-3xl font-bold text-white mb-3">Mis Proyectos y Aplicaciones</h2>
+                        <p class="text-slate-400 text-sm max-w-lg mx-auto">
+                            Explora mis aplicaciones interactivas y videojuegos de alto rendimiento. <span class="text-blue-400 font-medium">Pasa el puntero</span> sobre las tarjetas para ver una vista previa interactiva en tiempo real.
+                        </p>
+                    </div>
+
+                    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6" id="projects-grid-container">
+                        <!-- Las tarjetas se generan mediante JS o se estructuran con atributos de vista previa -->
                     </div>
                 </div>
             </section>
@@ -162,50 +160,12 @@
         <div id="proyectos" class="tab-content pt-32">
             <section class="py-10 px-6">
                 <div class="max-w-6xl mx-auto">
-                    <h2 class="text-3xl font-bold mb-12 text-center">Mis Proyectos y Juegos</h2>
-                    <div class="grid md:grid-cols-3 gap-6">
-                        <!-- Minecraft -->
-                        <a href="minecraft.html" target="_blank" rel="noopener noreferrer" class="p-6 rounded-2xl bg-slate-900 border border-slate-800 hover:border-blue-500 transition-all group block text-center">
-                            <div class="text-4xl mb-4 group-hover:scale-110 transition-transform">🧱</div>
-                            <h3 class="font-bold text-lg mb-2">Minecraft</h3>
-                            <p class="text-slate-400 text-xs">Juego sandbox creativo</p>
-                        </a>
-                        <!-- Ajedrez 3d -->
-                        <a href="ajedrez3d.html" target="_blank" rel="noopener noreferrer" class="p-6 rounded-2xl bg-slate-900 border border-slate-800 hover:border-blue-500 transition-all group block text-center">
-                            <div class="text-4xl mb-4 group-hover:scale-110 transition-transform">♟️</div>
-                            <h3 class="font-bold text-lg mb-2">Ajedrez 3D</h3>
-                            <p class="text-slate-400 text-xs">Desafío estratégico</p>
-                        </a>
-                        <!-- Angry bird -->
-                        <a href="angrybird.html" target="_blank" rel="noopener noreferrer" class="p-6 rounded-2xl bg-slate-900 border border-slate-800 hover:border-blue-500 transition-all group block text-center">
-                            <div class="text-4xl mb-4 group-hover:scale-110 transition-transform">🐦</div>
-                            <h3 class="font-bold text-lg mb-2">Angry Bird</h3>
-                            <p class="text-slate-400 text-xs">Juego de física</p>
-                        </a>
-                        <!-- Blooket -->
-                        <a href="blooket.html" target="_blank" rel="noopener noreferrer" class="p-6 rounded-2xl bg-slate-900 border border-slate-800 hover:border-blue-500 transition-all group block text-center">
-                            <div class="text-4xl mb-4 group-hover:scale-110 transition-transform">🎮</div>
-                            <h3 class="font-bold text-lg mb-2">Blooket</h3>
-                            <p class="text-slate-400 text-xs">Aprendizaje interactivo</p>
-                        </a>
-                        <!-- Roblox -->
-                        <a href="roblox.html" target="_blank" rel="noopener noreferrer" class="p-6 rounded-2xl bg-slate-900 border border-slate-800 hover:border-blue-500 transition-all group block text-center">
-                            <div class="text-4xl mb-4 group-hover:scale-110 transition-transform">🚀</div>
-                            <h3 class="font-bold text-lg mb-2">Roblox</h3>
-                            <p class="text-slate-400 text-xs">Mundos compartidos</p>
-                        </a>
-                        <!-- Quiero queque -->
-                        <a href="quieroqueque.html" target="_blank" rel="noopener noreferrer" class="p-6 rounded-2xl bg-slate-900 border border-slate-800 hover:border-blue-500 transition-all group block text-center">
-                            <div class="text-4xl mb-4 group-hover:scale-110 transition-transform">🍰</div>
-                            <h3 class="font-bold text-lg mb-2">Quiero Queque</h3>
-                            <p class="text-slate-400 text-xs">Juego de cocina</p>
-                        </a>
-                        <!-- Serpiente -->
-                        <a href="serpiente.html" target="_blank" rel="noopener noreferrer" class="p-6 rounded-2xl bg-slate-900 border border-slate-800 hover:border-blue-500 transition-all group block text-center">
-                            <div class="text-4xl mb-4 group-hover:scale-110 transition-transform">🐍</div>
-                            <h3 class="font-bold text-lg mb-2">Serpiente</h3>
-                            <p class="text-slate-400 text-xs">Juego de agilidad mental</p>
-                        </a>
+                    <div class="text-center mb-12">
+                        <h2 class="text-3xl font-bold text-white mb-3">Catálogo Completo</h2>
+                        <p class="text-slate-400 text-sm">Portafolio técnico enfocado en ingeniería de software, algoritmos y diseño interactivo.</p>
+                    </div>
+                    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6" id="projects-grid-container-all">
+                        <!-- Se poblará dinámicamente con las mismas tarjetas profesionales -->
                     </div>
                 </div>
             </section>
@@ -215,28 +175,28 @@
         <div id="hobbies" class="tab-content pt-32">
             <section class="py-10 px-6">
                 <div class="max-w-4xl mx-auto text-center">
-                    <h2 class="text-4xl font-bold mb-12 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-cyan-300 italic">"Mente activa, cuerpo sano"</h2>
+                    <h2 class="text-4xl font-extrabold mb-12 bg-gradient-to-r from-blue-400 to-indigo-300 bg-clip-text text-transparent">Mente Activa, Código de Alto Nivel</h2>
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-8">
-                        <div class="p-8 rounded-2xl bg-slate-900 border border-slate-800 group hover:bg-blue-600/5 transition-all">
+                        <div class="p-8 rounded-2xl bg-slate-900/60 border border-slate-800/80 group hover:bg-blue-600/5 transition-all">
                             <div class="w-16 h-16 bg-slate-950 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner text-blue-400 text-3xl group-hover:scale-110 transition-transform">
                                 <i class="fa-solid fa-chess"></i>
                             </div>
-                            <h3 class="font-bold text-xl mb-2">Ajedrez</h3>
-                            <p class="text-slate-500 text-sm">Estrategia, paciencia y visión a futuro.</p>
+                            <h3 class="font-bold text-xl mb-2 text-white">Ajedrez</h3>
+                            <p class="text-slate-400 text-sm leading-relaxed">Desarrollo de visión táctica, algoritmos de anticipación y toma de decisiones lógicas.</p>
                         </div>
-                        <div class="p-8 rounded-2xl bg-slate-900 border border-slate-800 group hover:bg-purple-600/5 transition-all">
+                        <div class="p-8 rounded-2xl bg-slate-900/60 border border-slate-800/80 group hover:bg-purple-600/5 transition-all">
                             <div class="w-16 h-16 bg-slate-950 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner text-purple-400 text-3xl group-hover:scale-110 transition-transform">
                                 <i class="fa-solid fa-gamepad"></i>
                             </div>
-                            <h3 class="font-bold text-xl mb-2">Videojuegos</h3>
-                            <p class="text-slate-500 text-sm">Exploración de mundos y narrativa digital.</p>
+                            <h3 class="font-bold text-xl mb-2 text-white">Videojuegos</h3>
+                            <p class="text-slate-400 text-sm leading-relaxed">Análisis de mecánicas de juego, motores de física, diseño tridimensional y UX.</p>
                         </div>
-                        <div class="p-8 rounded-2xl bg-slate-900 border border-slate-800 group hover:bg-cyan-600/5 transition-all">
+                        <div class="p-8 rounded-2xl bg-slate-900/60 border border-slate-800/80 group hover:bg-cyan-600/5 transition-all">
                             <div class="w-16 h-16 bg-slate-950 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner text-cyan-400 text-3xl group-hover:scale-110 transition-transform">
                                 <i class="fa-solid fa-person-swimming"></i>
                             </div>
-                            <h3 class="font-bold text-xl mb-2">Natación</h3>
-                            <p class="text-slate-500 text-sm">Disciplina física y desconexión mental.</p>
+                            <h3 class="font-bold text-xl mb-2 text-white">Natación</h3>
+                            <p class="text-slate-400 text-sm leading-relaxed">Construcción de disciplina física, resistencia mental, salud y desconexión creativa.</p>
                         </div>
                     </div>
                 </div>
@@ -248,67 +208,67 @@
             <section class="py-10 px-6">
                 <div class="max-w-5xl mx-auto">
                     <div class="text-center mb-16">
-                        <h2 class="text-4xl font-bold mb-4">Centro de Ayuda</h2>
-                        <p class="text-slate-400">¿Tienes dudas sobre mis proyectos o quieres colaborar? Aquí estoy.</p>
+                        <h2 class="text-4xl font-bold mb-4 text-white">Centro de Contacto & FAQ</h2>
+                        <p class="text-slate-400 max-w-lg mx-auto">¿Tienes dudas sobre mis desarrollos de aplicaciones o quieres proponer un proyecto? Aquí estoy.</p>
                     </div>
 
                     <div class="grid md:grid-cols-2 gap-12">
                         <!-- FAQ -->
                         <div>
-                            <h3 class="text-2xl font-bold mb-8 flex items-center gap-3">
+                            <h3 class="text-2xl font-bold mb-8 flex items-center gap-3 text-white">
                                 <i class="fa-solid fa-circle-question text-blue-500"></i> Preguntas Frecuentes
                             </h3>
                             <div class="space-y-4">
-                                <div class="faq-item bg-slate-900 border border-slate-800 rounded-xl px-5">
-                                    <button onclick="toggleFaq(this)" class="w-full py-5 flex justify-between items-center text-left">
-                                        <span class="font-medium pr-4">¿Cómo contactarte para un proyecto?</span>
+                                <div class="faq-item bg-slate-900/50 border border-slate-800/60 rounded-2xl px-5">
+                                    <button onclick="toggleFaq(this)" class="w-full py-5 flex justify-between items-center text-left text-white">
+                                        <span class="font-semibold pr-4 text-slate-200">¿Cómo optimizas tus aplicaciones Web y Mobile?</span>
                                         <i class="fa-solid fa-plus faq-icon transition-transform text-slate-500"></i>
                                     </button>
                                     <div class="faq-answer text-slate-400 text-sm leading-relaxed">
-                                        Puedes escribirme directamente a través del formulario de la derecha o mediante mis redes sociales en el pie de página. Respondo en menos de 24 horas.
+                                        Aplico principios de optimización avanzados: reducción del tamaño de bundles, carga diferida de assets, reciclaje de memoria (Object Pooling) y renderizado eficiente en Canvas y WebGL.
                                     </div>
                                 </div>
-                                <div class="faq-item bg-slate-900 border border-slate-800 rounded-xl px-5">
-                                    <button onclick="toggleFaq(this)" class="w-full py-5 flex justify-between items-center text-left">
-                                        <span class="font-medium pr-4">¿Qué herramientas de IA utilizas?</span>
+                                <div class="faq-item bg-slate-900/50 border border-slate-800/60 rounded-2xl px-5">
+                                    <button onclick="toggleFaq(this)" class="w-full py-5 flex justify-between items-center text-left text-white">
+                                        <span class="font-semibold pr-4 text-slate-200">¿Qué tecnologías místicas implementas?</span>
                                         <i class="fa-solid fa-plus faq-icon transition-transform text-slate-500"></i>
                                     </button>
                                     <div class="faq-answer text-slate-400 text-sm leading-relaxed">
-                                        Principalmente modelos de lenguaje (LLMs) para lógica de diseño y herramientas generativas de imágenes y assets 3D adaptadas a motores de juego.
+                                        Principalmente desarrollo con frameworks modernos responsivos, diseño de audio sintetizado en tiempo real mediante Web Audio API, motores físicos en 2D/3D (Matter.js, Cannon.js) y librerías gráficas interactivas (Three.js).
                                     </div>
                                 </div>
-                                <div class="faq-item bg-slate-900 border border-slate-800 rounded-xl px-5">
-                                    <button onclick="toggleFaq(this)" class="w-full py-5 flex justify-between items-center text-left">
-                                        <span class="font-medium pr-4">¿Haces diseño web para otros?</span>
+                                <div class="faq-item bg-slate-900/50 border border-slate-800/60 rounded-2xl px-5">
+                                    <button onclick="toggleFaq(this)" class="w-full py-5 flex justify-between items-center text-left text-white">
+                                        <span class="font-semibold pr-4 text-slate-200">¿Diseñas apps responsivas bajo demanda?</span>
                                         <i class="fa-solid fa-plus faq-icon transition-transform text-slate-500"></i>
                                     </button>
                                     <div class="faq-answer text-slate-400 text-sm leading-relaxed">
-                                        ¡Claro! Me encanta colaborar en sitios web modernos y portafolios creativos que busquen destacar visualmente.
+                                        ¡Absolutamente! Me encanta colaborar en la conceptualización, prototipado rápido y desarrollo final de sitios web interactivos, portfolios profesionales y simulaciones complejas en la nube.
                                     </div>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Formulario -->
-                        <div class="bg-slate-900 p-8 rounded-3xl border border-slate-800 shadow-xl">
-                            <h3 class="text-2xl font-bold mb-6 flex items-center gap-3">
-                                <i class="fa-solid fa-paper-plane text-blue-500 text-xl"></i> Mensaje Directo
+                        <div class="bg-slate-900/40 p-8 rounded-3xl border border-slate-800 shadow-2xl">
+                            <h3 class="text-2xl font-bold mb-6 flex items-center gap-3 text-white">
+                                <i class="fa-solid fa-paper-plane text-blue-500 text-xl"></i> Enviar Mensaje
                             </h3>
                             <form id="contactForm" onsubmit="handleContact(event)" class="space-y-4">
                                 <div>
-                                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2 ml-1">Nombre Completo</label>
-                                    <input required type="text" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-sm focus:border-blue-500 outline-none transition-all placeholder:text-slate-700" placeholder="Escribe tu nombre...">
+                                    <label class="block text-xs font-bold text-slate-400 uppercase mb-2 ml-1">Nombre Completo</label>
+                                    <input required type="text" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-sm focus:border-blue-500 outline-none transition-all placeholder:text-slate-700 text-white" placeholder="Escribe tu nombre...">
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2 ml-1">Tu Correo</label>
-                                    <input required type="email" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-sm focus:border-blue-500 outline-none transition-all placeholder:text-slate-700" placeholder="ejemplo@correo.com">
+                                    <label class="block text-xs font-bold text-slate-400 uppercase mb-2 ml-1">Tu Correo</label>
+                                    <input required type="email" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-sm focus:border-blue-500 outline-none transition-all placeholder:text-slate-700 text-white" placeholder="ejemplo@correo.com">
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2 ml-1">Asunto</label>
-                                    <textarea required rows="4" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-sm focus:border-blue-500 outline-none transition-all placeholder:text-slate-700" placeholder="¿En qué puedo ayudarte?"></textarea>
+                                    <label class="block text-xs font-bold text-slate-400 uppercase mb-2 ml-1">Asunto</label>
+                                    <textarea required rows="4" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-sm focus:border-blue-500 outline-none transition-all placeholder:text-slate-700 text-white" placeholder="¿En qué puedo ayudarte?"></textarea>
                                 </div>
-                                <button type="submit" class="w-full py-4 bg-blue-600 hover:bg-blue-700 rounded-xl font-bold text-sm transition-all shadow-lg shadow-blue-600/20 active:scale-95">
-                                    Enviar Petición de Ayuda
+                                <button type="submit" class="w-full py-4 bg-blue-600 hover:bg-blue-700 rounded-xl font-bold text-sm transition-all shadow-lg shadow-blue-600/20 active:scale-95 text-white">
+                                    Enviar Mensaje Profesional
                                 </button>
                             </form>
                             <div id="successMsg" class="hidden mt-4 p-4 bg-green-500/10 border border-green-500/20 text-green-400 text-sm rounded-xl text-center">
@@ -321,16 +281,39 @@
         </div>
     </main>
 
+    <!-- FLOATING LIVE HOVER PREVIEW CONTAINER (Device/Browser Simulator Mockup) -->
+    <div id="hover-preview-container" class="preview-container bg-slate-900 border border-slate-800 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden">
+        <!-- Barra de Cabecera del Simulador -->
+        <div class="h-7 bg-slate-950 border-b border-slate-800/80 px-3 flex items-center justify-between">
+            <div class="flex gap-1.5">
+                <div class="w-2.5 h-2.5 rounded-full bg-red-500"></div>
+                <div class="w-2.5 h-2.5 rounded-full bg-yellow-500"></div>
+                <div class="w-2.5 h-2.5 rounded-full bg-green-500"></div>
+            </div>
+            <!-- Campo de URL de simulación -->
+            <div class="bg-slate-900 text-[10px] text-slate-500 font-mono-code px-3 py-0.5 rounded-md border border-slate-800 w-44 truncate text-center" id="preview-url-display">localhost</div>
+            <div class="w-8"></div>
+        </div>
+        <!-- Loader / Spinner -->
+        <div id="preview-loader" class="absolute inset-0 flex items-center justify-center bg-slate-900/90 z-10 transition-opacity duration-300">
+            <i class="fa-solid fa-circle-notch animate-spin text-blue-500 text-2xl"></i>
+        </div>
+        <!-- Iframe scaled wrapper -->
+        <div class="iframe-wrapper">
+            <iframe id="preview-iframe" src="" loading="lazy"></iframe>
+        </div>
+    </div>
+
     <!-- Footer -->
-    <footer class="py-16 px-6 border-t border-slate-900 bg-slate-950/50 backdrop-blur-sm">
+    <footer class="py-12 px-6 border-t border-slate-900 bg-slate-950/50 backdrop-blur-sm">
         <div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8 text-center md:text-left">
             <div>
                 <div class="flex items-center gap-2 mb-4 justify-center md:justify-start">
-                    <div class="w-8 h-8 bg-blue-600 rounded flex items-center justify-center font-bold text-sm shadow-lg shadow-blue-500/20">JE</div>
-                    <span class="font-semibold text-lg tracking-tight">Jose Enrique</span>
+                    <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center font-bold text-sm shadow-lg shadow-blue-500/20 text-white">JE</div>
+                    <span class="font-bold text-lg text-white tracking-tight">Jose Enrique</span>
                 </div>
                 <p class="text-slate-500 text-sm italic">Unidad Educativa Cambridge - 2024</p>
-                <p class="text-slate-600 text-xs mt-2 font-mono tracking-widest uppercase">Building the AI Future</p>
+                <p class="text-slate-600 text-xs mt-2 font-mono-code tracking-widest uppercase">Building Responsive Experiences</p>
             </div>
             <div class="flex gap-4">
                 <a href="#" class="w-12 h-12 bg-slate-900 hover:bg-blue-600 transition-all rounded-full flex items-center justify-center text-slate-400 hover:text-white border border-slate-800 hover:border-transparent">
@@ -347,28 +330,123 @@
     </footer>
 
     <script>
+        // BASE DE DATOS DE PROYECTOS CON TAGS Y ESTRUCTURA TÉCNICA
+        const proyectosData = [
+            {
+                id: 'minecraft',
+                title: 'Minecraft Voxel Engine',
+                desc: 'Motor tridimensional basado en vóxeles procedurales. Integra gravedad, colisiones, ciclos de día/noche, crafteo avanzado y dimensiones alternativas.',
+                emoji: '🧱',
+                url: 'minecraft.html',
+                category: '3D & Physics',
+                tags: ['Three.js', 'WebGL', 'Object Pool']
+            },
+            {
+                id: 'ajedrez3d',
+                title: 'Master Chess 3D',
+                desc: 'Ajedrez tridimensional PvE con IA avanzada por Minimax y poda Alfa-Beta. Incluye detección teórica de aperturas clásicas y gambitos.',
+                emoji: '♟️',
+                url: 'ajedrez3d.html',
+                category: 'AI & Game Logic',
+                tags: ['Three.js', 'Chess.js', 'Minimax']
+            },
+            {
+                id: 'angrybird',
+                title: 'Angry Birds Ultimate',
+                desc: 'Clon del clásico videojuego de física Matter.js con 50 niveles complejos, pájaros explosivos de radio dinámico y un blindaje anti-trampas.',
+                emoji: '🐦',
+                url: 'angrybird.html',
+                category: 'Physics Engine',
+                tags: ['Matter.js', 'Matter Physics', 'Game Loop']
+            },
+            {
+                id: 'blooket',
+                title: 'Monster Brawl Prototype',
+                desc: 'Videojuego roguelike de supervivencia. Incorpora optimización espacial por Spatial Hashing, pool de proyectiles místicas y progresión de niveles.',
+                emoji: '🎮',
+                url: 'blooket.html',
+                category: 'Web Mechanics',
+                tags: ['Canvas 2D', 'Spatial Grid', 'Upgrade Draft']
+            },
+            {
+                id: 'roblox',
+                title: 'Roblox Obby Simulator',
+                desc: 'Simulador en primera y tercera persona. Incluye físicas de rebote optimizadas, checkpoint de guardado magnético e IA de guardiaBarry.',
+                emoji: '🚀',
+                url: 'roblox.html',
+                category: '3D Simulation',
+                tags: ['Three.js', 'Roblox Physics', 'Guard AI']
+            },
+            {
+                id: 'quieroqueque',
+                title: '¡Quiero Queque! Extreme',
+                desc: 'Juego de agilidad y física de velocidad exponencial, viento lateral dinámico, efectos de controles invertidos y un sistema de puntajes y récords.',
+                emoji: '🍰',
+                url: 'quieroqueque.html',
+                category: 'Web Interactive',
+                tags: ['Canvas 2D', 'Wind Physics', 'Dynamic Speed']
+            },
+            {
+                id: 'serpiente',
+                title: 'Word Predators: Serpientes',
+                desc: 'Juego retro cyberpunk que desafía la agilidad mental. Serpientes senoidales que avanzan en base a palabras ingresadas mediante teclado físico.',
+                emoji: '🐍',
+                url: 'serpiente.html',
+                category: 'Keyboard Mechanics',
+                tags: ['Canvas 2D', 'Audio API', 'Sine Slither']
+            }
+        ];
+
+        // RENDERIZADO DE LAS TARJETAS PROFESIONALES DE PROYECTOS
+        function renderProjects() {
+            const containerInicio = document.getElementById('projects-grid-container');
+            const containerAll = document.getElementById('projects-grid-container-all');
+
+            const makeCard = (p) => `
+                <div class="project-card p-6 rounded-2xl bg-slate-900/60 border border-slate-800/80 hover:border-blue-500/50 hover:bg-slate-900 transition-all duration-300 flex flex-col justify-between group h-full relative"
+                     data-url="${p.url}">
+                    <div>
+                        <div class="flex justify-between items-start mb-4">
+                            <span class="text-3xl group-hover:scale-110 transition-transform block">${p.emoji}</span>
+                            <span class="text-[10px] font-mono-code font-semibold px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-400 border border-blue-500/20 uppercase tracking-wider">${p.category}</span>
+                        </div>
+                        <h3 class="font-bold text-lg mb-2 text-white group-hover:text-blue-400 transition-colors">${p.title}</h3>
+                        <p class="text-slate-400 text-xs leading-relaxed mb-6">${p.desc}</p>
+                    </div>
+                    <div>
+                        <div class="flex flex-wrap gap-1.5 mb-6">
+                            ${p.tags.map(t => `<span class="text-[9px] font-mono-code font-medium px-2 py-0.5 rounded bg-slate-950 text-slate-400 border border-slate-800/60">${t}</span>`).join('')}
+                        </div>
+                        <a href="${p.url}" target="_blank" rel="noopener noreferrer" class="w-full py-2.5 rounded-xl bg-slate-950 group-hover:bg-blue-600/10 border border-slate-800 group-hover:border-blue-500/30 text-xs font-bold text-center block text-slate-300 hover:text-white transition-all flex items-center justify-center gap-2">
+                            Lanzar Aplicación <i class="fa-solid fa-arrow-up-right-from-square text-[10px] text-blue-400"></i>
+                        </a>
+                    </div>
+                </div>
+            `;
+
+            containerInicio.innerHTML = proyectosData.slice(0, 6).map(makeCard).join('');
+            containerAll.innerHTML = proyectosData.map(makeCard).join('');
+
+            setupHoverPreviewListeners();
+        }
+
         // Lógica de cambio de pestañas
         function switchTab(tabId) {
-            // Ocultar todos los contenidos
             document.querySelectorAll('.tab-content').forEach(tab => {
                 tab.classList.remove('active');
             });
-            // Quitar estilos activos de la nav
             document.querySelectorAll('.nav-link').forEach(link => {
                 link.classList.remove('text-blue-400');
                 link.classList.add('text-slate-400');
             });
 
-            // Mostrar el seleccionado
             const activeTab = document.getElementById(tabId);
             activeTab.classList.add('active');
             
-            // Marcar link activo
             const activeLink = document.querySelector(`[data-tab="${tabId}"]`);
             activeLink.classList.remove('text-slate-400');
             activeLink.classList.add('text-blue-400');
 
-            // Scroll al inicio suave
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
@@ -376,10 +454,10 @@
         window.onscroll = function() {
             const nav = document.getElementById('navbar');
             if (window.scrollY > 50) {
-                nav.classList.add('bg-slate-950/80', 'backdrop-blur-md', 'border-b', 'border-slate-800', 'py-4');
+                nav.classList.add('bg-slate-950/80', 'backdrop-blur-md', 'border-b', 'border-slate-800/80', 'py-4');
                 nav.classList.remove('py-6');
             } else {
-                nav.classList.remove('bg-slate-950/80', 'backdrop-blur-md', 'border-b', 'border-slate-800', 'py-4');
+                nav.classList.remove('bg-slate-950/80', 'backdrop-blur-md', 'border-b', 'border-slate-800/80', 'py-4');
                 nav.classList.add('py-6');
             }
         };
@@ -389,7 +467,6 @@
             const item = btn.parentElement;
             const isActive = item.classList.contains('active');
             
-            // Cerrar otros
             document.querySelectorAll('.faq-item').forEach(el => {
                 el.classList.remove('active');
                 el.querySelector('.faq-icon').classList.replace('fa-minus', 'fa-plus');
@@ -401,7 +478,7 @@
             }
         }
 
-        // Simulación de envío de formulario
+        // Envío de formulario
         function handleContact(e) {
             e.preventDefault();
             const btn = e.target.querySelector('button');
@@ -412,12 +489,80 @@
 
             setTimeout(() => {
                 e.target.reset();
-                btn.innerHTML = 'Enviar Petición de Ayuda';
+                btn.innerHTML = 'Enviar Mensaje Profesional';
                 btn.disabled = false;
                 msg.classList.remove('hidden');
                 setTimeout(() => msg.classList.add('hidden'), 5000);
-            }, 1500);
+            }, 1200);
         }
+
+        // SISTEMA INTELIGENTE DE VISTA PREVIA INTERACTIVA (HOVER)
+        function setupHoverPreviewListeners() {
+            const previewContainer = document.getElementById('hover-preview-container');
+            const previewIframe = document.getElementById('preview-iframe');
+            const previewLoader = document.getElementById('preview-loader');
+            const previewUrlDisplay = document.getElementById('preview-url-display');
+
+            document.querySelectorAll('.project-card').forEach(card => {
+                const url = card.getAttribute('data-url');
+
+                card.addEventListener('mouseenter', () => {
+                    // Actualizar URL y cargar iframe
+                    previewUrlDisplay.textContent = `localhost:8000/${url}`;
+                    previewLoader.style.opacity = '1';
+                    previewLoader.classList.remove('hidden');
+
+                    // Asignar src para iniciar la carga
+                    previewIframe.src = url;
+
+                    // Mostrar contenedor de vista previa
+                    previewContainer.classList.add('visible');
+                });
+
+                card.addEventListener('mousemove', (e) => {
+                    // Posicionamiento inteligente al lado del puntero
+                    const previewWidth = 320;
+                    const previewHeight = 240;
+
+                    let posX = e.clientX + 20;
+                    let posY = e.clientY + 20;
+
+                    // Prevenir desbordamiento de pantalla (derecha)
+                    if (posX + previewWidth > window.innerWidth) {
+                        posX = e.clientX - previewWidth - 20;
+                    }
+                    // Prevenir desbordamiento de pantalla (abajo)
+                    if (posY + previewHeight > window.innerHeight) {
+                        posY = e.clientY - previewHeight - 20;
+                    }
+
+                    previewContainer.style.left = `${posX}px`;
+                    previewContainer.style.top = `${posY}px`;
+                });
+
+                card.addEventListener('mouseleave', () => {
+                    // PREVENCIÓN DE AUDIO LEAK & OPTIMIZACIÓN:
+                    // Limpiamos el src al instante para cerrar todos los procesos, Matter.js, Three.js y Web Audio contexts
+                    previewIframe.src = '';
+                    previewContainer.classList.remove('visible');
+                    previewLoader.classList.remove('hidden');
+                });
+            });
+
+            // Ocultar loader una vez cargado el iframe
+            previewIframe.addEventListener('load', () => {
+                // Pequeño timeout para transiciones más fluidas
+                setTimeout(() => {
+                    previewLoader.style.opacity = '0';
+                    setTimeout(() => previewLoader.classList.add('hidden'), 300);
+                }, 100);
+            });
+        }
+
+        // Iniciar rendering al cargar la página
+        window.onload = () => {
+            renderProjects();
+        };
     </script>
 </body>
 </html>
