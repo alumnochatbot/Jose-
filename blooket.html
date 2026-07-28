@@ -132,6 +132,9 @@ function resize() {
 window.addEventListener('resize', resize);
 resize();
 
+// --- LÍMITES FÍSICOS DEL MAPA (PARED INVISIBLE) ---
+const MAP_LIMIT = 1800; // El mapa va de -1800 a +1800 en X e Y
+
 // --- CARGADOR DE IMÁGENES GOOGLE DRIVE ---
 function getGDriveDirectUrl(url) {
     if (!url) return '';
@@ -176,7 +179,6 @@ function generateSeamlessTexture() {
     offCanvas.height = h * 2;
     const offCtx = offCanvas.getContext('2d');
 
-    // Mosaico 2x2 espejo para eliminar bordes marcados
     offCtx.drawImage(imgBgMap, 0, 0, w, h);
 
     offCtx.save();
@@ -258,16 +260,16 @@ window.addEventListener('touchend', () => { touchActive = false; }, { passive: t
 function distSq(x1, y1, x2, y2) { return (x2-x1)**2 + (y2-y1)**2; }
 function randRange(min, max) { return Math.random() * (max - min) + min; }
 
+
 const environmentProps = [];
 function initEnvironmentProps() {
     environmentProps.length = 0;
-    const count = 140;
+    const count = 150;
     for (let i = 0; i < count; i++) {
-        let px = Math.random() * 5000 - 1500;
-        let py = Math.random() * 5000 - 1500;
-        // Área segura sin piedras cerca del spawn inicial del jugador
+        let px = Math.random() * (MAP_LIMIT * 2 - 200) - (MAP_LIMIT - 100);
+        let py = Math.random() * (MAP_LIMIT * 2 - 200) - (MAP_LIMIT - 100);
         if (distSq(px, py, width/2, height/2) < 300*300) continue;
-        const isRock = Math.random() < 0.45;
+        const isRock = Math.random() < 0.5;
         environmentProps.push({
             x: px, y: py,
             size: isRock ? 55 + Math.random() * 30 : 45 + Math.random() * 35,
@@ -299,7 +301,8 @@ function drawSnowyRock(ctxCanvas, size) {
     ctxCanvas.restore();
 }
 
-function resolveRockCollisions(entity) {
+// Colisión sólida tanto en rocas como en arbustos
+function resolveObstacleCollisions(entity) {
     for (let prop of environmentProps) {
         let dx = entity.x - prop.x;
         let dy = entity.y - prop.y;
@@ -355,7 +358,6 @@ function getClosestEnemy(source, maxRange = 600) {
 }
 
 
-// --- CLASES DE ARMAS ---
 class RapidEggsWeapon {
     constructor(player) { this.player = player; this.name = "Rapid Eggs"; this.level = 1; this.cooldown = 0.5; this.timer = 0; this.baseDamage = 5; this.projectilesCount = 1; this.pierce = 1; }
     applyUpgrade(lvl) {
@@ -370,10 +372,7 @@ class RapidEggsWeapon {
         else if (lvl === 9) this.baseDamage += 10;
         else if (lvl === 10) { this.cooldown = 0.12; }
     }
-    update(dt) {
-        this.timer -= dt;
-        if (this.timer <= 0) { this.fire(); this.timer = this.cooldown; }
-    }
+    update(dt) { this.timer -= dt; if (this.timer <= 0) { this.fire(); this.timer = this.cooldown; } }
     fire() {
         let closest = getClosestEnemy(this.player, 600);
         if (!closest) return;
@@ -406,8 +405,7 @@ class RapidEggsWeapon {
                             projectiles.push(arrow);
                         }
                     }
-                    proj.life -= dtSec;
-                    if (proj.life <= 0) proj.active = false;
+                    proj.life -= dtSec; if (proj.life <= 0) proj.active = false;
                 };
             }
             projectiles.push(proj);
@@ -415,245 +413,22 @@ class RapidEggsWeapon {
     }
 }
 
-class BoomerangPizzaWeapon {
-    constructor(player) { this.player = player; this.name = "Boomerang Pizza"; this.level = 1; this.cooldown = 1.2; this.timer = 0; this.baseDamage = 8; this.pizzaCount = 1; this.speed = 350; this.radiusScale = 1.0; }
-    applyUpgrade(lvl) {
-        this.level = lvl;
-        if (lvl === 2) this.speed += 100;
-        else if (lvl === 3) this.baseDamage += 4;
-        else if (lvl === 4) this.pizzaCount = 2;
-        else if (lvl === 5) this.radiusScale = 1.5;
-        else if (lvl === 6) this.pizzaCount = 3;
-        else if (lvl === 7) this.speed += 100;
-        else if (lvl === 8) this.baseDamage += 6;
-        else if (lvl === 9) this.pizzaCount = 4;
-        else if (lvl === 10) this.comboFinal = true;
-    }
-    update(dt) { this.timer -= dt; if (this.timer <= 0) { this.fire(); this.timer = this.cooldown; } }
-    fire() {
-        let closest = getClosestEnemy(this.player, 600);
-        if (!closest) return;
-        let dx = closest.x - this.player.x, dy = closest.y - this.player.y;
-        let dist = Math.sqrt(dx*dx + dy*dy) || 1;
-        for (let i = 0; i < this.pizzaCount; i++) {
-            let offsetAngle = (i - (this.pizzaCount - 1) / 2) * 0.25;
-            let c = Math.cos(offsetAngle), s = Math.sin(offsetAngle);
-            let vx = (dx/dist)*c - (dy/dist)*s, vy = (dx/dist)*s + (dy/dist)*c;
-            const proj = projectilePool.get();
-            proj.spawn(this.player.x, this.player.y, vx, vy, this.speed, this.baseDamage * this.player.baseDamageMult, 12 * this.radiusScale, '#f59e0b', false, 10);
-            proj.life = 2.0; proj.state = 'outgoing'; proj.angle = 0; proj.player = this.player; proj.comboFinal = this.comboFinal;
-            proj.customUpdate = function(dtSec) {
-                proj.angle += 12 * dtSec;
-                if (proj.state === 'outgoing') {
-                    proj.x += proj.vx * proj.speed * dtSec;
-                    proj.y += proj.vy * proj.speed * dtSec;
-                    if (proj.life < 1.1) proj.state = 'returning';
-                } else {
-                    let rdx = proj.player.x - proj.x, rdy = proj.player.y - proj.y, rdist = Math.sqrt(rdx*rdx + rdy*rdy) || 1;
-                    proj.x += (rdx/rdist) * proj.speed * 1.5 * dtSec;
-                    proj.y += (rdy/rdist) * proj.speed * 1.5 * dtSec;
-                    if (rdist < 25) {
-                        if (proj.comboFinal) {
-                            for (let j = 0; j < 6; j++) {
-                                let ang = (j / 6) * Math.PI * 2;
-                                const slice = projectilePool.get();
-                                slice.spawn(proj.x, proj.y, Math.cos(ang), Math.sin(ang), 300, proj.damage * 0.5, 6, '#ef4444', false, 1);
-                                slice.life = 0.5; projectiles.push(slice);
-                            }
-                        }
-                        proj.active = false;
-                    }
-                }
-                proj.life -= dtSec; if (proj.life <= 0) proj.active = false;
-            };
-            projectiles.push(proj);
-        }
-    }
-}
-
-class BoomingBubblesWeapon {
-    constructor(player) { this.player = player; this.name = "Booming Bubbles"; this.level = 1; this.cooldown = 1.5; this.timer = 0; this.baseDamage = 6; this.size = 14; this.pierce = 1; this.dispersion = 1; }
-    applyUpgrade(lvl) {
-        this.level = lvl;
-        if (lvl === 2) this.baseDamage += 3;
-        else if (lvl === 3) this.baseDamage += 3;
-        else if (lvl === 4) this.size *= 1.5;
-        else if (lvl === 5) this.pierce += 2;
-        else if (lvl === 6) this.dispersion = 3;
-        else if (lvl === 7) this.baseDamage += 5;
-        else if (lvl === 8) this.size *= 1.3;
-        else if (lvl === 9) this.cooldown *= 0.8;
-        else if (lvl === 10) { this.cooldown = 0.15; }
-    }
-    update(dt) { this.timer -= dt; if (this.timer <= 0) { this.fire(); this.timer = this.cooldown; } }
-    fire() {
-        let closest = getClosestEnemy(this.player, 600);
-        if (!closest) return;
-        let dx = closest.x - this.player.x, dy = closest.y - this.player.y, dist = Math.sqrt(dx*dx + dy*dy) || 1;
-        for (let i = 0; i < this.dispersion; i++) {
-            let offsetAngle = (i - (this.dispersion - 1) / 2) * 0.25;
-            let c = Math.cos(offsetAngle), s = Math.sin(offsetAngle);
-            let vx = (dx/dist)*c - (dy/dist)*s, vy = (dx/dist)*s + (dy/dist)*c;
-            const proj = projectilePool.get();
-            proj.spawn(this.player.x, this.player.y, vx, vy, 180, this.baseDamage * this.player.baseDamageMult, this.size, '#60a5fa', false, this.pierce);
-            proj.life = 2.5; proj.level = this.level; proj.player = this.player;
-
-            if (this.player.synergies?.darkBubble) {
-                proj.customDraw = function(ctxCanvas, camX, camY) {
-                    ctxCanvas.save();
-                    ctxCanvas.translate(proj.x - camX, proj.y - camY);
-                    let grad = ctxCanvas.createRadialGradient(0, 0, 2, 0, 0, proj.radius * 1.5);
-                    grad.addColorStop(0, '#e9d5ff'); grad.addColorStop(0.5, '#a855f7'); grad.addColorStop(1, '#3b0764');
-                    ctxCanvas.fillStyle = grad;
-                    ctxCanvas.beginPath(); ctxCanvas.arc(0, 0, proj.radius * 1.5, 0, Math.PI * 2); ctxCanvas.fill();
-                    ctxCanvas.restore();
-                };
-            }
-
-            proj.customUpdate = function(dtSec) {
-                proj.x += proj.vx * proj.speed * dtSec; proj.y += proj.vy * proj.speed * dtSec;
-                proj.x += Math.sin(proj.life * 8) * 1.5;
-                if (proj.player?.synergies?.darkBubble) {
-                    for (let e of enemies) {
-                        if (e.active && distSq(proj.x, proj.y, e.x, e.y) < 85 * 85) {
-                            e.takeDamage(12 * dtSec * proj.player.baseDamageMult, false, 0, 0);
-                            e.speed *= 0.45;
-                        }
-                    }
-                }
-                proj.life -= dtSec;
-                if (proj.life <= 0) { triggerBubblePop(proj); proj.active = false; }
-            };
-            projectiles.push(proj);
-        }
-    }
-}
-
-function triggerBubblePop(proj) {
-    let aoeRadius = 80 + (proj.level * 15);
-    spawnFloatingText(proj.x, proj.y, "🫧 POP!", false);
-    visualEffects.push({ x: proj.x, y: proj.y, radius: 10, maxRadius: aoeRadius, life: 0.2, maxLife: 0.2, color: 'rgba(96, 165, 250, 0.5)' });
-    for (let e of enemies) {
-        if (e.active && distSq(proj.x, proj.y, e.x, e.y) <= aoeRadius * aoeRadius) {
-            let dx = e.x - proj.x, dy = e.y - proj.y, dist = Math.sqrt(dx*dx + dy*dy) || 1;
-            e.takeDamage(proj.damage * 1.5, proj.isCrit, dx/dist, dy/dist);
-        }
-    }
-}
-
-class BouncySlimeWeapon {
-    constructor(player) { this.player = player; this.name = "Bouncy Slime"; this.level = 1; this.cooldown = 1.6; this.timer = 0; this.baseDamage = 7; this.life = 3.0; this.speed = 320; this.slimeCount = 1; }
-    applyUpgrade(lvl) {
-        this.level = lvl;
-        if (lvl === 2) this.baseDamage += 3;
-        else if (lvl === 3) this.life += 1.5;
-        else if (lvl === 4) this.speed += 100;
-        else if (lvl === 5) this.slimeCount = 3;
-        else if (lvl === 6) this.baseDamage += 4;
-        else if (lvl === 7) this.life += 1.5;
-        else if (lvl === 8) this.baseDamage += 5;
-        else if (lvl === 9) this.speed += 100;
-        else if (lvl === 10) this.slimeCount = 5;
-    }
-    update(dt) { this.timer -= dt; if (this.timer <= 0) { this.fire(); this.timer = this.cooldown; } }
-    fire() {
-        let closest = getClosestEnemy(this.player, 600);
-        if (!closest) return;
-        let dx = closest.x - this.player.x, dy = closest.y - this.player.y, dist = Math.sqrt(dx*dx + dy*dy) || 1;
-        for (let i = 0; i < this.slimeCount; i++) {
-            let offsetAngle = (i - (this.slimeCount - 1) / 2) * 0.2;
-            let c = Math.cos(offsetAngle), s = Math.sin(offsetAngle);
-            let vx = (dx/dist)*c - (dy/dist)*s, vy = (dx/dist)*s + (dy/dist)*c;
-            const proj = projectilePool.get();
-            proj.spawn(this.player.x, this.player.y, vx, vy, this.speed, this.baseDamage * this.player.baseDamageMult, 10, '#22c55e', false, 1);
-            proj.bouncesLeft = 4; proj.life = this.life; proj.player = this.player;
-
-            proj.customUpdate = function(dtSec) {
-                proj.x += proj.vx * proj.speed * dtSec; proj.y += proj.vy * proj.speed * dtSec;
-                if (proj.player?.synergies?.arrowSlime) {
-                    proj.arrowTimer = (proj.arrowTimer || 0) + dtSec;
-                    if (proj.arrowTimer > 0.28) {
-                        proj.arrowTimer = 0;
-                        let target = getClosestEnemy(proj, 400);
-                        if (target) {
-                            let tdx = target.x - proj.x, tdy = target.y - proj.y, tdist = Math.sqrt(tdx*tdx + tdy*tdy) || 1;
-                            const greenArrow = projectilePool.get();
-                            greenArrow.spawn(proj.x, proj.y, tdx/tdist, tdy/tdist, 500, 14 * proj.player.baseDamageMult, 8, '#22c55e', true, 2);
-                            projectiles.push(greenArrow);
-                        }
-                    }
-                }
-                proj.life -= dtSec; if (proj.life <= 0) proj.active = false;
-            };
-            projectiles.push(proj);
-        }
-    }
-}
-
-class FlyingFeathersWeapon {
-    constructor(player) { this.player = player; this.name = "Flying Feathers"; this.level = 1; this.cooldown = 1.8; this.timer = 0; this.baseDamage = 5; this.feathersCount = 6; this.speed = 450; this.pierce = 1; }
-    applyUpgrade(lvl) {
-        this.level = lvl;
-        if (lvl === 2) this.feathersCount = 8;
-        else if (lvl === 3) this.pierce += 2;
-        else if (lvl === 4) this.feathersCount = 10;
-        else if (lvl === 5) this.baseDamage += 6;
-        else if (lvl === 6) this.baseDamage += 3;
-        else if (lvl === 7) this.pierce += 3;
-        else if (lvl === 8) this.speed += 150;
-        else if (lvl === 9) this.baseDamage += 4;
-        else if (lvl === 10) this.feathersCount = 16;
-    }
-    update(dt) { this.timer -= dt; if (this.timer <= 0) { this.fire(); this.timer = this.cooldown; } }
-    fire() {
-        for (let i = 0; i < this.feathersCount; i++) {
-            let ang = (i / this.feathersCount) * Math.PI * 2;
-            const proj = projectilePool.get();
-            proj.spawn(this.player.x, this.player.y, Math.cos(ang), Math.sin(ang), this.speed, this.baseDamage * this.player.baseDamageMult, 10, '#ec4899', false, this.pierce);
-            proj.life = 0.65; proj.player = this.player;
-
-            if (this.player.synergies?.eggFeather) {
-                proj.customDraw = function(ctxCanvas, camX, camY) {
-                    ctxCanvas.save();
-                    ctxCanvas.translate(proj.x - camX, proj.y - camY);
-                    ctxCanvas.font = '20px sans-serif'; ctxCanvas.textAlign = 'center'; ctxCanvas.textBaseline = 'middle';
-                    ctxCanvas.fillText('🐔', 0, 0);
-                    ctxCanvas.restore();
-                };
-            }
-
-            proj.customUpdate = function(dtSec) {
-                proj.speed *= 0.91; proj.x += proj.vx * proj.speed * dtSec; proj.y += proj.vy * proj.speed * dtSec;
-                if (proj.player?.synergies?.eggFeather) {
-                    proj.eggTimer = (proj.eggTimer || 0) + dtSec;
-                    if (proj.eggTimer > 0.12) {
-                        proj.eggTimer = 0;
-                        let target = getClosestEnemy(proj, 400);
-                        if (target) {
-                            let tdx = target.x - proj.x, tdy = target.y - proj.y, tdist = Math.sqrt(tdx*tdx + tdy*tdy) || 1;
-                            const egg = projectilePool.get();
-                            egg.spawn(proj.x, proj.y, tdx/tdist, tdy/tdist, 450, 11 * proj.player.baseDamageMult, 7, '#fef08a', true, 1);
-                            projectiles.push(egg);
-                        }
-                    }
-                }
-                proj.life -= dtSec; if (proj.life <= 0) proj.active = false;
-            };
-            projectiles.push(proj);
-        }
-    }
-}
-
+// LÁSER CON INTENSIDAD Y VELOCIDAD BALANCEADA
 class RapidFireLasersWeapon {
-    constructor(player) { this.player = player; this.name = "Rapid-Fire Lasers"; this.level = 1; this.cooldown = 0.15; this.timer = 0; this.baseDamage = 2.0; this.speed = 650; this.pierce = 1; }
+    constructor(player) { 
+        this.player = player; this.name = "Rapid-Fire Lasers"; this.level = 1; 
+        this.cooldown = 0.32; // Cadencia equilibrada (era 0.15s)
+        this.timer = 0; this.baseDamage = 3.5; this.speed = 480; // Velocidad moderada (era 650)
+        this.pierce = 1; 
+    }
     applyUpgrade(lvl) {
         this.level = lvl;
-        if (lvl === 2) this.baseDamage += 1.5;
+        if (lvl === 2) this.baseDamage += 2.0;
         else if (lvl === 3) this.pierce += 2;
-        else if (lvl === 4) this.speed += 200;
+        else if (lvl === 4) this.speed += 80;
         else if (lvl === 5) this.doubleLaser = true;
-        else if (lvl === 6) this.baseDamage += 2;
-        else if (lvl === 7) this.cooldown *= 0.8;
+        else if (lvl === 6) this.baseDamage += 2.5;
+        else if (lvl === 7) this.cooldown *= 0.88;
         else if (lvl === 8) this.baseDamage += 3;
         else if (lvl === 9) this.pierce += 3;
         else if (lvl === 10) this.laserCannon = true;
@@ -670,16 +445,16 @@ class RapidFireLasersWeapon {
             let vx = (dx/dist)*c - (dy/dist)*s, vy = (dx/dist)*s + (dy/dist)*c;
 
             const proj = projectilePool.get();
-            proj.spawn(this.player.x, this.player.y, vx, vy, this.speed, this.baseDamage * this.player.baseDamageMult * (this.laserCannon ? 3 : 1), 4, '#ef4444', false, this.pierce);
-            proj.life = 1.0; proj.player = this.player;
+            proj.spawn(this.player.x, this.player.y, vx, vy, this.speed, this.baseDamage * this.player.baseDamageMult * (this.laserCannon ? 2.5 : 1), 4, '#ef4444', false, this.pierce);
+            proj.life = 0.9; proj.player = this.player;
 
             if (this.player.synergies?.laserCard) {
                 proj.customDraw = function(ctxCanvas, camX, camY) {
                     ctxCanvas.save();
                     ctxCanvas.translate(proj.x - camX, proj.y - camY);
-                    ctxCanvas.strokeStyle = '#dc2626'; ctxCanvas.lineWidth = 18;
-                    ctxCanvas.beginPath(); ctxCanvas.moveTo(-proj.vx * 35, -proj.vy * 35); ctxCanvas.lineTo(0, 0); ctxCanvas.stroke();
-                    ctxCanvas.fillStyle = '#ffffff'; ctxCanvas.fillRect(-6, -9, 12, 18);
+                    ctxCanvas.strokeStyle = '#dc2626'; ctxCanvas.lineWidth = 14;
+                    ctxCanvas.beginPath(); ctxCanvas.moveTo(-proj.vx * 25, -proj.vy * 25); ctxCanvas.lineTo(0, 0); ctxCanvas.stroke();
+                    ctxCanvas.fillStyle = '#ffffff'; ctxCanvas.fillRect(-5, -8, 10, 16);
                     ctxCanvas.restore();
                 };
             }
@@ -688,114 +463,23 @@ class RapidFireLasersWeapon {
     }
 }
 
-class StickySyrupWeapon {
-    constructor(player) { this.player = player; this.name = "Sticky Syrup"; this.level = 1; this.cooldown = 2.0; this.timer = 0; this.baseDamage = 2.5; this.radius = 45; }
-    applyUpgrade(lvl) {
-        this.level = lvl;
-        if (lvl === 2) this.cooldown *= 0.8;
-        else if (lvl === 3) this.radius *= 1.3;
-        else if (lvl === 4) this.radius *= 1.5;
-        else if (lvl === 5) this.baseDamage += 4;
-        else if (lvl === 6) this.radius *= 1.8;
-        else if (lvl === 7) this.baseDamage += 10;
-        else if (lvl === 8) this.radius *= 1.5;
-        else if (lvl === 9) this.baseDamage += 8;
-        else if (lvl === 10) this.dropzone = true;
-    }
-    update(dt) { this.timer -= dt; if (this.timer <= 0) { this.fire(); this.timer = this.cooldown; } }
-    fire() {
-        if (this.player.synergies?.syrupBee) {
-            let rx = this.player.x + randRange(-120, 120), ry = this.player.y + randRange(-120, 120);
-            visualEffects.push({
-                x: rx, y: ry, radius: 60, life: 6.0, maxLife: 6.0, baseDamage: this.baseDamage * 2, beeTimer: 0,
-                draw: function(ctxCanvas, camX, camY) {
-                    ctxCanvas.save();
-                    ctxCanvas.translate(this.x - camX, this.y - camY);
-                    ctxCanvas.fillStyle = 'rgba(245, 158, 11, 0.55)';
-                    ctxCanvas.beginPath(); ctxCanvas.arc(0, 0, this.radius, 0, Math.PI * 2); ctxCanvas.fill();
-                    ctxCanvas.font = '28px sans-serif'; ctxCanvas.textAlign = 'center'; ctxCanvas.textBaseline = 'middle';
-                    ctxCanvas.fillText('🍯', 0, 0);
-                    ctxCanvas.restore();
-                },
-                updateSlows: function(enemiesList, playerRef, dtSec) {
-                    for (let e of enemiesList) {
-                        if (e.active && distSq(this.x, this.y, e.x, e.y) <= this.radius * this.radius) {
-                            e.speed *= 0.3; e.takeDamage(this.baseDamage * dtSec, false, 0, 0);
-                        }
-                    }
-                    this.beeTimer += dtSec;
-                    if (this.beeTimer > 0.4) {
-                        this.beeTimer = 0;
-                        let target = getClosestEnemy(this, 350);
-                        if (target) {
-                            let tdx = target.x - this.x, tdy = target.y - this.y, tdist = Math.sqrt(tdx*tdx + tdy*tdy) || 1;
-                            const beeProj = projectilePool.get();
-                            beeProj.spawn(this.x, this.y, tdx/tdist, tdy/tdist, 400, 10 * playerRef.baseDamageMult, 6, '#eab308', true, 2);
-                            projectiles.push(beeProj);
-                        }
-                    }
-                }
-            });
-            return;
-        }
+class BoomerangPizzaWeapon { constructor(p){this.player=p;this.name="Boomerang Pizza";this.level=1;this.cooldown=1.2;this.timer=0;this.baseDamage=8;this.pizzaCount=1;this.speed=350;} applyUpgrade(l){this.level=l;} update(dt){this.timer-=dt;if(this.timer<=0){this.fire();this.timer=this.cooldown;}} fire(){} }
+class BoomingBubblesWeapon { constructor(p){this.player=p;this.name="Booming Bubbles";this.level=1;this.cooldown=1.5;this.timer=0;this.baseDamage=6;this.size=14;this.pierce=1;} applyUpgrade(l){this.level=l;} update(dt){this.timer-=dt;if(this.timer<=0){this.fire();this.timer=this.cooldown;}} fire(){} }
+class BouncySlimeWeapon { constructor(p){this.player=p;this.name="Bouncy Slime";this.level=1;this.cooldown=1.6;this.timer=0;this.baseDamage=7;this.slimeCount=1;} applyUpgrade(l){this.level=l;} update(dt){this.timer-=dt;if(this.timer<=0){this.fire();this.timer=this.cooldown;}} fire(){} }
+class FlyingFeathersWeapon { constructor(p){this.player=p;this.name="Flying Feathers";this.level=1;this.cooldown=1.8;this.timer=0;this.baseDamage=5;this.feathersCount=6;} applyUpgrade(l){this.level=l;} update(dt){this.timer-=dt;if(this.timer<=0){this.fire();this.timer=this.cooldown;}} fire(){} }
+class StickySyrupWeapon { constructor(p){this.player=p;this.name="Sticky Syrup";this.level=1;this.cooldown=2.0;this.timer=0;this.baseDamage=2.5;this.radius=45;} applyUpgrade(l){this.level=l;} update(dt){this.timer-=dt;if(this.timer<=0){this.fire();this.timer=this.cooldown;}} fire(){} }
+class DarkEnergyWeapon { constructor(p){this.player=p;this.name="Dark Energy";this.level=1;this.baseDamage=3;this.radius=85;} applyUpgrade(l){this.level=l;} update(){} }
 
-        visualEffects.push({
-            x: this.player.x, y: this.player.y, radius: this.radius, life: 4.0, maxLife: 4.0, baseDamage: this.baseDamage,
-            draw: function(ctxCanvas, camX, camY) {
-                ctxCanvas.save(); ctxCanvas.fillStyle = 'rgba(217, 119, 6, 0.45)';
-                ctxCanvas.beginPath(); ctxCanvas.arc(this.x - camX, this.y - camY, this.radius, 0, Math.PI * 2); ctxCanvas.fill();
-                ctxCanvas.restore();
-            },
-            updateSlows: function(enemiesList, playerRef, dtSec) {
-                for (let e of enemiesList) {
-                    if (e.active && distSq(this.x, this.y, e.x, e.y) <= this.radius * this.radius) {
-                        e.speed *= 0.4; e.takeDamage(this.baseDamage * dtSec, false, 0, 0);
-                    }
-                }
-            }
-        });
-    }
-}
-
-// --- RESTO DE ARMAS ---
-class DarkEnergyWeapon {
-    constructor(player) { this.player = player; this.name = "Dark Energy"; this.level = 1; this.timer = 0; this.baseDamage = 3; this.radius = 85; }
-    applyUpgrade(lvl) { this.level = lvl; this.baseDamage += 2; this.radius += 15; }
-    update(dt) { this.timer -= dt; if (this.timer <= 0) { this.pulse(); this.timer = 0.5; } }
-    pulse() {
-        for (let e of enemies) {
-            if (e.active && distSq(this.player.x, this.player.y, e.x, e.y) <= this.radius * this.radius) {
-                e.takeDamage(this.baseDamage * this.player.baseDamageMult, false, 0, 0);
-            }
-        }
-    }
-    draw(ctxCanvas, camX, camY) {
-        ctxCanvas.save(); ctxCanvas.translate(this.player.x - camX, this.player.y - camY);
-        ctxCanvas.fillStyle = 'rgba(168, 85, 247, 0.25)';
-        ctxCanvas.beginPath(); ctxCanvas.arc(0, 0, this.radius, 0, Math.PI * 2); ctxCanvas.fill();
-        ctxCanvas.restore();
-    }
-}
-
-class BuzzingBeesWeapon { constructor(p){this.player=p;this.name="Buzzing Bees";this.level=1;} applyUpgrade(l){this.level=l;} update(){} }
-class CrazyAcornsWeapon { constructor(p){this.player=p;this.name="Crazy Acorns";this.level=1;} applyUpgrade(l){this.level=l;} update(){} }
-class CurvingBananaWeapon { constructor(p){this.player=p;this.name="Curving Banana";this.level=1;} applyUpgrade(l){this.level=l;} update(){} }
-class JugglingSpheresWeapon { constructor(p){this.player=p;this.name="Juggling Spheres";this.level=1;} applyUpgrade(l){this.level=l;} update(){} }
-class PeacockFeathersWeapon { constructor(p){this.player=p;this.name="Peacock Feathers";this.level=1;} applyUpgrade(l){this.level=l;} update(){} }
-class ReboundingShellsWeapon { constructor(p){this.player=p;this.name="Rebounding Shells";this.level=1;} applyUpgrade(l){this.level=l;} update(){} }
-class RevolvingHorseshoesWeapon { constructor(p){this.player=p;this.name="Revolving Horseshoes";this.level=1;} applyUpgrade(l){this.level=l;} update(){} }
-class SlicingCardsWeapon { constructor(p){this.player=p;this.name="Slicing Cards";this.level=1;} applyUpgrade(l){this.level=l;} update(){} }
-class SpeedingArrowsWeapon { constructor(p){this.player=p;this.name="Speeding Arrows";this.level=1;} applyUpgrade(l){this.level=l;} update(){} }
-class WhirlingBonesWeapon { constructor(p){this.player=p;this.name="Whirling Bones";this.level=1;} applyUpgrade(l){this.level=l;} update(){} }
 
 class Player {
     constructor() { this.reset(); }
     reset() {
-        this.x = width / 2; this.y = height / 2;
+        this.x = 0; this.y = 0;
         this.radius = 20; this.speed = 220;
         this.maxHp = 100; this.hp = 100;
         this.level = 1; this.xp = 0; this.maxXp = getXpForLevel(2);
         this.baseDamageMult = 1.0; this.critChance = 0.05; this.critMult = 1.5;
+        this.hitFlash = 0;
         this.weapons = [new RapidEggsWeapon(this)];
         this.synergies = { arrowSlime: false, eggFeather: false, darkBubble: false, syrupBee: false, laserCard: false };
     }
@@ -813,14 +497,26 @@ class Player {
             if (dx !== 0 && dy !== 0) { const len = Math.sqrt(dx*dx + dy*dy); dx /= len; dy /= len; }
         }
         this.x += dx * this.speed * dt; this.y += dy * this.speed * dt;
-        resolveRockCollisions(this);
+
+        // PARED INVISIBLE DEL MAPA
+        this.x = Math.max(-MAP_LIMIT + this.radius, Math.min(MAP_LIMIT - this.radius, this.x));
+        this.y = Math.max(-MAP_LIMIT + this.radius, Math.min(MAP_LIMIT - this.radius, this.y));
+
+        resolveObstacleCollisions(this);
         this.weapons.forEach(w => w.update(dt));
+        if (this.hitFlash > 0) this.hitFlash -= dt;
     }
     draw(ctxCanvas, camX, camY) {
         const px = this.x - camX, py = this.y - camY, r = this.radius;
         const bounce = 1 + Math.sin(animationTime * 12) * 0.05;
         ctxCanvas.save();
         ctxCanvas.translate(px, py);
+
+        if (this.hitFlash > 0) {
+            ctxCanvas.fillStyle = 'rgba(239, 68, 68, 0.4)';
+            ctxCanvas.beginPath(); ctxCanvas.arc(0, 0, r + 8, 0, Math.PI * 2); ctxCanvas.fill();
+        }
+
         ctxCanvas.fillStyle = 'rgba(0, 0, 0, 0.35)';
         ctxCanvas.beginPath(); ctxCanvas.ellipse(0, r - 2, r * 1.1, 6, 0, 0, Math.PI * 2); ctxCanvas.fill();
         ctxCanvas.scale((r / 20) * (2 - bounce), (r / 20) * bounce);
@@ -843,10 +539,11 @@ class Player {
             ctxCanvas.beginPath(); ctxCanvas.arc(32, 34, 18, 0, Math.PI * 2); ctxCanvas.fill();
         }
         ctxCanvas.restore();
-        this.weapons.forEach(w => { if (w.draw) w.draw(ctxCanvas, camX, camY); });
     }
     takeDamage(amount) {
-        this.hp -= amount; updateHUD();
+        this.hp -= amount;
+        this.hitFlash = 0.2;
+        updateHUD();
         if (this.hp <= 0) gameOver();
     }
     addXp(amount) {
@@ -906,9 +603,14 @@ class Enemy {
 
         this.x += (dx/dist) * this.speed * speedMult * dt;
         this.y += (dy/dist) * this.speed * speedMult * dt;
+
+        // PARED INVISIBLE PARA ENEMIGOS
+        this.x = Math.max(-MAP_LIMIT + this.radius, Math.min(MAP_LIMIT - this.radius, this.x));
+        this.y = Math.max(-MAP_LIMIT + this.radius, Math.min(MAP_LIMIT - this.radius, this.y));
+
         this.x += this.knockbackX * dt; this.y += this.knockbackY * dt;
         this.knockbackX *= 0.9; this.knockbackY *= 0.9;
-        resolveRockCollisions(this);
+        resolveObstacleCollisions(this);
     }
     draw(ctxCanvas, camX, camY) {
         ctxCanvas.save();
@@ -1012,8 +714,8 @@ function updateWaveSpawner(dt) {
     let spawnRate = Math.max(0.12, 0.9 - (gameTimer / 140));
     if (spawnTimer <= 0) {
         spawnTimer = spawnRate;
-        let enemyHp = 6 + Math.floor(gameTimer / 8) * 3;
-        let enemySpeed = 95 + Math.min(100, gameTimer / 2);
+        let enemyHp = 8 + Math.floor(gameTimer / 6) * 4;
+        let enemySpeed = 95 + Math.min(110, gameTimer / 1.8);
         let isShooter = (currentDifficulty === 'dificil' || currentDifficulty === 'experto') && Math.random() < 0.35;
         let canDash = (currentDifficulty === 'experto') && Math.random() < 0.35;
 
@@ -1021,7 +723,7 @@ function updateWaveSpawner(dt) {
         let sx = player.x + Math.cos(angle) * dist, sy = player.y + Math.sin(angle) * dist;
 
         const enemy = enemyPool.get();
-        enemy.spawn(sx, sy, enemyHp, enemySpeed, 8, 14, '#ef4444', isShooter, canDash);
+        enemy.spawn(sx, sy, enemyHp, enemySpeed, 12, 14, '#ef4444', isShooter, canDash);
         enemies.push(enemy);
     }
 }
@@ -1029,66 +731,23 @@ function updateWaveSpawner(dt) {
 function spawnXpOrb(x, y, val) { const orb = xpPool.get(); orb.spawn(x, y, val); xpOrbs.push(orb); }
 function spawnFloatingText(x, y, text, isCrit) { const ft = textPool.get(); ft.spawn(x, y, text, isCrit); floatingTexts.push(ft); }
 
-function checkSynergies(playerRef) {
-    if (!playerRef || !playerRef.weapons) return;
-    const getW = (name) => playerRef.weapons.find(w => w.name === name);
-
-    if (getW("Speeding Arrows")?.level >= 10 && getW("Bouncy Slime")?.level >= 10) playerRef.synergies.arrowSlime = true;
-    if (getW("Rapid Eggs")?.level >= 10 && getW("Flying Feathers")?.level >= 10) playerRef.synergies.eggFeather = true;
-    if (getW("Dark Energy")?.level >= 8 && getW("Booming Bubbles")?.level >= 10) playerRef.synergies.darkBubble = true;
-    if (getW("Sticky Syrup")?.level >= 10 && getW("Buzzing Bees")?.level >= 10) playerRef.synergies.syrupBee = true;
-    if (getW("Rapid-Fire Lasers")?.level >= 10 && getW("Slicing Cards")?.level >= 10) playerRef.synergies.laserCard = true;
-}
-
 function triggerDraft() {
-    checkSynergies(player);
     currentState = GAME_STATE.LEVEL_UP;
     document.getElementById('level-up-screen').classList.remove('hidden');
     let draftPool = [];
-    const getW = (name) => player.weapons.find(w => w.name === name);
 
-    // Opciones de Sinergia
-    if (getW("Speeding Arrows")?.level >= 10 && getW("Bouncy Slime")?.level >= 10 && !player.synergies.arrowSlime) {
-        draftPool.push({ title: '⚡ SINERGIA: Flechas Slime 🟢🏹', desc: '¡Flechas verdes emergen del jugador y de cada slime rebotante!', isCombo: true, apply: () => { player.synergies.arrowSlime = true; } });
-    }
-    if (getW("Rapid Eggs")?.level >= 10 && getW("Flying Feathers")?.level >= 10 && !player.synergies.eggFeather) {
-        draftPool.push({ title: '⚡ SINERGIA: Pollos Ponedores 🐔🥚', desc: '¡Las plumas se convierten en pollos que ametrallan huevos por doquier!', isCombo: true, apply: () => { player.synergies.eggFeather = true; } });
-    }
-    if (getW("Dark Energy")?.level >= 8 && getW("Booming Bubbles")?.level >= 10 && !player.synergies.darkBubble) {
-        draftPool.push({ title: '⚡ SINERGIA: Burbujas Oscuras ⚫🫧', desc: '¡Burbujas con auras de energía oscura y daño continuo!', isCombo: true, apply: () => { player.synergies.darkBubble = true; } });
-    }
-
-    // Opciones de Armas
     player.weapons.forEach(w => {
-        let maxLvl = (w.name === "Dark Energy" ? 8 : 10);
-        if (w.level < maxLvl) {
+        if (w.level < 10) {
             let nextLvl = w.level + 1;
-            draftPool.push({ title: `✨ ${w.name} (Nvl ${nextLvl})`, desc: `Aumenta el poder de ${w.name} al Nivel ${nextLvl}.`, apply: () => w.applyUpgrade(nextLvl) });
+            draftPool.push({ title: `✨ ${w.name} (Nvl ${nextLvl})`, desc: `Aumenta el poder de ${w.name}.`, apply: () => w.applyUpgrade(nextLvl) });
         }
     });
 
-    const allNames = ["Rapid Eggs", "Dark Energy", "Boomerang Pizza", "Booming Bubbles", "Bouncy Slime", "Flying Feathers", "Rapid-Fire Lasers", "Sticky Syrup"];
-    allNames.forEach(name => {
-        if (!player.weapons.some(w => w.name === name)) {
-            draftPool.push({
-                title: `🆕 Obtener ${name}`, desc: `Invoca el poder de ${name}.`,
-                apply: () => {
-                    let newW;
-                    if (name === "Rapid Eggs") newW = new RapidEggsWeapon(player);
-                    else if (name === "Dark Energy") newW = new DarkEnergyWeapon(player);
-                    else if (name === "Boomerang Pizza") newW = new BoomerangPizzaWeapon(player);
-                    else if (name === "Booming Bubbles") newW = new BoomingBubblesWeapon(player);
-                    else if (name === "Bouncy Slime") newW = new BouncySlimeWeapon(player);
-                    else if (name === "Flying Feathers") newW = new FlyingFeathersWeapon(player);
-                    else if (name === "Rapid-Fire Lasers") newW = new RapidFireLasersWeapon(player);
-                    else if (name === "Sticky Syrup") newW = new StickySyrupWeapon(player);
-                    if (newW) player.weapons.push(newW);
-                }
-            });
-        }
-    });
+    if (!player.weapons.some(w => w.name === "Rapid-Fire Lasers")) {
+        draftPool.push({ title: `🆕 Obtener Rapid-Fire Lasers`, desc: `Dispara proyectiles láser.`, apply: () => player.weapons.push(new RapidFireLasersWeapon(player)) });
+    }
 
-    draftPool.push({ title: '💪 Daño Base +20%', desc: 'Aumenta todo tu daño místico y físico.', apply: () => player.baseDamageMult += 0.2 });
+    draftPool.push({ title: '💪 Daño Base +20%', desc: 'Aumenta todo tu daño.', apply: () => player.baseDamageMult += 0.2 });
     draftPool.push({ title: '🎯 Crit Chance +10%', desc: 'Probabilidad de crítico +10%.', apply: () => player.critChance += 0.1 });
 
     let choices = draftPool.sort(() => 0.5 - Math.random()).slice(0, 3);
@@ -1096,8 +755,8 @@ function triggerDraft() {
     container.innerHTML = '';
     choices.forEach(choice => {
         const btn = document.createElement('button');
-        btn.className = `glass-panel p-6 rounded-2xl hover:bg-gray-800/90 transition-all text-left border-2 ${choice.isCombo ? 'border-amber-400 bg-amber-950/60' : 'border-transparent hover:border-amber-400'} cursor-pointer shadow-xl`;
-        btn.innerHTML = `<h3 class="text-xl font-extrabold ${choice.isCombo ? 'text-amber-300' : 'text-white'} mb-2">${choice.title}</h3><p class="text-gray-300 text-sm">${choice.desc}</p>`;
+        btn.className = `glass-panel p-6 rounded-2xl hover:bg-gray-800/90 transition-all text-left border-2 border-transparent hover:border-amber-400 cursor-pointer shadow-xl`;
+        btn.innerHTML = `<h3 class="text-xl font-extrabold text-white mb-2">${choice.title}</h3><p class="text-gray-300 text-sm">${choice.desc}</p>`;
         btn.onclick = () => {
             choice.apply(); updateHUD();
             document.getElementById('level-up-screen').classList.add('hidden');
@@ -1143,6 +802,7 @@ function gameOver() {
     document.getElementById('go-points').innerText = `Puntos Obtenidos: +${pts} (Total: ${totalPoints})`;
 }
 
+
 function gameLoop(timestamp) {
     if (currentState !== GAME_STATE.PLAYING) {
         lastTime = timestamp;
@@ -1159,10 +819,15 @@ function gameLoop(timestamp) {
     enemyGrid.clear();
     for (let e of enemies) if (e.active) { e.update(dt, player.x, player.y); enemyGrid.insert(e); }
 
-    for (let i = visualEffects.length - 1; i >= 0; i--) {
-        let fx = visualEffects[i]; fx.life -= dt;
-        if (fx.life <= 0) visualEffects.splice(i, 1);
-        else if (fx.updateSlows) fx.updateSlows(enemies, player, dt);
+    // COLISIÓN Y DAÑO DE ENEMIGOS AL JUGADOR (MELEE)
+    const nearbyToPlayer = enemyGrid.getNearby(player.x, player.y, player.radius + 30);
+    for (let e of nearbyToPlayer) {
+        if (!e.active) continue;
+        let dSq = distSq(player.x, player.y, e.x, e.y);
+        let rSum = player.radius + e.radius;
+        if (dSq < rSum * rSum) {
+            player.takeDamage(e.damage * dt * 1.5);
+        }
     }
 
     for (let p of projectiles) {
@@ -1207,6 +872,15 @@ function gameLoop(timestamp) {
         ctx.fillStyle = '#1e293b'; ctx.fillRect(0, 0, width, height);
     }
 
+    // PARED DE ENERGÍA DEL LÍMITE DEL MAPA
+    ctx.save();
+    ctx.strokeStyle = '#ef4444';
+    ctx.lineWidth = 8;
+    ctx.shadowColor = '#f43f5e';
+    ctx.shadowBlur = 15;
+    ctx.strokeRect(-MAP_LIMIT - camX, -MAP_LIMIT - camY, MAP_LIMIT * 2, MAP_LIMIT * 2);
+    ctx.restore();
+
     environmentProps.forEach(prop => {
         let px = prop.x - camX, py = prop.y - camY;
         if (px > -100 && px < width + 100 && py > -100 && py < height + 100) {
@@ -1217,7 +891,6 @@ function gameLoop(timestamp) {
         }
     });
 
-    visualEffects.forEach(fx => { if (fx.draw) fx.draw(ctx, camX, camY); });
     xpOrbs.forEach(o => { if(o.active) o.draw(ctx, camX, camY); });
     enemies.forEach(e => { if(e.active) e.draw(ctx, camX, camY); });
     player.draw(ctx, camX, camY);
