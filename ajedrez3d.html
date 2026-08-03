@@ -14,7 +14,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <!-- Controles de cámara orbital de Three.js -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-    
+
     <style>
         body {
             user-select: none;
@@ -219,7 +219,7 @@
             <!-- Vista 1: Crear Sala -->
             <div id="view-create-room" class="flex flex-col gap-4">
                 <p class="text-xs text-slate-300 leading-relaxed">
-                    Crea una sala privada. Tu amigo podrá ingresar digitando el código único de partida.
+                    Crea una sala privada. Comparte el código con tu amigo (por chat, mensaje, etc.) para que pueda unirse desde su propio dispositivo.
                 </p>
                 <button id="btn-do-create" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 transition font-bold rounded-xl text-white shadow-lg flex items-center justify-center gap-2">
                     <i data-lucide="plus-circle" class="w-5 h-5"></i>
@@ -298,49 +298,10 @@
     <!-- TOAST NOTIFICATION CONTAINER -->
     <div id="toast-container" class="fixed top-20 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
-    <!-- FIREBASE SERVICES MODULE -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'master-chess-3d-app';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' 
-            ? JSON.parse(__firebase_config) 
-            : {
-                apiKey: "demo-key",
-                authDomain: "demo.firebaseapp.com",
-                projectId: "demo-project",
-                storageBucket: "demo.appspot.com",
-                messagingSenderId: "123456789",
-                appId: "1:123456789:web:123456"
-            };
-
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-
-        window.FirebaseServices = {
-            app, auth, db, appId,
-            doc, getDoc, setDoc, updateDoc, onSnapshot
-        };
-
-        async function authenticate() {
-            try {
-                const token = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-                if (token) {
-                    await signInWithCustomToken(auth, token);
-                } else {
-                    await signInAnonymously(auth);
-                }
-                window.currentUserId = auth.currentUser ? auth.currentUser.uid : 'usr_' + Math.random().toString(36).substring(2, 8);
-            } catch (err) {
-                console.warn("Auth fallback activado:", err);
-                window.currentUserId = 'usr_' + Math.random().toString(36).substring(2, 8);
-            }
-        }
-
-        window.authPromise = authenticate();
+    <!-- IDENTIDAD DE USUARIO LOCAL (sin backend externo) -->
+    <script>
+        // Identificador simple de este cliente/navegador, usado para saber quién es "host" y quién es "guest".
+        window.currentUserId = 'usr_' + Math.random().toString(36).substring(2, 10);
     </script>
 
     <!-- AUDIO SINTETIZADOR DE EFECTOS (Web Audio API) -->
@@ -468,7 +429,6 @@
         let currentMode = 'pve'; // 'pve' o 'online'
         let currentRoomCode = null;
         let myOnlineRole = 'w';
-        let roomUnsubscribe = null;
         let isUpdatingFromRemote = false;
 
         let game = new Chess();
@@ -506,46 +466,66 @@
             return null;
         }
 
-        const localRoomBus = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('chess_local_rooms') : null;
+        /* =========================================================================
+           SINCRONIZACIÓN MULTIJUGADOR ONLINE
+           Usa el almacenamiento persistente y COMPARTIDO del artefacto (window.storage)
+           para que dos personas en DOS DISPOSITIVOS/NAVEGADORES distintos puedan jugar
+           entre sí a partir de un código de sala de 6 caracteres. No requiere backend
+           propio: los datos de la sala (posición FEN, turno, jugadores) se guardan bajo
+           la clave "room:<CODIGO>" en modo "shared" (visible para cualquiera con el
+           código) y cada cliente sondea (polling) esa clave cada 1.5s para detectar
+           las jugadas del rival.
+           ========================================================================= */
 
-        function saveLocalRoom(code, data) {
-            try {
-                const existing = getLocalRoom(code) || {};
-                const merged = { ...existing, ...data };
-                localStorage.setItem('chess_room_' + code, JSON.stringify(merged));
-                if (localRoomBus) localRoomBus.postMessage({ type: 'room_update', code, data: merged });
-            } catch (e) {}
+        let pollIntervalHandle = null;
+        let lastKnownUpdatedAt = 0;
+        const ROOM_POLL_MS = 1500;
+
+        function roomKey(code) {
+            return 'room:' + code;
         }
 
-        function getLocalRoom(code) {
+        async function readRoom(code) {
             try {
-                const item = localStorage.getItem('chess_room_' + code);
-                return item ? JSON.parse(item) : null;
-            } catch (e) {
+                const result = await window.storage.get(roomKey(code), true);
+                if (!result) return null;
+                return JSON.parse(result.value);
+            } catch (err) {
                 return null;
             }
         }
 
-        let localBusListener = null;
-
-        function listenToLocalRoomUpdates(code) {
-            if (localRoomBus) {
-                if (localBusListener) localRoomBus.removeEventListener('message', localBusListener);
-                localBusListener = (e) => {
-                    if (e.data && e.data.code === code && e.data.data) {
-                        applyRemoteRoomState(e.data.data);
-                    }
-                };
-                localRoomBus.addEventListener('message', localBusListener);
+        async function writeRoom(code, data) {
+            try {
+                const result = await window.storage.set(roomKey(code), JSON.stringify(data), true);
+                return !!result;
+            } catch (err) {
+                console.warn('Error al guardar el estado de la sala:', err);
+                return false;
             }
+        }
 
-            window.addEventListener('storage', (e) => {
-                if (e.key === 'chess_room_' + code && e.newValue) {
-                    try {
-                        applyRemoteRoomState(JSON.parse(e.newValue));
-                    } catch (err) {}
-                }
-            });
+        function startRoomPolling(code) {
+            stopRoomPolling();
+            pollIntervalHandle = setInterval(() => pollRoomState(code), ROOM_POLL_MS);
+            // primer sondeo casi inmediato
+            pollRoomState(code);
+        }
+
+        function stopRoomPolling() {
+            if (pollIntervalHandle) {
+                clearInterval(pollIntervalHandle);
+                pollIntervalHandle = null;
+            }
+        }
+
+        async function pollRoomState(code) {
+            if (!code || currentMode !== 'online') return;
+            const data = await readRoom(code);
+            if (data && data.updatedAt && data.updatedAt !== lastKnownUpdatedAt) {
+                lastKnownUpdatedAt = data.updatedAt;
+                applyRemoteRoomState(data);
+            }
         }
 
         function applyRemoteRoomState(data) {
@@ -564,19 +544,18 @@
                 game.load(data.fen);
                 spawnProceduralPieces();
                 updateHUDAndHistory();
-                if (data.lastMove) {
-                    if (game.in_check()) playSynthSound('check');
-                    else playSynthSound('move');
-                }
+                if (game.in_check()) playSynthSound('check');
+                else playSynthSound('move');
                 updateTurnIndicator(game.turn() === 'w');
                 checkEndGameCondition();
                 isUpdatingFromRemote = false;
+            } else {
+                // Aunque el FEN no haya cambiado (p.ej. sólo se unió el rival), refresca el turno.
+                updateTurnIndicator(game.turn() === 'w');
             }
         }
 
         async function createOnlineRoom() {
-            if (window.authPromise) await window.authPromise;
-
             const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
             let roomCode = '';
             for (let i = 0; i < 6; i++) {
@@ -586,41 +565,40 @@
             currentRoomCode = roomCode;
             myOnlineRole = 'w';
             setPresetCamera('white');
+            game.reset();
 
+            const now = Date.now();
             const initialRoomData = {
                 code: roomCode,
                 fen: game.fen(),
-                hostUid: window.currentUserId || 'host_anon',
-                guestUid: null,
+                hostId: window.currentUserId,
+                guestId: null,
                 status: 'waiting',
                 turn: 'w',
                 history: [],
                 lastMove: null,
-                createdAt: Date.now()
+                createdAt: now,
+                updatedAt: now
             };
 
-            saveLocalRoom(roomCode, initialRoomData);
-
-            if (window.FirebaseServices) {
-                const { db, appId, doc, setDoc } = window.FirebaseServices;
-                const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'chess_rooms', roomCode);
-
-                try {
-                    await setDoc(roomRef, initialRoomData);
-                    listenToRoomUpdates(roomRef, roomCode);
-                } catch (err) {
-                    console.warn("Firestore error al crear sala, usando canal local:", err);
-                    listenToLocalRoomUpdates(roomCode);
-                }
-            } else {
-                listenToLocalRoomUpdates(roomCode);
+            const ok = await writeRoom(roomCode, initialRoomData);
+            if (!ok) {
+                showToast('No se pudo crear la sala. Intenta de nuevo.', true);
+                return;
             }
+
+            lastKnownUpdatedAt = now;
+            startRoomPolling(roomCode);
 
             document.getElementById('generated-code-display').innerText = roomCode;
             document.getElementById('online-room-code-display').innerText = `SALA: ${roomCode} (Blancas)`;
 
+            spawnProceduralPieces();
+            updateHUDAndHistory();
+            updateTurnIndicator(true);
+
             showViewInOnlineModal('waiting');
-            showToast(`Sala creada. Código: ${roomCode}`);
+            showToast(`Sala creada. Comparte el código: ${roomCode}`);
         }
 
         async function joinOnlineRoom(inputCode) {
@@ -630,37 +608,14 @@
                 return;
             }
 
-            if (window.authPromise) await window.authPromise;
-
-            let roomData = null;
-            let roomRef = null;
-            let usingFirebase = false;
-
-            if (window.FirebaseServices) {
-                const { db, appId, doc, getDoc } = window.FirebaseServices;
-                roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'chess_rooms', code);
-
-                try {
-                    const snapshot = await getDoc(roomRef);
-                    if (snapshot.exists()) {
-                        roomData = snapshot.data();
-                        usingFirebase = true;
-                    }
-                } catch (err) {
-                    console.warn("Excepción en Firestore al unirse, probando búsqueda local:", err);
-                }
-            }
-
-            if (!roomData) {
-                roomData = getLocalRoom(code);
-            }
+            const roomData = await readRoom(code);
 
             if (!roomData) {
                 showToast("La sala no existe. Revisa el código e inténtalo de nuevo.", true);
                 return;
             }
 
-            if (roomData.status === 'playing' && roomData.guestUid && roomData.guestUid !== window.currentUserId) {
+            if (roomData.guestId && roomData.guestId !== window.currentUserId) {
                 showToast("La sala ya tiene dos jugadores en partida", true);
                 return;
             }
@@ -669,73 +624,63 @@
             myOnlineRole = 'b';
             setPresetCamera('black');
 
+            const now = Date.now();
             const updatedData = {
                 ...roomData,
-                guestUid: window.currentUserId || 'guest_anon',
-                status: 'playing'
+                guestId: window.currentUserId,
+                status: 'playing',
+                updatedAt: now
             };
 
-            saveLocalRoom(code, updatedData);
-
-            if (usingFirebase && roomRef) {
-                const { updateDoc } = window.FirebaseServices;
-                try {
-                    await updateDoc(roomRef, {
-                        guestUid: updatedData.guestUid,
-                        status: 'playing'
-                    });
-                    listenToRoomUpdates(roomRef, code);
-                } catch (err) {
-                    console.warn("Fallback a canal local tras error de updateDoc:", err);
-                    listenToLocalRoomUpdates(code);
-                }
-            } else {
-                listenToLocalRoomUpdates(code);
+            const ok = await writeRoom(code, updatedData);
+            if (!ok) {
+                showToast('No se pudo unir a la sala. Intenta de nuevo.', true);
+                return;
             }
+
+            lastKnownUpdatedAt = now;
+
+            // Carga la posición actual de la sala (por si el anfitrión ya jugó).
+            if (updatedData.fen) {
+                game.load(updatedData.fen);
+            }
+            spawnProceduralPieces();
+            updateHUDAndHistory();
+            updateTurnIndicator(game.turn() === 'w');
+
+            startRoomPolling(code);
 
             document.getElementById('online-room-code-display').innerText = `SALA: ${code} (Negras)`;
             toggleModal('modal-online', false);
             showToast("¡Unido con éxito a la sala! Juegas con Negras.");
         }
 
-        function listenToRoomUpdates(roomRef, code) {
-            if (roomUnsubscribe) roomUnsubscribe();
-            listenToLocalRoomUpdates(code);
-
-            const { onSnapshot } = window.FirebaseServices;
-
-            roomUnsubscribe = onSnapshot(roomRef, (snapshot) => {
-                if (!snapshot.exists()) return;
-                const data = snapshot.data();
-                applyRemoteRoomState(data);
-            }, (error) => {
-                console.warn("Error en el snapshot de Firebase, manteniendo bus local:", error);
-            });
-        }
-
         async function syncMoveToOnlineServer() {
             if (!currentRoomCode) return;
 
+            const now = Date.now();
+            const existing = await readRoom(currentRoomCode) || {};
+
             const updateData = {
+                ...existing,
+                code: currentRoomCode,
                 fen: game.fen(),
                 turn: game.turn(),
+                status: existing.status || 'playing',
                 history: game.history(),
-                lastMove: game.history({ verbose: true }).slice(-1)[0] || null
+                lastMove: game.history({ verbose: true }).slice(-1)[0] || null,
+                updatedAt: now
             };
 
-            saveLocalRoom(currentRoomCode, updateData);
+            lastKnownUpdatedAt = now;
 
-            if (window.FirebaseServices) {
-                const { db, appId, doc, updateDoc } = window.FirebaseServices;
-                const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'chess_rooms', currentRoomCode);
-
-                try {
-                    await updateDoc(roomRef, updateData);
-                } catch (err) {
-                    console.warn("Error al sincronizar jugada en Firestore:", err);
-                }
+            const ok = await writeRoom(currentRoomCode, updateData);
+            if (!ok) {
+                showToast('Error al sincronizar la jugada. Reintentando...', true);
             }
         }
+
+        /* ========================================================================= */
 
         function initEngine3D() {
             const container = document.getElementById('canvas-container');
@@ -1050,6 +995,10 @@
             if (game.game_over()) return;
 
             if (currentMode === 'online') {
+                if (!currentRoomCode) {
+                    showToast("Primero crea o únete a una sala", true);
+                    return;
+                }
                 if (game.turn() !== myOnlineRole) {
                     showToast("Es el turno de tu rival", true);
                     return;
@@ -1141,7 +1090,12 @@
             clearSelection();
             updateHUDAndHistory();
 
-            if (checkEndGameCondition()) return;
+            if (checkEndGameCondition()) {
+                if (currentMode === 'online' && !isUpdatingFromRemote) {
+                    syncMoveToOnlineServer();
+                }
+                return;
+            }
 
             updateTurnIndicator(game.turn() === 'w');
 
@@ -1542,6 +1496,11 @@
             if (!dot || !text) return;
             
             if (currentMode === 'online') {
+                if (!currentRoomCode) {
+                    dot.className = "relative inline-flex rounded-full h-3.5 w-3.5 bg-slate-500";
+                    text.innerText = "Crea o únete a una sala";
+                    return;
+                }
                 const isMyTurn = game.turn() === myOnlineRole;
                 dot.className = `relative inline-flex rounded-full h-3.5 w-3.5 ${isMyTurn ? 'bg-emerald-500' : 'bg-rose-500'}`;
                 text.innerText = isMyTurn ? `Tu turno (${myOnlineRole === 'w' ? 'Blancas' : 'Negras'})` : "Turno del Rival...";
@@ -1643,7 +1602,9 @@
             
             if (currentMode === 'online') {
                 setPresetCamera(myOnlineRole === 'w' ? 'white' : 'black');
-                syncMoveToOnlineServer();
+                if (currentRoomCode) {
+                    syncMoveToOnlineServer();
+                }
             } else {
                 setPresetCamera('white');
             }
@@ -1659,6 +1620,7 @@
             const btnCampaign = document.getElementById('btn-campaign');
 
             if (newMode === 'pve') {
+                stopRoomPolling();
                 pveBtn.className = "px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 bg-indigo-600 text-white shadow-md";
                 onlineBtn.className = "px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 text-slate-400 hover:text-white";
                 pveBadge.classList.remove('hidden');
@@ -1675,9 +1637,11 @@
                 btnCampaign.classList.add('hidden');
 
                 if (!currentRoomCode) {
+                    updateTurnIndicator(true);
                     toggleModal('modal-online', true);
                 } else {
-                    restartGame();
+                    startRoomPolling(currentRoomCode);
+                    updateTurnIndicator(game.turn() === 'w');
                 }
             }
         }
