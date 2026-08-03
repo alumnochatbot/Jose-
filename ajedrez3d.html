@@ -233,7 +233,7 @@
                     Ingresa el código de 6 caracteres compartido por tu oponente:
                 </p>
                 <div class="flex flex-col gap-2">
-                    <input id="input-room-code" type="text" maxlength="6" placeholder="EJ: X7K29P" class="w-full bg-slate-950 border border-slate-800 focus:border-emerald-500 rounded-xl px-4 py-3 text-center text-xl font-mono uppercase tracking-widest text-emerald-400 outline-none transition" />
+                    <input id="input-room-code" type="text" maxlength="6" placeholder="EJ: X7K29P" autocomplete="off" spellcheck="false" class="w-full bg-slate-950 border border-slate-800 focus:border-emerald-500 rounded-xl px-4 py-3 text-center text-xl font-mono uppercase tracking-widest text-emerald-400 outline-none transition" />
                 </div>
                 <button id="btn-do-join" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 transition font-bold rounded-xl text-white shadow-lg flex items-center justify-center gap-2">
                     <i data-lucide="log-in" class="w-5 h-5"></i>
@@ -334,14 +334,13 @@
                     await signInAnonymously(auth);
                 }
                 window.currentUserId = auth.currentUser ? auth.currentUser.uid : 'usr_' + Math.random().toString(36).substring(2, 8);
-                console.log("Firebase Auth listo. User ID:", window.currentUserId);
             } catch (err) {
                 console.warn("Auth fallback activado:", err);
                 window.currentUserId = 'usr_' + Math.random().toString(36).substring(2, 8);
             }
         }
 
-        authenticate();
+        window.authPromise = authenticate();
     </script>
 
     <!-- AUDIO SINTETIZADOR DE EFECTOS (Web Audio API) -->
@@ -400,13 +399,14 @@
 
         function showToast(msg, isError = false) {
             const container = document.getElementById('toast-container');
+            if (!container) return;
             const toast = document.createElement('div');
             toast.className = `px-4 py-2.5 rounded-xl shadow-2xl border text-xs font-bold tracking-wide flex items-center gap-2 transform transition-all duration-300 translate-y-2 opacity-0 pointer-events-auto ${
                 isError ? 'bg-rose-950/90 border-rose-500/50 text-rose-200' : 'bg-emerald-950/90 border-emerald-500/50 text-emerald-200'
             }`;
             toast.innerHTML = `<i data-lucide="${isError ? 'alert-circle' : 'check-circle'}" class="w-4 h-4"></i> <span>${msg}</span>`;
             container.appendChild(toast);
-            lucide.createIcons();
+            if (window.lucide) lucide.createIcons();
 
             setTimeout(() => {
                 toast.classList.remove('translate-y-2', 'opacity-0');
@@ -421,7 +421,6 @@
 
     <!-- MOTOR DE JUEGO, RENDERING 3D, IA Y MULTIJUGADOR -->
     <script>
-        // Diccionario Teórico de Aperturas, Trampas y Gambitos
         const OPENING_BOOK = {
             "e4": ["e5", "c5", "e6", "c6", "d5"],
             "e4 d5": ["exd5"],
@@ -436,11 +435,11 @@
             "e4 c6": ["d4"],
             "e4 c6 d4": ["d5"],
             "e4 e5": ["Nf3", "Bc4", "f4"],
-            "e4 e5 f4": ["exf4", "d5"],
+            "e4 e5 f4": ["exd4", "d5"],
             "e4 e5 Nf3": ["Nc6", "Nf6"],
             "e4 e5 Nf3 Nc6": ["Bc4", "Bb5", "d4"],
-            "e4 e5 Nf3 Nc6 Bc4": ["Bc5", "Nf6", "Nd4"],
             "d4": ["d5", "Nf6", "e5"],
+            "d4 e5": ["dxe5"],
             "d4 d5": ["c4"],
             "d4 d5 c4": ["e6", "c6", "dxc4", "e5"]
         };
@@ -451,11 +450,10 @@
             "e4 c6": "Defensa Caro-Kann ⚙️",
             "e4 d5": "Defensa Escandinava ❄️",
             "e4 e5 f4": "Gambito de Rey 👑",
-            "e4 e5 Nf3 Nc6 Bb5": "Apertura Española (Ruy López) 🇪🇸",
+            "e4 e5 Nf3 Nc6 Bb5": "Apertura Española 🇪🇸",
             "e4 e5 Nf3 Nc6 Bc4": "Apertura Italiana 🇮🇹",
-            "e4 e5 Nf3 Nc6 Bc4 Nf6": "Defensa de los Dos Caballos 🐎",
-            "d4 d5 c4": "Gambito de Dama 👑",
-            "d4 Nf6": "Defensa India de Rey 🇮🇳"
+            "d4 e5": "Gambito Englund 🧪",
+            "d4 d5 c4": "Gambito de Dama 👑"
         };
 
         const CAMPAIGN_LEVELS = [
@@ -466,20 +464,19 @@
             { id: 5, name: "Rusia - La Fortaleza", flag: "🇷🇺", difficulty: "Gran Maestro (ELO 2500)", color: "slate", depth: 4, bgGrad: [0x0f172a, 0x020617] }
         ];
 
-        let currentMode = 'pve'; // 'pve' o 'online'
         let currentLevelIndex = 0;
+        let currentMode = 'pve'; // 'pve' o 'online'
+        let currentRoomCode = null;
+        let myOnlineRole = 'w';
+        let roomUnsubscribe = null;
+        let isUpdatingFromRemote = false;
+
         let game = new Chess();
         let scene, camera, renderer, controls;
         let boardGroup, piecesGroup, indicatorsGroup;
         let selectedSquare = null;
         let particleSystem;
         let currentThemeColor = 0x10b981;
-
-        // Variables de Estado Multijugador Online
-        let currentRoomCode = null;
-        let myOnlineRole = 'w'; // 'w' o 'b'
-        let roomUnsubscribe = null;
-        let isUpdatingFromRemote = false;
 
         const pieceUnicode = {
             'p': '♟', 'r': '♜', 'n': '♞', 'b': '♝', 'q': '♛', 'k': '♚',
@@ -499,76 +496,253 @@
             };
         }
 
-        const PAWN_PST = [
-            [0,  0,  0,  0,  0,  0,  0,  0],
-            [50, 50, 50, 50, 50, 50, 50, 50],
-            [10, 10, 20, 30, 30, 20, 10, 10],
-            [5,  5, 10, 25, 25, 10,  5,  5],
-            [0,  0,  0, 20, 20,  0,  0,  0],
-            [5, -5,-10,  0,  0,-10, -5,  5],
-            [5, 10, 10,-20,-20, 10, 10,  5],
-            [0,  0,  0,  0,  0,  0,  0,  0]
-        ];
+        function coordsToSquare(x, z) {
+            const fileIdx = Math.round((x + BOARD_OFFSET) / SQUARE_SIZE);
+            const rankIdx = 7 - Math.round((z + BOARD_OFFSET) / SQUARE_SIZE);
+            const files = 'abcdefgh';
+            if (fileIdx >= 0 && fileIdx < 8 && rankIdx >= 0 && rankIdx < 8) {
+                return files[fileIdx] + (rankIdx + 1);
+            }
+            return null;
+        }
 
-        const KNIGHT_PST = [
-            [-50,-40,-30,-30,-30,-30,-40,-50],
-            [-40,-20,  0,  0,  0,  0,-20,-40],
-            [-30,  0, 10, 15, 15, 10,  0,-30],
-            [-30,  5, 15, 20, 20, 15,  5,-30],
-            [-30,  0, 15, 20, 20, 15,  0,-30],
-            [-30,  5, 10, 15, 15, 10,  5,-30],
-            [-40,-20,  0,  5,  5,  0,-20,-40],
-            [-50,-40,-30,-30,-30,-30,-40,-50]
-        ];
+        const localRoomBus = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('chess_local_rooms') : null;
 
-        const BISHOP_PST = [
-            [-20,-10,-10,-10,-10,-10,-10,-20],
-            [-10,  0,  0,  0,  0,  0,  0,-10],
-            [-10,  0,  5, 10, 10,  5,  0,-10],
-            [-10,  5,  5, 10, 10,  5,  5,-10],
-            [-10,  0, 10, 10, 10, 10,  0,-10],
-            [-10, 10, 10, 10, 10, 10, 10,-10],
-            [-10,  5,  0,  0,  0,  0,  5,-10],
-            [-20,-10,-10,-10,-10,-10,-10,-20]
-        ];
+        function saveLocalRoom(code, data) {
+            try {
+                const existing = getLocalRoom(code) || {};
+                const merged = { ...existing, ...data };
+                localStorage.setItem('chess_room_' + code, JSON.stringify(merged));
+                if (localRoomBus) localRoomBus.postMessage({ type: 'room_update', code, data: merged });
+            } catch (e) {}
+        }
 
-        const ROOK_PST = [
-            [  0,  0,  0,  0,  0,  0,  0,  0],
-            [  5, 10, 10, 10, 10, 10, 10,  5],
-            [ -5,  0,  0,  0,  0,  0,  0, -5],
-            [ -5,  0,  0,  0,  0,  0,  0, -5],
-            [ -5,  0,  0,  0,  0,  0,  0, -5],
-            [ -5,  0,  0,  0,  0,  0,  0, -5],
-            [ -5,  0,  0,  0,  0,  0,  0, -5],
-            [  0,  0,  0,  5,  5,  0,  0,  0]
-        ];
+        function getLocalRoom(code) {
+            try {
+                const item = localStorage.getItem('chess_room_' + code);
+                return item ? JSON.parse(item) : null;
+            } catch (e) {
+                return null;
+            }
+        }
 
-        const QUEEN_PST = [
-            [-20,-10,-10, -5, -5,-10,-10,-20],
-            [-10,  0,  0,  0,  0,  0,  0,-10],
-            [-10,  0,  5,  5,  5,  5,  0,-10],
-            [ -5,  0,  5,  5,  5,  5,  0, -5],
-            [  0,  0,  5,  5,  5,  5,  0, -5],
-            [-10,  5,  5,  5,  5,  5,  0,-10],
-            [-10,  0,  5,  0,  0,  5,  0,-10],
-            [-20,-10,-10, -5, -5,-10,-10,-20]
-        ];
+        let localBusListener = null;
 
-        const KING_PST = [
-            [-30,-40,-40,-50,-50,-40,-40,-30],
-            [-30,-40,-40,-50,-50,-40,-40,-30],
-            [-30,-40,-40,-50,-50,-40,-40,-30],
-            [-30,-40,-40,-50,-50,-40,-40,-30],
-            [-20,-30,-30,-40,-40,-30,-30,-20],
-            [-10,-20,-20,-20,-20,-20,-20,-10],
-            [ 20, 20,  0,  0,  0,  0, 20, 20],
-            [ 20, 30, 10,  0,  0, 10, 30, 20]
-        ];
+        function listenToLocalRoomUpdates(code) {
+            if (localRoomBus) {
+                if (localBusListener) localRoomBus.removeEventListener('message', localBusListener);
+                localBusListener = (e) => {
+                    if (e.data && e.data.code === code && e.data.data) {
+                        applyRemoteRoomState(e.data.data);
+                    }
+                };
+                localRoomBus.addEventListener('message', localBusListener);
+            }
+
+            window.addEventListener('storage', (e) => {
+                if (e.key === 'chess_room_' + code && e.newValue) {
+                    try {
+                        applyRemoteRoomState(JSON.parse(e.newValue));
+                    } catch (err) {}
+                }
+            });
+        }
+
+        function applyRemoteRoomState(data) {
+            if (!data) return;
+
+            if (data.status === 'playing') {
+                const modal = document.getElementById('modal-online');
+                if (modal && !modal.classList.contains('hidden')) {
+                    toggleModal('modal-online', false);
+                    showToast("¡Oponente conectado! Empieza la batalla.");
+                }
+            }
+
+            if (data.fen && data.fen !== game.fen()) {
+                isUpdatingFromRemote = true;
+                game.load(data.fen);
+                spawnProceduralPieces();
+                updateHUDAndHistory();
+                if (data.lastMove) {
+                    if (game.in_check()) playSynthSound('check');
+                    else playSynthSound('move');
+                }
+                updateTurnIndicator(game.turn() === 'w');
+                checkEndGameCondition();
+                isUpdatingFromRemote = false;
+            }
+        }
+
+        async function createOnlineRoom() {
+            if (window.authPromise) await window.authPromise;
+
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            let roomCode = '';
+            for (let i = 0; i < 6; i++) {
+                roomCode += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+
+            currentRoomCode = roomCode;
+            myOnlineRole = 'w';
+            setPresetCamera('white');
+
+            const initialRoomData = {
+                code: roomCode,
+                fen: game.fen(),
+                hostUid: window.currentUserId || 'host_anon',
+                guestUid: null,
+                status: 'waiting',
+                turn: 'w',
+                history: [],
+                lastMove: null,
+                createdAt: Date.now()
+            };
+
+            saveLocalRoom(roomCode, initialRoomData);
+
+            if (window.FirebaseServices) {
+                const { db, appId, doc, setDoc } = window.FirebaseServices;
+                const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'chess_rooms', roomCode);
+
+                try {
+                    await setDoc(roomRef, initialRoomData);
+                    listenToRoomUpdates(roomRef, roomCode);
+                } catch (err) {
+                    console.warn("Firestore error al crear sala, usando canal local:", err);
+                    listenToLocalRoomUpdates(roomCode);
+                }
+            } else {
+                listenToLocalRoomUpdates(roomCode);
+            }
+
+            document.getElementById('generated-code-display').innerText = roomCode;
+            document.getElementById('online-room-code-display').innerText = `SALA: ${roomCode} (Blancas)`;
+
+            showViewInOnlineModal('waiting');
+            showToast(`Sala creada. Código: ${roomCode}`);
+        }
+
+        async function joinOnlineRoom(inputCode) {
+            const code = (inputCode || '').trim().toUpperCase();
+            if (!code || code.length < 4) {
+                showToast("Ingresa un código válido de al menos 4 caracteres", true);
+                return;
+            }
+
+            if (window.authPromise) await window.authPromise;
+
+            let roomData = null;
+            let roomRef = null;
+            let usingFirebase = false;
+
+            if (window.FirebaseServices) {
+                const { db, appId, doc, getDoc } = window.FirebaseServices;
+                roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'chess_rooms', code);
+
+                try {
+                    const snapshot = await getDoc(roomRef);
+                    if (snapshot.exists()) {
+                        roomData = snapshot.data();
+                        usingFirebase = true;
+                    }
+                } catch (err) {
+                    console.warn("Excepción en Firestore al unirse, probando búsqueda local:", err);
+                }
+            }
+
+            if (!roomData) {
+                roomData = getLocalRoom(code);
+            }
+
+            if (!roomData) {
+                showToast("La sala no existe. Revisa el código e inténtalo de nuevo.", true);
+                return;
+            }
+
+            if (roomData.status === 'playing' && roomData.guestUid && roomData.guestUid !== window.currentUserId) {
+                showToast("La sala ya tiene dos jugadores en partida", true);
+                return;
+            }
+
+            currentRoomCode = code;
+            myOnlineRole = 'b';
+            setPresetCamera('black');
+
+            const updatedData = {
+                ...roomData,
+                guestUid: window.currentUserId || 'guest_anon',
+                status: 'playing'
+            };
+
+            saveLocalRoom(code, updatedData);
+
+            if (usingFirebase && roomRef) {
+                const { updateDoc } = window.FirebaseServices;
+                try {
+                    await updateDoc(roomRef, {
+                        guestUid: updatedData.guestUid,
+                        status: 'playing'
+                    });
+                    listenToRoomUpdates(roomRef, code);
+                } catch (err) {
+                    console.warn("Fallback a canal local tras error de updateDoc:", err);
+                    listenToLocalRoomUpdates(code);
+                }
+            } else {
+                listenToLocalRoomUpdates(code);
+            }
+
+            document.getElementById('online-room-code-display').innerText = `SALA: ${code} (Negras)`;
+            toggleModal('modal-online', false);
+            showToast("¡Unido con éxito a la sala! Juegas con Negras.");
+        }
+
+        function listenToRoomUpdates(roomRef, code) {
+            if (roomUnsubscribe) roomUnsubscribe();
+            listenToLocalRoomUpdates(code);
+
+            const { onSnapshot } = window.FirebaseServices;
+
+            roomUnsubscribe = onSnapshot(roomRef, (snapshot) => {
+                if (!snapshot.exists()) return;
+                const data = snapshot.data();
+                applyRemoteRoomState(data);
+            }, (error) => {
+                console.warn("Error en el snapshot de Firebase, manteniendo bus local:", error);
+            });
+        }
+
+        async function syncMoveToOnlineServer() {
+            if (!currentRoomCode) return;
+
+            const updateData = {
+                fen: game.fen(),
+                turn: game.turn(),
+                history: game.history(),
+                lastMove: game.history({ verbose: true }).slice(-1)[0] || null
+            };
+
+            saveLocalRoom(currentRoomCode, updateData);
+
+            if (window.FirebaseServices) {
+                const { db, appId, doc, updateDoc } = window.FirebaseServices;
+                const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'chess_rooms', currentRoomCode);
+
+                try {
+                    await updateDoc(roomRef, updateData);
+                } catch (err) {
+                    console.warn("Error al sincronizar jugada en Firestore:", err);
+                }
+            }
+        }
 
         function initEngine3D() {
             const container = document.getElementById('canvas-container');
-            const width = container.clientWidth;
-            const height = container.clientHeight;
+            if (!container) return;
+
+            const width = container.clientWidth || window.innerWidth;
+            const height = container.clientHeight || window.innerHeight;
 
             scene = new THREE.Scene();
             scene.fog = new THREE.FogExp2(0x012417, 0.025);
@@ -581,6 +755,8 @@
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             renderer.shadowMap.enabled = true;
             renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+            container.innerHTML = '';
             container.appendChild(renderer.domElement);
 
             controls = new THREE.OrbitControls(camera, renderer.domElement);
@@ -873,14 +1049,12 @@
         function onSquareClicked(squareName) {
             if (game.game_over()) return;
 
-            // En modo Online, solo permite mover en tu turno y tus piezas
             if (currentMode === 'online') {
                 if (game.turn() !== myOnlineRole) {
                     showToast("Es el turno de tu rival", true);
                     return;
                 }
             } else {
-                // En modo PvE, solo juegas con Blancas
                 if (game.turn() === 'b') return;
             }
 
@@ -978,150 +1152,9 @@
             }
         }
 
-        async function createOnlineRoom() {
-            if (!window.FirebaseServices) {
-                showToast("Inicializando conexión...", true);
-                return;
-            }
-            const { db, appId, doc, setDoc, onSnapshot } = window.FirebaseServices;
-
-            // Generar código de sala de 6 caracteres
-            const roomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
-            currentRoomCode = roomCode;
-            myOnlineRole = 'w';
-
-            setPresetCamera('white');
-
-            const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'chess_rooms', roomCode);
-
-            const initialRoomData = {
-                code: roomCode,
-                fen: game.fen(),
-                hostUid: window.currentUserId || 'host_anon',
-                guestUid: null,
-                status: 'waiting',
-                turn: 'w',
-                history: [],
-                lastMove: null,
-                createdAt: Date.now()
-            };
-
-            try {
-                await setDoc(roomRef, initialRoomData);
-                listenToRoomUpdates(roomRef);
-
-                document.getElementById('generated-code-display').innerText = roomCode;
-                document.getElementById('online-room-code-display').innerText = `SALA: ${roomCode}`;
-
-                showViewInOnlineModal('waiting');
-                showToast(`Sala creada. Código: ${roomCode}`);
-            } catch (err) {
-                console.error("Error al crear la sala online:", err);
-                showToast("Error al crear la sala online", true);
-            }
-        }
-
-        async function joinOnlineRoom(inputCode) {
-            if (!inputCode || inputCode.length < 4) {
-                showToast("Ingresa un código válido", true);
-                return;
-            }
-            if (!window.FirebaseServices) {
-                showToast("Inicializando conexión...", true);
-                return;
-            }
-
-            const { db, appId, doc, getDoc, updateDoc } = window.FirebaseServices;
-            const code = inputCode.trim().toUpperCase();
-            const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'chess_rooms', code);
-
-            try {
-                const snapshot = await getDoc(roomRef);
-                if (!snapshot.exists()) {
-                    showToast("La sala no existe", true);
-                    return;
-                }
-
-                const data = snapshot.data();
-                if (data.status === 'playing' && data.guestUid !== window.currentUserId) {
-                    showToast("La sala ya está llena", true);
-                    return;
-                }
-
-                currentRoomCode = code;
-                myOnlineRole = 'b';
-                setPresetCamera('black');
-
-                if (!data.guestUid) {
-                    await updateDoc(roomRef, {
-                        guestUid: window.currentUserId || 'guest_anon',
-                        status: 'playing'
-                    });
-                }
-
-                listenToRoomUpdates(roomRef);
-                document.getElementById('online-room-code-display').innerText = `SALA: ${code}`;
-                toggleModal('modal-online', false);
-                showToast("¡Unido con éxito a la sala!");
-            } catch (err) {
-                console.error("Error al unirse a la sala:", err);
-                showToast("No se pudo conectar a la sala", true);
-            }
-        }
-
-        function listenToRoomUpdates(roomRef) {
-            if (roomUnsubscribe) roomUnsubscribe();
-
-            const { onSnapshot } = window.FirebaseServices;
-
-            roomUnsubscribe = onSnapshot(roomRef, (snapshot) => {
-                if (!snapshot.exists()) return;
-                const data = snapshot.data();
-
-                if (data.status === 'playing') {
-                    const modal = document.getElementById('modal-online');
-                    if (!modal.classList.contains('hidden')) {
-                        toggleModal('modal-online', false);
-                        showToast("¡Oponente conectado! Empieza la partida.");
-                    }
-                }
-
-                if (data.fen && data.fen !== game.fen()) {
-                    isUpdatingFromRemote = true;
-                    game.load(data.fen);
-                    spawnProceduralPieces();
-                    updateHUDAndHistory();
-                    if (data.lastMove) {
-                        if (game.in_check()) playSynthSound('check');
-                        else playSynthSound('move');
-                    }
-                    updateTurnIndicator(game.turn() === 'w');
-                    checkEndGameCondition();
-                    isUpdatingFromRemote = false;
-                }
-            }, (error) => {
-                console.error("Error en listener de sala:", error);
-            });
-        }
-
-        async function syncMoveToOnlineServer() {
-            if (!currentRoomCode || !window.FirebaseServices) return;
-            const { db, appId, doc, updateDoc } = window.FirebaseServices;
-            const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'chess_rooms', currentRoomCode);
-
-            try {
-                await updateDoc(roomRef, {
-                    fen: game.fen(),
-                    turn: game.turn(),
-                    history: game.history()
-                });
-            } catch (err) {
-                console.error("Error al sincronizar jugada:", err);
-            }
-        }
-
         function updateHUDAndHistory() {
             const historyList = document.getElementById('move-history-list');
+            if (!historyList) return;
             historyList.innerHTML = '';
 
             const moves = game.history();
@@ -1155,7 +1188,7 @@
                 }
 
                 const scrollContainer = document.getElementById('history-scroll-container');
-                scrollContainer.scrollTop = scrollContainer.scrollHeight;
+                if (scrollContainer) scrollContainer.scrollTop = scrollContainer.scrollHeight;
             }
 
             updateCapturedPiecesUI();
@@ -1166,6 +1199,7 @@
             const historyStr = game.history({ verbose: false }).join(' ');
             const badge = document.getElementById('opening-badge');
             const text = document.getElementById('opening-text');
+            if (!badge || !text) return;
 
             let matchedOpening = null;
             let maxWords = 0;
@@ -1183,7 +1217,7 @@
             if (matchedOpening) {
                 text.innerText = matchedOpening;
                 badge.classList.remove('hidden');
-                lucide.createIcons();
+                if (window.lucide) lucide.createIcons();
             } else {
                 if (game.history().length <= 1) {
                     badge.classList.add('hidden');
@@ -1209,6 +1243,7 @@
         function updateCapturedPiecesUI() {
             const whiteCapturesContainer = document.getElementById('white-captures');
             const blackCapturesContainer = document.getElementById('black-captures');
+            if (!whiteCapturesContainer || !blackCapturesContainer) return;
 
             const initialPieces = {
                 w: { p: 8, r: 2, n: 2, b: 2, q: 1 },
@@ -1367,6 +1402,72 @@
 
         const PIECE_VALUES = { p: 100, n: 320, b: 330, r: 500, q: 900, k: 20000 };
 
+        const PAWN_PST = [
+            [0,  0,  0,  0,  0,  0,  0,  0],
+            [50, 50, 50, 50, 50, 50, 50, 50],
+            [10, 10, 20, 30, 30, 20, 10, 10],
+            [5,  5, 10, 25, 25, 10,  5,  5],
+            [0,  0,  0, 20, 20,  0,  0,  0],
+            [5, -5,-10,  0,  0,-10, -5,  5],
+            [5, 10, 10,-20,-20, 10, 10,  5],
+            [0,  0,  0,  0,  0,  0,  0,  0]
+        ];
+
+        const KNIGHT_PST = [
+            [-50,-40,-30,-30,-30,-30,-40,-50],
+            [-40,-20,  0,  0,  0,  0,-20,-40],
+            [-30,  0, 10, 15, 15, 10,  0,-30],
+            [-30,  5, 15, 20, 20, 15,  5,-30],
+            [-30,  0, 15, 20, 20, 15,  0,-30],
+            [-30,  5, 10, 15, 15, 10,  5,-30],
+            [-40,-20,  0,  5,  5,  0,-20,-40],
+            [-50,-40,-30,-30,-30,-30,-40,-50]
+        ];
+
+        const BISHOP_PST = [
+            [-20,-10,-10,-10,-10,-10,-10,-20],
+            [-10,  0,  0,  0,  0,  0,  0,-10],
+            [-10,  0,  5, 10, 10,  5,  0,-10],
+            [-10,  5,  5, 10, 10,  5,  5,-10],
+            [-10,  0, 10, 10, 10, 10,  0,-10],
+            [-10, 10, 10, 10, 10, 10, 10,-10],
+            [-10,  5,  0,  0,  0,  0,  5,-10],
+            [-20,-10,-10,-10,-10,-10,-10,-20]
+        ];
+
+        const ROOK_PST = [
+            [  0,  0,  0,  0,  0,  0,  0,  0],
+            [  5, 10, 10, 10, 10, 10, 10,  5],
+            [ -5,  0,  0,  0,  0,  0,  0, -5],
+            [ -5,  0,  0,  0,  0,  0,  0, -5],
+            [ -5,  0,  0,  0,  0,  0,  0, -5],
+            [ -5,  0,  0,  0,  0,  0,  0, -5],
+            [ -5,  0,  0,  0,  0,  0,  0, -5],
+            [  0,  0,  0,  5,  5,  0,  0,  0]
+        ];
+
+        const QUEEN_PST = [
+            [-20,-10,-10, -5, -5,-10,-10,-20],
+            [-10,  0,  0,  0,  0,  0,  0,-10],
+            [-10,  0,  5,  5,  5,  5,  0,-10],
+            [ -5,  0,  5,  5,  5,  5,  0, -5],
+            [  0,  0,  5,  5,  5,  5,  0, -5],
+            [-10,  5,  5,  5,  5,  5,  0,-10],
+            [-10,  0,  5,  0,  0,  5,  0,-10],
+            [-20,-10,-10, -5, -5,-10,-10,-20]
+        ];
+
+        const KING_PST = [
+            [-30,-40,-40,-50,-50,-40,-40,-30],
+            [-30,-40,-40,-50,-50,-40,-40,-30],
+            [-30,-40,-40,-50,-50,-40,-40,-30],
+            [-30,-40,-40,-50,-50,-40,-40,-30],
+            [-20,-30,-30,-40,-40,-30,-30,-20],
+            [-10,-20,-20,-20,-20,-20,-20,-10],
+            [ 20, 20,  0,  0,  0,  0, 20, 20],
+            [ 20, 30, 10,  0,  0, 10, 30, 20]
+        ];
+
         function staticBoardEvaluation(board) {
             let totalEvaluation = 0;
             for (let r = 0; r < 8; r++) {
@@ -1405,11 +1506,13 @@
                         if (game.turn() === 'b') {
                             title = "¡Victoria Heroica!";
                             desc = `Felicidades, has dominado el nivel "${CAMPAIGN_LEVELS[currentLevelIndex].name}" exitosamente.`;
-                            document.getElementById('endgame-next-btn').style.display = currentLevelIndex < CAMPAIGN_LEVELS.length - 1 ? 'block' : 'none';
+                            const nextBtn = document.getElementById('endgame-next-btn');
+                            if (nextBtn) nextBtn.style.display = currentLevelIndex < CAMPAIGN_LEVELS.length - 1 ? 'block' : 'none';
                         } else {
                             title = "Derrota Inminente";
                             desc = `El oponente de ${CAMPAIGN_LEVELS[currentLevelIndex].name.split(' - ')[0]} ha capturado tu rey. ¡Inténtalo de nuevo!`;
-                            document.getElementById('endgame-next-btn').style.display = 'none';
+                            const nextBtn = document.getElementById('endgame-next-btn');
+                            if (nextBtn) nextBtn.style.display = 'none';
                         }
                     } else {
                         const winnerRole = game.turn() === 'b' ? 'w' : 'b';
@@ -1420,7 +1523,8 @@
                             title = "Derrota Online";
                             desc = "Tu rey ha sido acorralado en la partida multijugador.";
                         }
-                        document.getElementById('endgame-next-btn').style.display = 'none';
+                        const nextBtn = document.getElementById('endgame-next-btn');
+                        if (nextBtn) nextBtn.style.display = 'none';
                     }
                 }
 
@@ -1435,6 +1539,7 @@
         function updateTurnIndicator(isWhiteTurn) {
             const dot = document.getElementById('turn-dot');
             const text = document.getElementById('turn-text');
+            if (!dot || !text) return;
             
             if (currentMode === 'online') {
                 const isMyTurn = game.turn() === myOnlineRole;
@@ -1453,15 +1558,18 @@
 
         function toggleModal(id, show) {
             const modal = document.getElementById(id);
+            if (!modal) return;
             if (show) {
                 modal.classList.remove('hidden');
                 setTimeout(() => {
                     modal.classList.remove('opacity-0', 'pointer-events-none');
-                    modal.querySelector('.transform').classList.remove('scale-95');
+                    const card = modal.querySelector('.transform');
+                    if (card) card.classList.remove('scale-95');
                 }, 10);
             } else {
                 modal.classList.add('opacity-0', 'pointer-events-none');
-                modal.querySelector('.transform').classList.add('scale-95');
+                const card = modal.querySelector('.transform');
+                if (card) card.classList.add('scale-95');
                 setTimeout(() => {
                     modal.classList.add('hidden');
                 }, 300);
@@ -1470,6 +1578,7 @@
 
         function showCampaignModal() {
             const listContainer = document.getElementById('campaign-map-list');
+            if (!listContainer) return;
             listContainer.innerHTML = '';
 
             CAMPAIGN_LEVELS.forEach((level, idx) => {
@@ -1512,7 +1621,7 @@
                 listContainer.appendChild(card);
             });
 
-            lucide.createIcons();
+            if (window.lucide) lucide.createIcons();
             toggleModal('modal-campaign', true);
         }
 
@@ -1580,6 +1689,8 @@
             const tabCreate = document.getElementById('tab-create-btn');
             const tabJoin = document.getElementById('tab-join-btn');
 
+            if (!vCreate || !vJoin || !vWait) return;
+
             vCreate.classList.add('hidden');
             vJoin.classList.add('hidden');
             vWait.classList.add('hidden');
@@ -1614,6 +1725,8 @@
 
         function onWindowResize() {
             const container = document.getElementById('canvas-container');
+            if (!container || !camera || !renderer) return;
+
             const width = container.clientWidth;
             const height = container.clientHeight;
 
@@ -1627,20 +1740,30 @@
             initEngine3D();
             setupInteractions();
             updateHUDAndHistory(); 
-            lucide.createIcons();
+            if (window.lucide) lucide.createIcons();
+
+            const inputRoomCodeEl = document.getElementById('input-room-code');
+            if (inputRoomCodeEl) {
+                inputRoomCodeEl.addEventListener('input', (e) => {
+                    e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                });
+                inputRoomCodeEl.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        joinOnlineRoom(e.target.value);
+                    }
+                });
+            }
 
             const historyPanel = document.getElementById('history-panel');
             const btnToggleHistory = document.getElementById('btn-toggle-history');
             const btnCloseHistory = document.getElementById('btn-close-history');
 
-            btnToggleHistory.addEventListener('click', () => historyPanel.classList.toggle('translate-x-full'));
-            btnCloseHistory.addEventListener('click', () => historyPanel.classList.add('translate-x-full'));
+            if (btnToggleHistory) btnToggleHistory.addEventListener('click', () => historyPanel.classList.toggle('translate-x-full'));
+            if (btnCloseHistory) btnCloseHistory.addEventListener('click', () => historyPanel.classList.add('translate-x-full'));
 
-            // Cambiadores de modo
             document.getElementById('mode-pve-btn').addEventListener('click', () => switchGameMode('pve'));
             document.getElementById('mode-online-btn').addEventListener('click', () => switchGameMode('online'));
 
-            // Modal Online
             document.getElementById('btn-online-lobby').addEventListener('click', () => toggleModal('modal-online', true));
             document.getElementById('close-online-modal').addEventListener('click', () => toggleModal('modal-online', false));
             document.getElementById('tab-create-btn').addEventListener('click', () => showViewInOnlineModal('create'));
@@ -1654,7 +1777,6 @@
             document.getElementById('btn-copy-code').addEventListener('click', copyRoomCodeToClipboard);
             document.getElementById('btn-copy-modal-code').addEventListener('click', copyRoomCodeToClipboard);
 
-            // Modales Generales
             document.getElementById('btn-campaign').addEventListener('click', showCampaignModal);
             document.getElementById('close-campaign').addEventListener('click', () => toggleModal('modal-campaign', false));
             document.getElementById('btn-camera').addEventListener('click', () => {
