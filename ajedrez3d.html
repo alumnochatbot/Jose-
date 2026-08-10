@@ -1036,769 +1036,592 @@
 
                 raycaster.setFromCamera(mouse, camera);
 
-                const intersects = raycaster.intersectObjects(boardGroup.children);
-                if (intersects.length > 0) {
-                    const intersectedObj = intersects[0].object;
-                    if (intersectedObj.userData && intersectedObj.userData.isSquare) {
-                        onSquareClicked(intersectedObj.userData.squareName);
+                const pieceIntersects = raycaster.intersectObjects(piecesGroup.children, true);
+                const boardIntersects = raycaster.intersectObjects(boardGroup.children, false);
+
+                let clickedSquare = null;
+
+                if (pieceIntersects.length > 0) {
+                    let obj = pieceIntersects[0].object;
+                    while (obj.parent && obj.parent !== piecesGroup) {
+                        obj = obj.parent;
                     }
+                    if (obj.userData && obj.userData.square) {
+                        clickedSquare = obj.userData.square;
+                    }
+                } else if (boardIntersects.length > 0) {
+                    const squareObj = boardIntersects[0].object;
+                    if (squareObj.userData && squareObj.userData.squareName) {
+                        clickedSquare = squareObj.userData.squareName;
+                    }
+                }
+
+                if (clickedSquare) {
+                    handleSquareClick(clickedSquare);
                 }
             });
         }
 
-        function onSquareClicked(squareName) {
+        function handleSquareClick(square) {
             if (game.game_over()) return;
 
             if (currentMode === 'online') {
                 if (game.turn() !== myOnlineRole) {
-                    showToast("Es el turno de tu rival", true);
+                    showToast("Espera el turno de tu rival", true);
                     return;
                 }
-            } else {
-                if (game.turn() === 'b') return;
+            } else if (currentMode === 'pve') {
+                if (game.turn() === 'b') return; // Esperar a la IA
             }
 
-            const pieceOnSquare = game.get(squareName);
+            const pieceOnSquare = game.get(square);
 
             if (selectedSquare) {
-                if (selectedSquare === squareName) {
-                    clearSelection();
+                if (selectedSquare === square) {
+                    clearHighlights();
+                    selectedSquare = null;
                     return;
                 }
 
                 const moves = game.moves({ square: selectedSquare, verbose: true });
-                const moveObj = moves.find(m => m.to === squareName);
+                const validMove = moves.find(m => m.to === square);
 
-                if (moveObj) {
-                    let isPromotion = moveObj.flags.includes('p') ? 'q' : undefined;
-
-                    executeMove({
-                        from: selectedSquare,
-                        to: squareName,
-                        promotion: isPromotion
-                    });
+                if (validMove) {
+                    executeMove(validMove);
+                    clearHighlights();
+                    selectedSquare = null;
                     return;
                 }
             }
 
-            const activeColor = currentMode === 'online' ? myOnlineRole : 'w';
-            if (pieceOnSquare && pieceOnSquare.color === activeColor) {
-                selectedSquare = squareName;
-                highlightValidMoves(squareName);
-                playSynthSound('move');
+            if (pieceOnSquare && pieceOnSquare.color === game.turn()) {
+                selectedSquare = square;
+                highlightSquareAndMoves(square);
             } else {
-                clearSelection();
+                clearHighlights();
+                selectedSquare = null;
             }
         }
 
-        function highlightValidMoves(squareName) {
-            clearIndicators();
+        function highlightSquareAndMoves(square) {
+            clearHighlights();
 
-            const selCoords = squareToCoords(squareName);
-            const selRing = createHighlightIndicator(selCoords.x, selCoords.z, 0x10b981);
-            indicatorsGroup.add(selRing);
+            const coords = squareToCoords(square);
+            const selGeom = new THREE.BoxGeometry(SQUARE_SIZE, 0.18, SQUARE_SIZE);
+            const selMat = new THREE.MeshBasicMaterial({ color: 0x6366f1, transparent: true, opacity: 0.55 });
+            const selMesh = new THREE.Mesh(selGeom, selMat);
+            selMesh.position.set(coords.x, 0.02, coords.z);
+            indicatorsGroup.add(selMesh);
 
-            const moves = game.moves({ square: squareName, verbose: true });
+            const moves = game.moves({ square: square, verbose: true });
             moves.forEach(m => {
                 const targetCoords = squareToCoords(m.to);
-                const isCapture = game.get(m.to) !== null;
-                const optRing = createHighlightIndicator(targetCoords.x, targetCoords.z, isCapture ? 0xef4444 : 0x06b6d4, isCapture ? 0.4 : 0.2);
-                indicatorsGroup.add(optRing);
+                const isCapture = m.captured;
+                const ringGeom = new THREE.RingGeometry(0.2, 0.45, 16);
+                ringGeom.rotateX(-Math.PI / 2);
+
+                const ringMat = new THREE.MeshBasicMaterial({
+                    color: isCapture ? 0xf43f5e : 0x10b981,
+                    side: THREE.DoubleSide,
+                    transparent: true,
+                    opacity: 0.75
+                });
+
+                const ringMesh = new THREE.Mesh(ringGeom, ringMat);
+                ringMesh.position.set(targetCoords.x, 0.09, targetCoords.z);
+                indicatorsGroup.add(ringMesh);
             });
         }
 
-        function createHighlightIndicator(x, z, colorHex, size = 0.35) {
-            const geom = new THREE.RingGeometry(size - 0.05, size, 16);
-            const mat = new THREE.MeshBasicMaterial({ color: colorHex, side: THREE.DoubleSide });
-            const mesh = new THREE.Mesh(geom, mat);
-            mesh.rotation.x = Math.PI / 2;
-            mesh.position.set(x, 0.08, z);
-            return mesh;
-        }
-
-        function clearSelection() {
-            selectedSquare = null;
-            clearIndicators();
-        }
-
-        function clearIndicators() {
+        function clearHighlights() {
             while (indicatorsGroup.children.length > 0) {
                 indicatorsGroup.remove(indicatorsGroup.children[0]);
             }
         }
 
-        function executeMove(movePayload) {
-            const result = game.move(movePayload);
+        function executeMove(moveObj) {
+            const result = game.move({
+                from: moveObj.from,
+                to: moveObj.to,
+                promotion: 'q'
+            });
+
             if (!result) return;
+
+            spawnProceduralPieces();
 
             if (result.captured) {
                 playSynthSound('capture');
+            } else if (game.in_check()) {
+                playSynthSound('check');
             } else {
                 playSynthSound('move');
             }
 
-            spawnProceduralPieces();
-            clearSelection();
             updateHUDAndHistory();
+            updateTurnIndicator(game.turn() === 'w');
+
+            if (currentMode === 'online') {
+                syncMoveToOnlineServer();
+            }
 
             if (checkEndGameCondition()) return;
 
-            updateTurnIndicator(game.turn() === 'w');
-
-            if (currentMode === 'pve') {
-                setTimeout(executeAIMove, 700);
-            } else if (currentMode === 'online' && !isUpdatingFromRemote) {
-                syncMoveToOnlineServer();
+            if (currentMode === 'pve' && game.turn() === 'b') {
+                setTimeout(makeBotMove, 400);
             }
         }
 
-        function updateHUDAndHistory() {
-            const historyList = document.getElementById('move-history-list');
-            if (!historyList) return;
-            historyList.innerHTML = '';
+        function makeBotMove() {
+            if (game.game_over()) return;
 
-            const moves = game.history();
-            if (moves.length === 0) {
-                historyList.innerHTML = `
-                    <div id="empty-history-notice" class="col-span-12 text-center text-xs text-slate-500 italic py-8">
-                        La batalla aún no ha comenzado...
-                    </div>
-                `;
-            } else {
-                for (let i = 0; i < moves.length; i += 2) {
-                    const moveNumber = Math.floor(i / 2) + 1;
-                    const whiteMove = moves[i];
-                    const blackMove = moves[i + 1] || '';
-
-                    const rowNum = document.createElement('div');
-                    rowNum.className = "col-span-2 text-slate-500 font-mono font-bold text-xs";
-                    rowNum.innerText = `${moveNumber}.`;
-
-                    const moveW = document.createElement('div');
-                    moveW.className = `col-span-5 font-semibold text-xs tracking-wide py-0.5 ${i === moves.length - 1 || i === moves.length - 2 ? 'text-indigo-400 font-bold' : 'text-slate-200'}`;
-                    moveW.innerText = whiteMove;
-
-                    const moveB = document.createElement('div');
-                    moveB.className = `col-span-5 font-semibold text-xs tracking-wide py-0.5 ${i + 1 === moves.length - 1 ? 'text-indigo-400 font-bold' : 'text-slate-300'}`;
-                    moveB.innerText = blackMove;
-
-                    historyList.appendChild(rowNum);
-                    historyList.appendChild(moveW);
-                    historyList.appendChild(moveB);
-                }
-
-                const scrollContainer = document.getElementById('history-scroll-container');
-                if (scrollContainer) scrollContainer.scrollTop = scrollContainer.scrollHeight;
-            }
-
-            updateCapturedPiecesUI();
-            detectOpening();
-        }
-
-        function detectOpening() {
-            const historyStr = game.history({ verbose: false }).join(' ');
-            const badge = document.getElementById('opening-badge');
-            const text = document.getElementById('opening-text');
-            if (!badge || !text) return;
-
-            let matchedOpening = null;
-            let maxWords = 0;
-
-            for (const key in OPENING_NAMES) {
-                if (historyStr.startsWith(key)) {
-                    const wordCount = key.split(' ').length;
-                    if (wordCount > maxWords) {
-                        maxWords = wordCount;
-                        matchedOpening = OPENING_NAMES[key];
-                    }
-                }
-            }
-
-            if (matchedOpening) {
-                text.innerText = matchedOpening;
-                badge.classList.remove('hidden');
-                if (window.lucide) lucide.createIcons();
-            } else {
-                if (game.history().length <= 1) {
-                    badge.classList.add('hidden');
-                }
-            }
-        }
-
-        function getOpeningMove(gameInstance) {
-            const history = gameInstance.history({ verbose: false }).join(' ');
-            const book = OPENING_BOOK[history];
-            if (!book) return null;
-
-            let levelChoices = [...book];
-            const legalMoves = gameInstance.moves();
-            const validBookMoves = levelChoices.filter(m => legalMoves.includes(m));
-            if (validBookMoves.length === 0) return null;
-
-            const chosenSan = validBookMoves[Math.floor(Math.random() * validBookMoves.length)];
-            const verboseMoves = gameInstance.moves({ verbose: true });
-            return verboseMoves.find(m => m.san === chosenSan);
-        }
-
-        function updateCapturedPiecesUI() {
-            const whiteCapturesContainer = document.getElementById('white-captures');
-            const blackCapturesContainer = document.getElementById('black-captures');
-            if (!whiteCapturesContainer || !blackCapturesContainer) return;
-
-            const initialPieces = {
-                w: { p: 8, r: 2, n: 2, b: 2, q: 1 },
-                b: { p: 8, r: 2, n: 2, b: 2, q: 1 }
-            };
-
-            const currentBoard = game.board();
-            const currentCount = {
-                w: { p: 0, r: 0, n: 0, b: 0, q: 0 },
-                b: { p: 0, r: 0, n: 0, b: 0, q: 0 }
-            };
-
-            for (let r = 0; r < 8; r++) {
-                for (let f = 0; f < 8; f++) {
-                    const piece = currentBoard[r][f];
-                    if (piece && piece.type !== 'k') {
-                        currentCount[piece.color][piece.type]++;
-                    }
-                }
-            }
-
-            whiteCapturesContainer.innerHTML = '';
-            let hasWhiteCaptures = false;
-            Object.keys(initialPieces.b).forEach(type => {
-                const diff = initialPieces.b[type] - currentCount.b[type];
-                if (diff > 0) {
-                    hasWhiteCaptures = true;
-                    for (let i = 0; i < diff; i++) {
-                        const unicode = pieceUnicode[type]; 
-                        const badge = document.createElement('span');
-                        badge.className = "inline-flex items-center justify-center bg-slate-900 border border-slate-800 text-slate-100 font-bold px-2 py-0.5 rounded text-sm shadow-sm";
-                        badge.innerText = unicode;
-                        whiteCapturesContainer.appendChild(badge);
-                    }
-                }
-            });
-            if (!hasWhiteCaptures) {
-                whiteCapturesContainer.innerHTML = '<span class="text-xs text-slate-500 italic">Ninguna</span>';
-            }
-
-            blackCapturesContainer.innerHTML = '';
-            let hasBlackCaptures = false;
-            Object.keys(initialPieces.w).forEach(type => {
-                const diff = initialPieces.w[type] - currentCount.w[type];
-                if (diff > 0) {
-                    hasBlackCaptures = true;
-                    for (let i = 0; i < diff; i++) {
-                        const unicode = pieceUnicode[type.toUpperCase()]; 
-                        const badge = document.createElement('span');
-                        badge.className = "inline-flex items-center justify-center bg-slate-800 border border-slate-700 text-slate-300 font-bold px-2 py-0.5 rounded text-sm shadow-sm";
-                        badge.innerText = unicode;
-                        blackCapturesContainer.appendChild(badge);
-                    }
-                }
-            });
-            if (!hasBlackCaptures) {
-                blackCapturesContainer.innerHTML = '<span class="text-xs text-slate-500 italic">Ninguna</span>';
-            }
-        }
-
-        function executeAIMove() {
-            if (game.game_over() || currentMode !== 'pve') return;
-
-            const moves = game.moves();
+            const moves = game.moves({ verbose: true });
             if (moves.length === 0) return;
 
-            let chosenMove = getOpeningMove(game);
+            const historyStr = game.history().join(" ");
+            let selectedMove = null;
 
-            if (!chosenMove) {
-                const depth = CAMPAIGN_LEVELS[currentLevelIndex].depth;
-                chosenMove = findBestMove(game, depth);
-            }
-
-            if (chosenMove) {
-                game.move(chosenMove);
-
-                if (game.in_check()) {
-                    playSynthSound('check');
-                } else {
-                    playSynthSound('move');
+            for (const key in OPENING_BOOK) {
+                if (historyStr === key || historyStr.endsWith(key)) {
+                    const candidates = OPENING_BOOK[key];
+                    const choiceSAN = candidates[Math.floor(Math.random() * candidates.length)];
+                    selectedMove = moves.find(m => m.san === choiceSAN || m.to === choiceSAN);
+                    if (selectedMove) break;
                 }
-
-                spawnProceduralPieces();
-                updateHUDAndHistory();
-                updateTurnIndicator(true);
-
-                checkEndGameCondition();
             }
+
+            if (!selectedMove) {
+                const depth = CAMPAIGN_LEVELS[currentLevelIndex].depth;
+                selectedMove = getBestMoveMinimax(depth);
+            }
+
+            if (!selectedMove) {
+                selectedMove = moves[Math.floor(Math.random() * moves.length)];
+            }
+
+            executeMove(selectedMove);
         }
 
-        function findBestMove(gameInstance, depth) {
-            const moves = gameInstance.moves({ verbose: true });
-            if (moves.length === 0) return null;
+        function getBestMoveMinimax(depth) {
+            const moves = game.moves({ verbose: true });
+            let bestMove = null;
+            let bestValue = -Infinity;
 
-            moves.sort((a, b) => {
-                const scoreA = (a.captured ? PIECE_VALUES[a.captured] * 10 - PIECE_VALUES[a.piece] : 0) + (a.promotion ? 900 : 0);
-                const scoreB = (b.captured ? PIECE_VALUES[b.captured] * 10 - PIECE_VALUES[b.piece] : 0) + (b.promotion ? 900 : 0);
-                return scoreB - scoreA;
-            });
-
-            let bestMove = moves[0];
-            let bestValue = -999999;
-            let alpha = -1000000;
-            let beta = 1000000;
+            moves.sort(() => Math.random() - 0.5);
 
             for (let i = 0; i < moves.length; i++) {
                 const move = moves[i];
-                gameInstance.move(move);
-                const boardValue = evaluateBoardMinimax(gameInstance, depth - 1, alpha, beta, false);
-                gameInstance.undo();
+                game.move(move);
+                const boardValue = minimax(depth - 1, -Infinity, Infinity, false);
+                game.undo();
 
                 if (boardValue > bestValue) {
                     bestValue = boardValue;
                     bestMove = move;
                 }
-                alpha = Math.max(alpha, boardValue);
             }
+
             return bestMove;
         }
 
-        function evaluateBoardMinimax(gameInstance, depth, alpha, beta, isMaximizing) {
-            if (depth === 0 || gameInstance.game_over()) {
-                return staticBoardEvaluation(gameInstance.board());
+        function minimax(depth, alpha, beta, isMaximizing) {
+            if (depth === 0 || game.game_over()) {
+                return evaluateBoard();
             }
 
-            const moves = gameInstance.moves({ verbose: true });
-            
-            moves.sort((a, b) => {
-                const scoreA = (a.captured ? PIECE_VALUES[a.captured] * 10 - PIECE_VALUES[a.piece] : 0) + (a.promotion ? 900 : 0);
-                const scoreB = (b.captured ? PIECE_VALUES[b.captured] * 10 - PIECE_VALUES[b.piece] : 0) + (b.promotion ? 900 : 0);
-                return scoreB - scoreA;
-            });
+            const moves = game.moves({ verbose: true });
 
             if (isMaximizing) {
-                let value = -999999;
+                let maxEval = -Infinity;
                 for (let i = 0; i < moves.length; i++) {
-                    gameInstance.move(moves[i]);
-                    value = Math.max(value, evaluateBoardMinimax(gameInstance, depth - 1, alpha, beta, false));
-                    gameInstance.undo();
-                    alpha = Math.max(alpha, value);
-                    if (alpha >= beta) break;
+                    game.move(moves[i]);
+                    const evalVal = minimax(depth - 1, alpha, beta, false);
+                    game.undo();
+                    maxEval = Math.max(maxEval, evalVal);
+                    alpha = Math.max(alpha, evalVal);
+                    if (beta <= alpha) break;
                 }
-                return value;
+                return maxEval;
             } else {
-                let value = 999999;
+                let minEval = Infinity;
                 for (let i = 0; i < moves.length; i++) {
-                    gameInstance.move(moves[i]);
-                    value = Math.min(value, evaluateBoardMinimax(gameInstance, depth - 1, alpha, beta, true));
-                    gameInstance.undo();
-                    beta = Math.min(beta, value);
-                    if (alpha >= beta) break;
+                    game.move(moves[i]);
+                    const evalVal = minimax(depth - 1, alpha, beta, true);
+                    game.undo();
+                    minEval = Math.min(minEval, evalVal);
+                    beta = Math.min(beta, evalVal);
+                    if (beta <= alpha) break;
                 }
-                return value;
+                return minEval;
             }
         }
 
-        const PIECE_VALUES = { p: 100, n: 320, b: 330, r: 500, q: 900, k: 20000 };
+        function evaluateBoard() {
+            let totalEval = 0;
+            const board = game.board();
 
-        const PAWN_PST = [
-            [0,  0,  0,  0,  0,  0,  0,  0],
-            [50, 50, 50, 50, 50, 50, 50, 50],
-            [10, 10, 20, 30, 30, 20, 10, 10],
-            [5,  5, 10, 25, 25, 10,  5,  5],
-            [0,  0,  0, 20, 20,  0,  0,  0],
-            [5, -5,-10,  0,  0,-10, -5,  5],
-            [5, 10, 10,-20,-20, 10, 10,  5],
-            [0,  0,  0,  0,  0,  0,  0,  0]
-        ];
+            const values = { p: 10, r: 50, n: 30, b: 35, q: 90, k: 1000 };
 
-        const KNIGHT_PST = [
-            [-50,-40,-30,-30,-30,-30,-40,-50],
-            [-40,-20,  0,  0,  0,  0,-20,-40],
-            [-30,  0, 10, 15, 15, 10,  0,-30],
-            [-30,  5, 15, 20, 20, 15,  5,-30],
-            [-30,  0, 15, 20, 20, 15,  0,-30],
-            [-30,  5, 10, 15, 15, 10,  5,-30],
-            [-40,-20,  0,  5,  5,  0,-20,-40],
-            [-50,-40,-30,-30,-30,-30,-40,-50]
-        ];
-
-        const BISHOP_PST = [
-            [-20,-10,-10,-10,-10,-10,-10,-20],
-            [-10,  0,  0,  0,  0,  0,  0,-10],
-            [-10,  0,  5, 10, 10,  5,  0,-10],
-            [-10,  5,  5, 10, 10,  5,  5,-10],
-            [-10,  0, 10, 10, 10, 10,  0,-10],
-            [-10, 10, 10, 10, 10, 10, 10,-10],
-            [-10,  5,  0,  0,  0,  0,  5,-10],
-            [-20,-10,-10,-10,-10,-10,-10,-20]
-        ];
-
-        const ROOK_PST = [
-            [  0,  0,  0,  0,  0,  0,  0,  0],
-            [  5, 10, 10, 10, 10, 10, 10,  5],
-            [ -5,  0,  0,  0,  0,  0,  0, -5],
-            [ -5,  0,  0,  0,  0,  0,  0, -5],
-            [ -5,  0,  0,  0,  0,  0,  0, -5],
-            [ -5,  0,  0,  0,  0,  0,  0, -5],
-            [ -5,  0,  0,  0,  0,  0,  0, -5],
-            [  0,  0,  0,  5,  5,  0,  0,  0]
-        ];
-
-        const QUEEN_PST = [
-            [-20,-10,-10, -5, -5,-10,-10,-20],
-            [-10,  0,  0,  0,  0,  0,  0,-10],
-            [-10,  0,  5,  5,  5,  5,  0,-10],
-            [ -5,  0,  5,  5,  5,  5,  0, -5],
-            [  0,  0,  5,  5,  5,  5,  0, -5],
-            [-10,  5,  5,  5,  5,  5,  0,-10],
-            [-10,  0,  5,  0,  0,  5,  0,-10],
-            [-20,-10,-10, -5, -5,-10,-10,-20]
-        ];
-
-        const KING_PST = [
-            [-30,-40,-40,-50,-50,-40,-40,-30],
-            [-30,-40,-40,-50,-50,-40,-40,-30],
-            [-30,-40,-40,-50,-50,-40,-40,-30],
-            [-30,-40,-40,-50,-50,-40,-40,-30],
-            [-20,-30,-30,-40,-40,-30,-30,-20],
-            [-10,-20,-20,-20,-20,-20,-20,-10],
-            [ 20, 20,  0,  0,  0,  0, 20, 20],
-            [ 20, 30, 10,  0,  0, 10, 30, 20]
-        ];
-
-        function staticBoardEvaluation(board) {
-            let totalEvaluation = 0;
             for (let r = 0; r < 8; r++) {
-                for (let c = 0; c < 8; c++) {
-                    const piece = board[r][c];
+                for (let f = 0; f < 8; f++) {
+                    const piece = board[r][f];
                     if (piece) {
-                        let value = PIECE_VALUES[piece.type];
-                        
-                        let pstValue = 0;
-                        const row = piece.color === 'w' ? r : 7 - r;
-                        const col = c;
-                        
-                        if (piece.type === 'p') pstValue = PAWN_PST[row][col];
-                        else if (piece.type === 'n') pstValue = KNIGHT_PST[row][col];
-                        else if (piece.type === 'b') pstValue = BISHOP_PST[row][col];
-                        else if (piece.type === 'r') pstValue = ROOK_PST[row][col];
-                        else if (piece.type === 'q') pstValue = QUEEN_PST[row][col];
-                        else if (piece.type === 'k') pstValue = KING_PST[row][col];
-                        
-                        value += pstValue;
-                        totalEvaluation += piece.color === 'w' ? -value : value; 
+                        const val = values[piece.type] || 0;
+                        if (piece.color === 'b') {
+                            totalEval += val;
+                        } else {
+                            totalEval -= val;
+                        }
                     }
                 }
             }
-            return totalEvaluation;
+
+            return totalEval;
         }
 
         function checkEndGameCondition() {
             if (game.game_over()) {
                 playSynthSound('gameover');
                 let title = "Fin de la Partida";
-                let desc = "La batalla ha terminado en tablas.";
+                let desc = "El juego ha concluido.";
 
                 if (game.in_checkmate()) {
-                    if (currentMode === 'pve') {
-                        if (game.turn() === 'b') {
-                            title = "¡Victoria Heroica!";
-                            desc = `Felicidades, has dominado el nivel "${CAMPAIGN_LEVELS[currentLevelIndex].name}" exitosamente.`;
-                            const nextBtn = document.getElementById('endgame-next-btn');
-                            if (nextBtn) nextBtn.style.display = currentLevelIndex < CAMPAIGN_LEVELS.length - 1 ? 'block' : 'none';
-                        } else {
-                            title = "Derrota Inminente";
-                            desc = `El oponente de ${CAMPAIGN_LEVELS[currentLevelIndex].name.split(' - ')[0]} ha capturado tu rey. ¡Inténtalo de nuevo!`;
-                            const nextBtn = document.getElementById('endgame-next-btn');
-                            if (nextBtn) nextBtn.style.display = 'none';
-                        }
+                    if (game.turn() === 'b') {
+                        title = "¡Victoria Magistral! 🏆";
+                        desc = "Has propinado un jaque mate impecable.";
                     } else {
-                        const winnerRole = game.turn() === 'b' ? 'w' : 'b';
-                        if (winnerRole === myOnlineRole) {
-                            title = "¡Victoria Online!";
-                            desc = "Has derrotado a tu oponente en la partida multijugador.";
-                        } else {
-                            title = "Derrota Online";
-                            desc = "Tu rey ha sido acorralado en la partida multijugador.";
-                        }
-                        const nextBtn = document.getElementById('endgame-next-btn');
-                        if (nextBtn) nextBtn.style.display = 'none';
+                        title = "Derrota ⚔️";
+                        desc = "Tu rey ha caído en combate.";
                     }
+                } else if (game.in_draw()) {
+                    title = "Tablas 🤝";
+                    desc = "La batalla termina en empate.";
                 }
 
                 document.getElementById('endgame-title').innerText = title;
                 document.getElementById('endgame-desc').innerText = desc;
+
                 toggleModal('modal-endgame', true);
                 return true;
             }
             return false;
         }
 
+        function updateHUDAndHistory() {
+            const moves = game.history({ verbose: true });
+
+            const historyList = document.getElementById('move-history-list');
+            const notice = document.getElementById('empty-history-notice');
+            if (notice && moves.length > 0) notice.remove();
+
+            historyList.innerHTML = '';
+            for (let i = 0; i < moves.length; i += 2) {
+                const moveNum = Math.floor(i / 2) + 1;
+                const whiteMove = moves[i] ? moves[i].san : '';
+                const blackMove = moves[i + 1] ? moves[i + 1].san : '';
+
+                const row = document.createElement('div');
+                row.className = 'col-span-12 grid grid-cols-12 gap-2 text-xs py-1 border-b border-slate-800/40 items-center';
+                row.innerHTML = `
+                    <span class="col-span-3 text-slate-500 font-mono font-bold">${moveNum}.</span>
+                    <span class="col-span-4 text-indigo-200 font-semibold">${whiteMove}</span>
+                    <span class="col-span-5 text-rose-300 font-semibold">${blackMove}</span>
+                `;
+                historyList.appendChild(row);
+            }
+
+            const scrollContainer = document.getElementById('history-scroll-container');
+            if (scrollContainer) scrollContainer.scrollTop = scrollContainer.scrollHeight;
+
+            const board = game.board();
+            const counts = { p: 8, r: 2, n: 2, b: 2, q: 1, k: 1 };
+            const currentWhite = { p: 0, r: 0, n: 0, b: 0, q: 0, k: 0 };
+            const currentBlack = { p: 0, r: 0, n: 0, b: 0, q: 0, k: 0 };
+
+            for (let r = 0; r < 8; r++) {
+                for (let f = 0; f < 8; f++) {
+                    const p = board[r][f];
+                    if (p) {
+                        if (p.color === 'w') currentWhite[p.type]++;
+                        else currentBlack[p.type]++;
+                    }
+                }
+            }
+
+            const whiteCapturesEl = document.getElementById('white-captures');
+            const blackCapturesEl = document.getElementById('black-captures');
+
+            whiteCapturesEl.innerHTML = '';
+            blackCapturesEl.innerHTML = '';
+
+            let whiteCapturedHTML = '';
+            let blackCapturedHTML = '';
+
+            for (const t in counts) {
+                const lostBlack = counts[t] - currentBlack[t];
+                if (lostBlack > 0) {
+                    for (let i = 0; i < lostBlack; i++) {
+                        whiteCapturedHTML += `<span title="${t}">${pieceUnicode[t] || t}</span>`;
+                    }
+                }
+
+                const lostWhite = counts[t] - currentWhite[t];
+                if (lostWhite > 0) {
+                    for (let i = 0; i < lostWhite; i++) {
+                        blackCapturedHTML += `<span title="${t}">${pieceUnicode[t.toUpperCase()] || t}</span>`;
+                    }
+                }
+            }
+
+            whiteCapturesEl.innerHTML = whiteCapturedHTML || '<span class="text-xs text-slate-500 italic">Ninguna</span>';
+            blackCapturesEl.innerHTML = blackCapturedHTML || '<span class="text-xs text-slate-500 italic">Ninguna</span>';
+
+            const sanHistoryStr = game.history().join(" ");
+            let openingFound = null;
+
+            for (const key in OPENING_NAMES) {
+                if (sanHistoryStr.startsWith(key)) {
+                    openingFound = OPENING_NAMES[key];
+                }
+            }
+
+            const openingBadge = document.getElementById('opening-badge');
+            const openingText = document.getElementById('opening-text');
+            if (openingFound) {
+                openingText.innerText = openingFound;
+                openingBadge.classList.remove('hidden');
+            } else if (moves.length < 2) {
+                openingBadge.classList.add('hidden');
+            }
+        }
+
         function updateTurnIndicator(isWhiteTurn) {
             const dot = document.getElementById('turn-dot');
             const text = document.getElementById('turn-text');
-            if (!dot || !text) return;
-            
-            if (currentMode === 'online') {
-                const isMyTurn = game.turn() === myOnlineRole;
-                dot.className = `relative inline-flex rounded-full h-3.5 w-3.5 ${isMyTurn ? 'bg-emerald-500' : 'bg-rose-500'}`;
-                text.innerText = isMyTurn ? `Tu turno (${myOnlineRole === 'w' ? 'Blancas' : 'Negras'})` : "Turno del Rival...";
+
+            if (isWhiteTurn) {
+                dot.className = 'relative inline-flex rounded-full h-3.5 w-3.5 bg-indigo-500';
+                text.innerText = 'Tu Turno (Blancas)';
             } else {
-                if (isWhiteTurn) {
-                    dot.className = "relative inline-flex rounded-full h-3.5 w-3.5 bg-indigo-500";
-                    text.innerText = "Tu turno (Blancas)";
-                } else {
-                    dot.className = "relative inline-flex rounded-full h-3.5 w-3.5 bg-rose-500";
-                    text.innerText = "Pensando (Negras PVE)";
-                }
+                dot.className = 'relative inline-flex rounded-full h-3.5 w-3.5 bg-rose-500';
+                text.innerText = currentMode === 'pve' ? 'Pensando Bot (Negras)...' : 'Turno Oponente (Negras)';
             }
         }
 
         function toggleModal(id, show) {
-            const modal = document.getElementById(id);
-            if (!modal) return;
+            const el = document.getElementById(id);
+            if (!el) return;
             if (show) {
-                modal.classList.remove('hidden');
+                el.classList.remove('hidden');
                 setTimeout(() => {
-                    modal.classList.remove('opacity-0', 'pointer-events-none');
-                    const card = modal.querySelector('.transform');
-                    if (card) card.classList.remove('scale-95');
+                    el.classList.remove('opacity-0', 'pointer-events-none');
+                    const child = el.firstElementChild;
+                    if (child) child.classList.remove('scale-95');
                 }, 10);
             } else {
-                modal.classList.add('opacity-0', 'pointer-events-none');
-                const card = modal.querySelector('.transform');
-                if (card) card.classList.add('scale-95');
+                el.classList.add('opacity-0', 'pointer-events-none');
+                const child = el.firstElementChild;
+                if (child) child.classList.add('scale-95');
                 setTimeout(() => {
-                    modal.classList.add('hidden');
+                    el.classList.add('hidden');
                 }, 300);
             }
         }
 
-        function showCampaignModal() {
-            const listContainer = document.getElementById('campaign-map-list');
-            if (!listContainer) return;
-            listContainer.innerHTML = '';
+        function showViewInOnlineModal(view) {
+            const createView = document.getElementById('view-create-room');
+            const joinView = document.getElementById('view-join-room');
+            const waitingView = document.getElementById('view-waiting-room');
 
-            CAMPAIGN_LEVELS.forEach((level, idx) => {
-                const isCurrent = idx === currentLevelIndex;
+            createView.classList.add('hidden');
+            joinView.classList.add('hidden');
+            waitingView.classList.add('hidden');
+
+            if (view === 'create') createView.classList.remove('hidden');
+            if (view === 'join') joinView.classList.remove('hidden');
+            if (view === 'waiting') waitingView.classList.remove('hidden');
+        }
+
+        function renderCampaignMap() {
+            const container = document.getElementById('campaign-map-list');
+            if (!container) return;
+
+            container.innerHTML = '';
+            CAMPAIGN_LEVELS.forEach((lvl, idx) => {
+                const isActive = idx === currentLevelIndex;
                 const isUnlocked = idx <= currentLevelIndex;
 
-                const card = document.createElement('div');
-                card.className = `flex items-center justify-between p-4 rounded-2xl border transition-all ${
-                    isCurrent ? 'bg-indigo-950/40 border-indigo-500/80 shadow-indigo-500/10 shadow-lg' : 
-                    isUnlocked ? 'bg-slate-800/40 border-slate-700/80' : 'bg-slate-900/10 border-slate-800/40 opacity-40'
+                const item = document.createElement('div');
+                item.className = `p-4 rounded-2xl border transition-all flex items-center justify-between cursor-pointer ${
+                    isActive ? 'bg-indigo-900/40 border-indigo-500 shadow-lg' : isUnlocked ? 'bg-slate-800/50 border-slate-700 hover:border-slate-500' : 'bg-slate-900/30 border-slate-800/40 opacity-50 cursor-not-allowed'
                 }`;
 
-                card.innerHTML = `
+                item.innerHTML = `
                     <div class="flex items-center gap-3">
-                        <div class="w-12 h-12 rounded-xl flex flex-col items-center justify-center ${
-                            isCurrent ? 'bg-indigo-600 text-slate-100' :
-                            isUnlocked ? 'bg-slate-700 text-slate-300' : 'bg-slate-800 text-slate-600'
-                        }">
-                            <span class="text-xl leading-none">${level.flag}</span>
-                            <span class="font-extrabold text-[10px] mt-0.5">${level.id}</span>
-                        </div>
+                        <span class="text-2xl">${lvl.flag}</span>
                         <div>
-                            <h4 class="text-sm font-bold text-slate-200">${level.name}</h4>
-                            <p class="text-xs text-slate-400">Dificultad: <span class="text-amber-400 font-semibold">${level.difficulty}</span></p>
+                            <h4 class="text-sm font-bold text-slate-100">${lvl.name}</h4>
+                            <p class="text-xs text-slate-400">${lvl.difficulty}</p>
                         </div>
                     </div>
-                    ${isUnlocked && !isCurrent ? `
-                        <button onclick="changeLevel(${idx})" class="px-3 py-1.5 bg-slate-800 hover:bg-indigo-900/50 hover:text-indigo-300 rounded-lg text-xs font-semibold border border-slate-700 transition">
-                            Revisitar
-                        </button>
-                    ` : isCurrent ? `
-                        <span class="text-xs font-bold text-indigo-400 uppercase tracking-widest flex items-center gap-1">
-                            <span class="w-2 h-2 rounded-full bg-indigo-400 animate-ping"></span> En Curso
-                        </span>
-                    ` : `
-                        <i data-lucide="lock" class="w-4 h-4 text-slate-600"></i>
-                    `}
+                    <div class="flex items-center gap-2">
+                        ${isActive ? '<span class="text-xs font-bold bg-indigo-500/20 text-indigo-300 px-2.5 py-1 rounded-lg border border-indigo-500/30">ACTIVO</span>' : ''}
+                        <i data-lucide="${isUnlocked ? 'chevron-right' : 'lock'}" class="w-5 h-5 text-slate-400"></i>
+                    </div>
                 `;
 
-                listContainer.appendChild(card);
+                if (isUnlocked) {
+                    item.onclick = () => {
+                        currentLevelIndex = idx;
+                        switchLevel(idx);
+                        toggleModal('modal-campaign', false);
+                    };
+                }
+
+                container.appendChild(item);
             });
 
             if (window.lucide) lucide.createIcons();
-            toggleModal('modal-campaign', true);
         }
 
-        window.changeLevel = function(idx) {
-            currentLevelIndex = idx;
-            const lvl = CAMPAIGN_LEVELS[idx];
+        function switchLevel(index) {
+            currentLevelIndex = index;
+            const lvl = CAMPAIGN_LEVELS[index];
             document.getElementById('level-display').innerHTML = `<span class="mr-1">${lvl.flag}</span> Nivel ${lvl.id}: ${lvl.name}`;
-            toggleModal('modal-campaign', false);
-            restartGame();
-        };
-
-        function restartGame() {
-            game.reset();
-            clearSelection();
-            spawnProceduralPieces();
+            resetGame();
             initLevelAtmosphere();
+            showToast(`Campaña cambiada a: ${lvl.name}`);
+        }
+
+        function resetGame() {
+            game.reset();
+            clearHighlights();
+            selectedSquare = null;
+            spawnProceduralPieces();
             updateHUDAndHistory();
-            updateTurnIndicator(game.turn() === 'w');
-            
-            if (currentMode === 'online') {
-                setPresetCamera(myOnlineRole === 'w' ? 'white' : 'black');
-                syncMoveToOnlineServer();
-            } else {
-                setPresetCamera('white');
-            }
-        }
-
-        function switchGameMode(newMode) {
-            currentMode = newMode;
-            const pveBtn = document.getElementById('mode-pve-btn');
-            const onlineBtn = document.getElementById('mode-online-btn');
-            const pveBadge = document.getElementById('pve-info-badge');
-            const onlineBadge = document.getElementById('online-info-badge');
-            const btnOnlineLobby = document.getElementById('btn-online-lobby');
-            const btnCampaign = document.getElementById('btn-campaign');
-
-            if (newMode === 'pve') {
-                pveBtn.className = "px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 bg-indigo-600 text-white shadow-md";
-                onlineBtn.className = "px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 text-slate-400 hover:text-white";
-                pveBadge.classList.remove('hidden');
-                onlineBadge.classList.add('hidden');
-                btnOnlineLobby.classList.add('hidden');
-                btnCampaign.classList.remove('hidden');
-                restartGame();
-            } else {
-                onlineBtn.className = "px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 bg-emerald-600 text-white shadow-md";
-                pveBtn.className = "px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 text-slate-400 hover:text-white";
-                pveBadge.classList.add('hidden');
-                onlineBadge.classList.remove('hidden');
-                btnOnlineLobby.classList.remove('hidden');
-                btnCampaign.classList.add('hidden');
-
-                if (!currentRoomCode) {
-                    toggleModal('modal-online', true);
-                } else {
-                    restartGame();
-                }
-            }
-        }
-
-        function showViewInOnlineModal(viewName) {
-            const vCreate = document.getElementById('view-create-room');
-            const vJoin = document.getElementById('view-join-room');
-            const vWait = document.getElementById('view-waiting-room');
-            const tabCreate = document.getElementById('tab-create-btn');
-            const tabJoin = document.getElementById('tab-join-btn');
-
-            if (!vCreate || !vJoin || !vWait) return;
-
-            vCreate.classList.add('hidden');
-            vJoin.classList.add('hidden');
-            vWait.classList.add('hidden');
-
-            if (viewName === 'create') {
-                vCreate.classList.remove('hidden');
-                tabCreate.className = "flex-1 py-2 text-xs font-bold rounded-xl transition bg-emerald-600 text-white shadow";
-                tabJoin.className = "flex-1 py-2 text-xs font-bold rounded-xl transition text-slate-400 hover:text-white";
-            } else if (viewName === 'join') {
-                vJoin.classList.remove('hidden');
-                tabJoin.className = "flex-1 py-2 text-xs font-bold rounded-xl transition bg-indigo-600 text-white shadow";
-                tabCreate.className = "flex-1 py-2 text-xs font-bold rounded-xl transition text-slate-400 hover:text-white";
-            } else if (viewName === 'waiting') {
-                vWait.classList.remove('hidden');
-            }
-        }
-
-        function copyRoomCodeToClipboard() {
-            if (!currentRoomCode) return;
-            const tempInput = document.createElement('textarea');
-            tempInput.value = currentRoomCode;
-            document.body.appendChild(tempInput);
-            tempInput.select();
-            try {
-                document.execCommand('copy');
-                showToast("¡Código copiado al portapapeles!");
-            } catch (e) {
-                showToast("No se pudo copiar el código", true);
-            }
-            document.body.removeChild(tempInput);
+            updateTurnIndicator(true);
         }
 
         function onWindowResize() {
             const container = document.getElementById('canvas-container');
-            if (!container || !camera || !renderer) return;
+            if (!container || !renderer || !camera) return;
 
-            const width = container.clientWidth;
-            const height = container.clientHeight;
+            const width = container.clientWidth || window.innerWidth;
+            const height = container.clientHeight || window.innerHeight;
 
             camera.aspect = width / height;
             camera.updateProjectionMatrix();
-
             renderer.setSize(width, height);
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            initEngine3D();
-            setupInteractions();
-            updateHUDAndHistory(); 
-            if (window.lucide) lucide.createIcons();
+        function setupUIEventListeners() {
+            document.getElementById('mode-pve-btn').onclick = () => {
+                currentMode = 'pve';
+                document.getElementById('mode-pve-btn').className = "px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 bg-indigo-600 text-white shadow-md";
+                document.getElementById('mode-online-btn').className = "px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 text-slate-400 hover:text-white";
 
-            const inputRoomCodeEl = document.getElementById('input-room-code');
-            if (inputRoomCodeEl) {
-                inputRoomCodeEl.addEventListener('input', (e) => {
-                    e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
-                });
-                inputRoomCodeEl.addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter') {
-                        joinOnlineRoom(e.target.value);
-                    }
-                });
-            }
+                document.getElementById('pve-info-badge').classList.remove('hidden');
+                document.getElementById('online-info-badge').classList.add('hidden');
+                document.getElementById('btn-online-lobby').classList.add('hidden');
 
-            const historyPanel = document.getElementById('history-panel');
-            const btnToggleHistory = document.getElementById('btn-toggle-history');
-            const btnCloseHistory = document.getElementById('btn-close-history');
+                setPresetCamera('white');
+                resetGame();
+                showToast("Modo Campaña Bot activado");
+            };
 
-            if (btnToggleHistory) btnToggleHistory.addEventListener('click', () => historyPanel.classList.toggle('translate-x-full'));
-            if (btnCloseHistory) btnCloseHistory.addEventListener('click', () => historyPanel.classList.add('translate-x-full'));
+            document.getElementById('mode-online-btn').onclick = () => {
+                currentMode = 'online';
+                document.getElementById('mode-online-btn').className = "px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 bg-emerald-600 text-white shadow-md";
+                document.getElementById('mode-pve-btn').className = "px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 text-slate-400 hover:text-white";
 
-            document.getElementById('mode-pve-btn').addEventListener('click', () => switchGameMode('pve'));
-            document.getElementById('mode-online-btn').addEventListener('click', () => switchGameMode('online'));
+                document.getElementById('pve-info-badge').classList.add('hidden');
+                document.getElementById('online-info-badge').classList.remove('hidden');
+                document.getElementById('btn-online-lobby').classList.remove('hidden');
 
-            document.getElementById('btn-online-lobby').addEventListener('click', () => toggleModal('modal-online', true));
-            document.getElementById('close-online-modal').addEventListener('click', () => toggleModal('modal-online', false));
-            document.getElementById('tab-create-btn').addEventListener('click', () => showViewInOnlineModal('create'));
-            document.getElementById('tab-join-btn').addEventListener('click', () => showViewInOnlineModal('join'));
-            document.getElementById('btn-do-create').addEventListener('click', createOnlineRoom);
-            document.getElementById('btn-do-join').addEventListener('click', () => {
+                toggleModal('modal-online', true);
+                showViewInOnlineModal('create');
+            };
+
+            document.getElementById('btn-online-lobby').onclick = () => {
+                toggleModal('modal-online', true);
+            };
+
+            document.getElementById('close-online-modal').onclick = () => toggleModal('modal-online', false);
+
+            document.getElementById('tab-create-btn').onclick = () => {
+                document.getElementById('tab-create-btn').className = "flex-1 py-2 text-xs font-bold rounded-xl transition bg-emerald-600 text-white shadow";
+                document.getElementById('tab-join-btn').className = "flex-1 py-2 text-xs font-bold rounded-xl transition text-slate-400 hover:text-white";
+                showViewInOnlineModal('create');
+            };
+
+            document.getElementById('tab-join-btn').onclick = () => {
+                document.getElementById('tab-join-btn').className = "flex-1 py-2 text-xs font-bold rounded-xl transition bg-indigo-600 text-white shadow";
+                document.getElementById('tab-create-btn').className = "flex-1 py-2 text-xs font-bold rounded-xl transition text-slate-400 hover:text-white";
+                showViewInOnlineModal('join');
+            };
+
+            document.getElementById('btn-do-create').onclick = createOnlineRoom;
+
+            document.getElementById('btn-do-join').onclick = () => {
                 const code = document.getElementById('input-room-code').value;
                 joinOnlineRoom(code);
-            });
+            };
 
-            document.getElementById('btn-copy-code').addEventListener('click', copyRoomCodeToClipboard);
-            document.getElementById('btn-copy-modal-code').addEventListener('click', copyRoomCodeToClipboard);
-
-            document.getElementById('btn-campaign').addEventListener('click', showCampaignModal);
-            document.getElementById('close-campaign').addEventListener('click', () => toggleModal('modal-campaign', false));
-            document.getElementById('btn-camera').addEventListener('click', () => {
-                setPresetCamera(currentMode === 'online' ? (myOnlineRole === 'w' ? 'white' : 'black') : 'white');
-            });
-            document.getElementById('btn-reset').addEventListener('click', restartGame);
-
-            document.getElementById('endgame-retry-btn').addEventListener('click', () => {
-                restartGame();
-                toggleModal('modal-endgame', false);
-            });
-
-            document.getElementById('endgame-next-btn').addEventListener('click', () => {
-                if (currentLevelIndex < CAMPAIGN_LEVELS.length - 1) {
-                    currentLevelIndex++;
-                    const lvl = CAMPAIGN_LEVELS[currentLevelIndex];
-                    document.getElementById('level-display').innerHTML = `<span class="mr-1">${lvl.flag}</span> Nivel ${lvl.id}: ${lvl.name}`;
-                    restartGame();
+            const copyHandler = () => {
+                if (currentRoomCode) {
+                    try {
+                        const tempInput = document.createElement('input');
+                        tempInput.value = currentRoomCode;
+                        document.body.appendChild(tempInput);
+                        tempInput.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(tempInput);
+                        showToast("Código copiado al portapapeles");
+                    } catch (e) {
+                        showToast(`Código: ${currentRoomCode}`);
+                    }
                 }
+            };
+
+            document.getElementById('btn-copy-code').onclick = copyHandler;
+            document.getElementById('btn-copy-modal-code').onclick = copyHandler;
+
+            document.getElementById('btn-toggle-history').onclick = () => {
+                const panel = document.getElementById('history-panel');
+                panel.classList.toggle('translate-x-full');
+            };
+
+            document.getElementById('btn-close-history').onclick = () => {
+                document.getElementById('history-panel').classList.add('translate-x-full');
+            };
+
+            document.getElementById('btn-campaign').onclick = () => {
+                renderCampaignMap();
+                toggleModal('modal-campaign', true);
+            };
+
+            document.getElementById('close-campaign').onclick = () => toggleModal('modal-campaign', false);
+
+            document.getElementById('btn-camera').onclick = () => {
+                setPresetCamera(myOnlineRole === 'b' ? 'black' : 'white');
+            };
+
+            document.getElementById('btn-reset').onclick = resetGame;
+
+            document.getElementById('endgame-retry-btn').onclick = () => {
                 toggleModal('modal-endgame', false);
-            });
-        });
+                resetGame();
+            };
+
+            document.getElementById('endgame-next-btn').onclick = () => {
+                toggleModal('modal-endgame', false);
+                if (currentLevelIndex < CAMPAIGN_LEVELS.length - 1) {
+                    switchLevel(currentLevelIndex + 1);
+                } else {
+                    resetGame();
+                }
+            };
+        }
 
         function animate() {
             requestAnimationFrame(animate);
@@ -1810,7 +1633,14 @@
                 renderer.render(scene, camera);
             }
         }
-        animate();
+
+        window.onload = function() {
+            if (window.lucide) lucide.createIcons();
+            initEngine3D();
+            setupInteractions();
+            setupUIEventListeners();
+            animate();
+        };
     </script>
 </body>
 </html>
