@@ -1,0 +1,101 @@
+[
+  {
+    "id": "shop-001",
+    "nombre": "Creación de Tiendas Online",
+    "precio": 2500,
+    "moneda": "BS",
+    "descripcion": "Desarrollo bajo estándares 2026. Optimización extrema de Core Web Vitals y arquitectura escalable.",
+    "imagen_url": "https://lh3.googleusercontent.com/d/1Z-2kiuJmUFxNakS-LlFcbnU78-z4BUjh",
+    "disponibilidad": true
+  },
+  {
+    "id": "shop-002",
+    "nombre": "Diseño Web",
+    "precio": 1500,
+    "moneda": "BS",
+    "descripcion": "Creación de interfaces modernas, responsivas y centradas en el usuario.",
+    "imagen_url": "https://lh3.googleusercontent.com/d/1Z-2kiuJmUFxNakS-LlFcbnU78-z4BUjh",
+    "disponibilidad": true
+  },
+  {
+    "id": "shop-003",
+    "nombre": "Inteligencia Artificial",
+    "precio": 3500,
+    "moneda": "BS",
+    "descripcion": "Exploración de modelos LLM, agentes autónomos y automatización de procesos.",
+    "imagen_url": "https://lh3.googleusercontent.com/d/1Z-2kiuJmUFxNakS-LlFcbnU78-z4BUjh",
+    "disponibilidad": true
+  },
+  {
+    "id": "shop-004",
+    "nombre": "Generación IA Minecraft",
+    "precio": 2000,
+    "moneda": "BS",
+    "descripcion": "Creación de mundos procedurales y assets mediante ingeniería de prompts.",
+    "imagen_url": "https://lh3.googleusercontent.com/d/1Z-2kiuJmUFxNakS-LlFcbnU78-z4BUjh",
+    "disponibilidad": true
+  },
+  {
+    "id": "shop-005",
+    "nombre": "Juego Minecraft",
+    "precio": 150,
+    "moneda": "BS",
+    "descripcion": "Juego sandbox creativo con generación procedural e integración de scripts de IA.",
+    "imagen_url": "https://lh3.googleusercontent.com/d/1Z-2kiuJmUFxNakS-LlFcbnU78-z4BUjh",
+    "disponibilidad": true
+  },
+  {
+    "id": "shop-006",
+    "nombre": "Ajedrez 3D",
+    "precio": 200,
+    "moneda": "BS",
+    "descripcion": "Desafío estratégico tridimensional con modelos interactivos y visualización inmersiva.",
+    "imagen_url": "https://lh3.googleusercontent.com/d/1Z-2kiuJmUFxNakS-LlFcbnU78-z4BUjh",
+    "disponibilidad": true
+  },
+  {
+    "id": "shop-007",
+    "nombre": "Angry Bird",
+    "precio": 100,
+    "moneda": "BS",
+    "descripcion": "Juego de física clásica recreado con precisión matemática y controles interactivos.",
+    "imagen_url": "https://lh3.googleusercontent.com/d/1Z-2kiuJmUFxNakS-LlFcbnU78-z4BUjh",
+    "disponibilidad": true
+  },
+  {
+    "id": "shop-008",
+    "nombre": "Blooket",
+    "precio": 180,
+    "moneda": "BS",
+    "descripcion": "Aprendizaje interactivo gamificado que combina cuestionarios con mecánicas dinámicas.",
+    "imagen_url": "https://lh3.googleusercontent.com/d/1Z-2kiuJmUFxNakS-LlFcbnU78-z4BUjh",
+    "disponibilidad": true
+  },
+  {
+    "id": "shop-009",
+    "nombre": "Roblox Obby Simulator",
+    "precio": 120,
+    "moneda": "BS",
+    "descripcion": "Mundos compartidos con simulador en primera y tercera persona con físicas de rebote.",
+    "imagen_url": "https://lh3.googleusercontent.com/d/1Z-2kiuJmUFxNakS-LlFcbnU78-z4BUjh",
+    "disponibilidad": true
+  },
+  {
+    "id": "shop-010",
+    "nombre": "Quiero Queque",
+    "precio": 130,
+    "moneda": "BS",
+    "descripcion": "Juego de cocina y agilidad con física de velocidad exponencial y viento lateral dinámico.",
+    "imagen_url": "https://lh3.googleusercontent.com/d/1Z-2kiuJmUFxNakS-LlFcbnU78-z4BUjh",
+    "disponibilidad": true
+  },
+  {
+    "id": "shop-011",
+    "nombre": "Serpiente",
+    "precio": 110,
+    "moneda": "BS",
+    "descripcion": "Juego de agilidad mental con serpientes senoidales que avanzan según palabras ingresadas.",
+    "imagen_url": "https://lh3.googleusercontent.com/d/1Z-2kiuJmUFxNakS-LlFcbnU78-z4BUjh",
+    "disponibilidad": true
+  }
+]
