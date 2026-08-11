@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jose Enrique | Portafolio Personal</title>
+    <title>Jose Enrique | Desarrollador de Aplicaciones Web y Móviles</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
@@ -18,6 +18,28 @@
         .faq-answer { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; }
         .faq-item.active .faq-answer { max-height: 200px; padding-bottom: 1.25rem; }
         .faq-item.active .faq-icon { transform: rotate(180deg); }
+
+        /* Floating live preview container */
+        #floating-preview {
+            position: fixed;
+            pointer-events: none;
+            z-index: 100;
+            width: 1024px;
+            height: 600px;
+            transform: scale(0.25);
+            transform-origin: top left;
+            display: none;
+            overflow: hidden;
+            border: 4px solid #3b82f6;
+            border-radius: 12px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+            background-color: #020617;
+        }
+        #floating-preview iframe {
+            width: 1024px;
+            height: 600px;
+            border: none;
+        }
     </style>
 </head>
 <body class="bg-slate-950 text-slate-100 bg-grid">
@@ -51,10 +73,10 @@
                         DISPONIBLE PARA PROYECTOS
                     </div>
                     <h1 class="text-5xl md:text-7xl font-extrabold mb-6 tracking-tight bg-clip-text text-transparent bg-gradient-to-b from-white to-slate-400">
-                        Diseñando el Futuro <br>con <span class="text-blue-500">IA y Creatividad</span>
+                        Desarrollo de <br>Aplicaciones <span class="text-blue-500">Web y Mobile</span>
                     </h1>
                     <p class="text-lg text-slate-400 mb-10 max-w-2xl mx-auto leading-relaxed">
-                        Hola, soy <span class="text-white font-medium">Jose Enrique</span> de la Unidad Educativa Cambridge. Estudiante apasionado por la inteligencia artificial y el diseño de experiencias digitales únicas.
+                        Hola, soy <span class="text-white font-medium">Jose Enrique</span> de la Unidad Educativa Cambridge. Estudiante apasionado por el desarrollo de software y la creación de soluciones interactivas, responsivas y de alto rendimiento para web y dispositivos móviles.
                     </p>
                     <div class="flex flex-wrap justify-center gap-4">
         <button onclick="document.getElementById('inicio-proyectos').scrollIntoView({ behavior: 'smooth' })" class="px-8 py-4 bg-blue-600 hover:bg-blue-700 rounded-xl font-bold transition-all transform hover:scale-105 flex items-center gap-2">
@@ -78,29 +100,29 @@
                         <!-- Card 1 -->
                         <div class="p-8 rounded-2xl bg-slate-950 border border-slate-800 hover:border-blue-500/50 transition-all group">
                             <div class="w-12 h-12 bg-blue-500/10 rounded-xl flex items-center justify-center text-blue-500 mb-6 group-hover:bg-blue-500 group-hover:text-white transition-all">
-                                <i class="fa-solid fa-layer-group text-xl"></i>
+                                <i class="fa-solid fa-mobile-screen-button text-xl"></i>
                             </div>
-                            <h3 class="text-xl font-bold mb-2">Diseño Web</h3>
+                            <h3 class="text-xl font-bold mb-2">Desarrollo Frontend y Mobile</h3>
                             <p class="text-blue-400 text-sm mb-4 font-medium uppercase tracking-wider">Avanzado</p>
-                            <p class="text-slate-400 text-sm leading-relaxed">Creación de interfaces modernas, responsivas y centradas en el usuario.</p>
+                            <p class="text-slate-400 text-sm leading-relaxed">Creación de interfaces web y móviles modernas, responsivas y optimizadas, empleando estándares actuales y diseños fluidos.</p>
                         </div>
                         <!-- Card 2 -->
                         <div class="p-8 rounded-2xl bg-slate-950 border border-slate-800 hover:border-blue-500/50 transition-all group">
                             <div class="w-12 h-12 bg-blue-500/10 rounded-xl flex items-center justify-center text-blue-500 mb-6 group-hover:bg-blue-500 group-hover:text-white transition-all">
-                                <i class="fa-solid fa-microchip text-xl"></i>
+                                <i class="fa-solid fa-cube text-xl"></i>
                             </div>
-                            <h3 class="text-xl font-bold mb-2">Inteligencia Artificial</h3>
+                            <h3 class="text-xl font-bold mb-2">Integración de IA & APIs</h3>
                             <p class="text-blue-400 text-sm mb-4 font-medium uppercase tracking-wider">En formación</p>
-                            <p class="text-slate-400 text-sm leading-relaxed">Exploración de modelos LLM, agentes autónomos y automatización de procesos.</p>
+                            <p class="text-slate-400 text-sm leading-relaxed">Consumo de APIs rest, sincronización de bases de datos en tiempo real y características inteligentes como asistentes y chatbots interactivos.</p>
                         </div>
                         <!-- Card 3 -->
                         <div class="p-8 rounded-2xl bg-slate-950 border border-slate-800 hover:border-blue-500/50 transition-all group">
                             <div class="w-12 h-12 bg-blue-500/10 rounded-xl flex items-center justify-center text-blue-500 mb-6 group-hover:bg-blue-500 group-hover:text-white transition-all">
-                                <i class="fa-solid fa-gamepad text-xl"></i>
+                                <i class="fa-solid fa-palette text-xl"></i>
                             </div>
-                            <h3 class="text-xl font-bold mb-2">Generación IA Minecraft</h3>
+                            <h3 class="text-xl font-bold mb-2">Diseño UX/UI & Prototipado</h3>
                             <p class="text-blue-400 text-sm mb-4 font-medium uppercase tracking-wider">Especialista</p>
-                            <p class="text-slate-400 text-sm leading-relaxed">Creación de mundos procedurales y assets mediante ingeniería de prompts.</p>
+                            <p class="text-slate-400 text-sm leading-relaxed">Diseño de la experiencia y del flujo de usuario, wireframing detallado y prototipado rápido con Tailwind CSS para máxima interactividad.</p>
                         </div>
                     </div>
                 </div>
@@ -118,7 +140,7 @@
                             <p class="text-slate-400 text-xs">Juego sandbox creativo</p>
                         </a>
                         <!-- Ajedrez 3d -->
-                        <a href="https://share.gemini.google/IAx0bf3uimXk" target="_blank" rel="noopener noreferrer" class="p-6 rounded-2xl bg-slate-900 border border-slate-800 hover:border-blue-500 transition-all group block text-center">
+                        <a href="ajedrez3d.html" target="_blank" rel="noopener noreferrer" class="p-6 rounded-2xl bg-slate-900 border border-slate-800 hover:border-blue-500 transition-all group block text-center">
                             <div class="text-4xl mb-4 group-hover:scale-110 transition-transform">♟️</div>
                             <h3 class="font-bold text-lg mb-2">Ajedrez 3D</h3>
                             <p class="text-slate-400 text-xs">Desafío estratégico</p>
@@ -346,7 +368,59 @@
         </div>
     </footer>
 
+    <!-- Contenedor flotante para simular vista previa de aplicaciones al pasar el cursor -->
+    <div id="floating-preview">
+        <iframe id="preview-iframe" src=""></iframe>
+    </div>
+
     <script>
+        // Lógica del simulador de vistas previas flotantes guiadas por cursor
+        document.addEventListener("DOMContentLoaded", () => {
+            const previewContainer = document.getElementById("floating-preview");
+            const previewIframe = document.getElementById("preview-iframe");
+
+            // Selector para todas las tarjetas de proyectos que tengan links locales
+            const projectCards = document.querySelectorAll("#inicio-proyectos a, #proyectos a");
+
+            projectCards.forEach(card => {
+                card.addEventListener("mouseenter", (e) => {
+                    const href = card.getAttribute("href");
+                    if (href && !href.startsWith("http")) {
+                        previewIframe.src = href;
+                        previewContainer.style.display = "block";
+                    }
+                });
+
+                card.addEventListener("mousemove", (e) => {
+                    // Posicionamos el contenedor un poco desfasado del cursor para que no lo cubra y se mueva suavemente
+                    const offsetX = 20;
+                    const offsetY = 20;
+
+                    // Aseguramos que la ventana no se desborde por los límites derecho o inferior
+                    let x = e.clientX + offsetX;
+                    let y = e.clientY + offsetY;
+
+                    // Ajustar si se sale por la derecha (tomando en cuenta el escalado de 0.25 en un contenedor de 1024px, lo que equivale a 256px de ancho real renderizado)
+                    if (x + 260 > window.innerWidth) {
+                        x = e.clientX - 270;
+                    }
+                    // Ajustar si se sale por abajo (150px de alto real renderizado)
+                    if (y + 160 > window.innerHeight) {
+                        y = e.clientY - 170;
+                    }
+
+                    previewContainer.style.left = `${x}px`;
+                    previewContainer.style.top = `${y}px`;
+                });
+
+                card.addEventListener("mouseleave", () => {
+                    previewContainer.style.display = "none";
+                    // Inmediatamente descargamos el iframe src para detener ejecuciones de juegos y ruidos en background
+                    previewIframe.src = "";
+                });
+            });
+        });
+
         // Lógica de cambio de pestañas
         function switchTab(tabId) {
             // Ocultar todos los contenidos
