@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Word Predators: Serpientes de Escritura</title>
     <style>
-        /* CSS GENERAL Y VARIABLES DE DISEÑO NEÓN */
         :root {
             --neon-green: #39ff14;
             --neon-blue: #00f0ff;
@@ -53,7 +52,6 @@
             height: 100%;
         }
 
-        /* COMPONENTES DE LA INTERFAZ (PANTALLAS) */
         .screen {
             position: absolute;
             top: 0;
@@ -64,7 +62,7 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            background: rgba(5, 5, 10, 0.9);
+            background: rgba(5, 5, 10, 0.95);
             z-index: 10;
             transition: opacity 0.3s ease;
             text-align: center;
@@ -135,7 +133,7 @@
             border-color: #555588;
         }
 
-        /* Estados activos personalizados para el selector */
+        /* Estados activos para el selector de dificultad */
         .diff-opt[data-diff="EASY"].active {
             border-color: var(--neon-green);
             color: var(--neon-green);
@@ -234,7 +232,32 @@
             box-shadow: 0 0 25px var(--neon-pink);
         }
 
-        /* HUD SUPERPUESTO DURANTE EL JUEGO */
+        /* PANTALLA VICTORIA */
+        #victory-screen {
+            background: rgba(5, 15, 5, 0.95);
+        }
+
+        #victory-screen h2 {
+            font-size: 3.5rem;
+            color: var(--neon-green);
+            text-shadow: 0 0 15px var(--neon-green);
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+        
+        .btn-victory {
+            border-color: var(--neon-green);
+            box-shadow: 0 0 10px rgba(57, 255, 20, 0.2);
+            color: var(--neon-green);
+        }
+
+        .btn-victory:hover {
+            background: var(--neon-green);
+            color: #000000;
+            box-shadow: 0 0 25px var(--neon-green);
+        }
+
         #hud {
             position: absolute;
             top: 0;
@@ -276,6 +299,17 @@
             text-shadow: 0 0 5px rgba(57, 255, 20, 0.5);
         }
 
+        #hud-bombs .hud-value {
+            color: #ffff00;
+            text-shadow: 0 0 5px rgba(255, 255, 0, 0.5);
+        }
+
+        #hud-lives .hud-value {
+            color: var(--neon-red);
+            text-shadow: 0 0 10px rgba(255, 49, 49, 0.6);
+            font-size: 1.15rem;
+        }
+
         #hud-difficulty .hud-value {
             color: var(--neon-blue);
             text-shadow: 0 0 5px rgba(0, 240, 255, 0.5);
@@ -284,12 +318,6 @@
         #hud-combo .hud-value {
             color: var(--neon-pink);
             text-shadow: 0 0 5px rgba(255, 0, 127, 0.5);
-        }
-
-        #hud-lives .hud-value {
-            color: var(--neon-red);
-            text-shadow: 0 0 10px rgba(255, 49, 49, 0.6);
-            font-size: 1.15rem;
         }
 
         /* AVISO DE SUBIDA DE NIVEL / DIFICULTAD */
@@ -351,6 +379,10 @@
                 <div class="hud-label">Puntos</div>
                 <div class="hud-value" id="score-val">0000</div>
             </div>
+            <div class="hud-item" id="hud-bombs">
+                <div class="hud-label">Bombas</div>
+                <div class="hud-value" id="bombs-val">0</div>
+            </div>
             <div class="hud-item" id="hud-lives">
                 <div class="hud-label">Vidas</div>
                 <div class="hud-value" id="lives-val">❤️❤️❤️</div>
@@ -376,7 +408,9 @@
         <div id="start-screen" class="screen">
             <h1>WORD PREDATORS</h1>
             <p class="subtitle">
-                Serpientes cibernéticas están emergiendo de los conductos de ventilación. ¡Escribe las palabras flotantes con tu teclado a toda velocidad antes de que alcancen tu núcleo de energía!
+                Serpientes cibernéticas están emergiendo de los conductos de ventilación. ¡Escribe las palabras flotantes con tu teclado antes de que colapsen tu núcleo!<br>
+                <strong style="color: var(--neon-blue);">[MISIÓN]:</strong> ¡Elimina 50 serpientes para asegurar el sistema!<br>
+                <strong style="color: #ffff00;">[BOMBA DE EMERGENCIA]:</strong> Presiona la tecla <strong style="color: var(--neon-green);">ESPACIO</strong> para detonar instantáneamente la serpiente más cercana a tu base.
             </p>
 
             <!-- Selector interactivo de dificultad inicial -->
@@ -412,6 +446,39 @@
                 </div>
             </div>
             <button class="btn btn-restart" id="btn-restart">Intentar de Nuevo</button>
+        </div>
+
+        <!-- Pantalla de Victoria -->
+        <div id="victory-screen" class="screen hidden">
+            <h2>¡SISTEMA ASEGURADO!</h2>
+            <div class="stats-panel">
+                <div class="stat-line">
+                    <span>Puntaje Final:</span>
+                    <span class="stat-value highlight" id="vic-score">0</span>
+                </div>
+                <div class="stat-line">
+                    <span>Dificultad Base:</span>
+                    <span class="stat-value" id="vic-level">Fácil</span>
+                </div>
+                <div class="stat-line">
+                    <span>Racha Máxima:</span>
+                    <span class="stat-value" id="vic-max-combo">0</span>
+                </div>
+                <div class="stat-line">
+                    <span>Vidas Restantes:</span>
+                    <span class="stat-value" id="vic-lives">0</span>
+                </div>
+            </div>
+            <button class="btn btn-victory" id="btn-victory-restart">Jugar de Nuevo</button>
+        </div>
+
+        <!-- Pantalla de Pausa -->
+        <div id="pause-screen" class="screen hidden">
+            <h1 style="color: var(--neon-pink); text-shadow: 0 0 15px var(--neon-pink);">SISTEMA EN PAUSA</h1>
+            <p class="subtitle" style="margin-top: 15px; margin-bottom: 30px;">
+                La simulación de defensa ha sido suspendida temporalmente. Presiona la tecla <strong style="color: var(--neon-blue);">ESC</strong> para reanudar.
+            </p>
+            <button class="btn btn-restart" id="btn-resume">Reanudar Simulación</button>
         </div>
 
         <!-- Canvas de renderizado -->
@@ -464,7 +531,6 @@
             const now = audioCtx.currentTime;
 
             if (type === 'hit') {
-                // Sonido corto y agudo de acierto de letra o selección de botón
                 osc.type = 'triangle';
                 osc.frequency.setValueAtTime(600, now);
                 osc.frequency.exponentialRampToValueAtTime(1000, now + 0.08);
@@ -473,7 +539,6 @@
                 osc.start(now);
                 osc.stop(now + 0.08);
             } else if (type === 'kill') {
-                // Sonido explosivo de serpiente muerta
                 osc.type = 'sawtooth';
                 osc.frequency.setValueAtTime(200, now);
                 osc.frequency.exponentialRampToValueAtTime(40, now + 0.35);
@@ -482,7 +547,6 @@
                 osc.start(now);
                 osc.stop(now + 0.35);
             } else if (type === 'error') {
-                // Sonido grave de equivocación
                 osc.type = 'sine';
                 osc.frequency.setValueAtTime(120, now);
                 gain.gain.setValueAtTime(0.15, now);
@@ -490,7 +554,6 @@
                 osc.start(now);
                 osc.stop(now + 0.15);
             } else if (type === 'gameover') {
-                // Cascada descendente triste
                 osc.type = 'sawtooth';
                 osc.frequency.setValueAtTime(300, now);
                 osc.frequency.linearRampToValueAtTime(80, now + 0.8);
@@ -499,7 +562,6 @@
                 osc.start(now);
                 osc.stop(now + 0.8);
             } else if (type === 'level') {
-                // Fanfarria corta ascendente
                 osc.type = 'square';
                 osc.frequency.setValueAtTime(300, now);
                 osc.frequency.setValueAtTime(450, now + 0.1);
@@ -508,6 +570,17 @@
                 gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
                 osc.start(now);
                 osc.stop(now + 0.4);
+            } else if (type === 'victory') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(400, now);
+                osc.frequency.setValueAtTime(500, now + 0.15);
+                osc.frequency.setValueAtTime(600, now + 0.3);
+                osc.frequency.setValueAtTime(800, now + 0.45);
+                osc.frequency.setValueAtTime(1200, now + 0.6);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 1.2);
+                osc.start(now);
+                osc.stop(now + 1.2);
             }
         }
 
@@ -515,11 +588,9 @@
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
 
-        // Configuración de resolución interna constante
         const VIEW_WIDTH = 1024;
         const VIEW_HEIGHT = 600;
 
-        // Estructuras de dibujo (Tubos y Base)
         const tubes = [
             { x: 40, y: 120, radius: 25 },
             { x: 40, y: 300, radius: 25 },
@@ -533,22 +604,42 @@
             height: VIEW_HEIGHT
         };
 
+        const MAX_SNAKES_TO_WIN = 50;
+
         // --- ESTADO GLOBAL DEL JUEGO ---
-        let gameState = 'START'; // START, PLAYING, GAMEOVER
+        let gameState = 'START'; // START, PLAYING, GAMEOVER, PAUSED, VICTORY
         let score = 0;
-        let selectedStartDifficulty = 'EASY'; // Seleccionada en el menú principal
-        let difficulty = 'EASY'; // EASY, MEDIUM, HARD (Dinámica en juego)
+        let selectedStartDifficulty = 'EASY'; 
+        let difficulty = 'EASY'; 
         let combo = 0;
         let maxCombo = 0;
         let defeatedCount = 0;
-        let lives = 3; // Vidas del jugador
+        let lives = 3;
+        let bombsSpent = 0;
+
         let snakes = [];
         let particles = [];
-        let activeSnakeId = null; // ID de la serpiente que el jugador está escribiendo actualmente
+        let activeSnakeId = null; 
         let lastSpawnTime = 0;
-        let spawnInterval = 3200; // Milisegundos entre spawns
+        let spawnInterval = 3200; 
         let backgroundGridOffset = 0;
         let lastFrameTime = 0;
+
+        // --- FUNCIÓN DE CONTROL DE PAUSA ---
+        function togglePause() {
+            if (gameState !== 'PLAYING' && gameState !== 'PAUSED') return;
+
+            if (gameState === 'PLAYING') {
+                gameState = 'PAUSED';
+                document.getElementById('pause-screen').classList.remove('hidden');
+                playSynthSound('error');
+            } else if (gameState === 'PAUSED') {
+                gameState = 'PLAYING';
+                document.getElementById('pause-screen').classList.add('hidden');
+                lastFrameTime = performance.now(); 
+                playSynthSound('hit');
+            }
+        }
 
         // --- CLASE ENEMIGO SERPIENTE ---
         class Snake {
@@ -557,22 +648,19 @@
                 this.word = word;
                 this.tubeIndex = tubeIndex;
                 this.speed = speed;
-                this.typedIndex = 0; // Letras escritas correctamente
+                this.typedIndex = 0; 
                 
-                // Posición inicial (sale del tubo)
                 this.x = tubes[tubeIndex].x + 10;
                 this.y = tubes[tubeIndex].y;
                 
                 this.width = 45;
                 this.height = 15;
-                this.size = 14; // Tamaño de los segmentos
+                this.size = 14; 
                 this.color = this.getRandomNeonColor();
                 
-                // Historial de posiciones para simular cuerpo ondulante (slither effect)
                 this.history = [];
-                this.historyLimit = word.length * 6; // Longitud del cuerpo depende de la palabra
+                this.historyLimit = word.length * 6; 
                 
-                // Variables de oscilación
                 this.waveSpeed = 0.15;
                 this.waveAmp = 10;
                 this.angle = Math.random() * Math.PI * 2;
@@ -592,15 +680,12 @@
             }
 
             update(dt) {
-                // Mover horizontalmente hacia el final
-                this.x += this.speed * (dt / 16.666); // Normalizado a 60fps
+                this.x += this.speed * (dt / 16.666); 
                 
-                // Oscilación de movimiento de serpiente (senoidal)
                 this.angle += this.waveSpeed;
                 const currentY = tubes[this.tubeIndex].y + Math.sin(this.angle) * this.waveAmp;
                 this.y = currentY;
 
-                // Guardar historial de cabeza para dibujar los segmentos del cuerpo
                 this.history.push({ x: this.x, y: this.y });
                 if (this.history.length > this.historyLimit) {
                     this.history.shift();
@@ -608,31 +693,27 @@
             }
 
             draw() {
-                // Dibujar cuerpo de la serpiente utilizando el historial de posiciones
                 const segmentsCount = this.word.length;
                 const historyStep = Math.max(1, Math.floor(this.history.length / segmentsCount));
 
                 ctx.save();
                 
-                // Dibujar segmentos de atrás hacia adelante (cola a cabeza)
                 for (let i = 0; i < segmentsCount; i++) {
                     const histIndex = Math.min(this.history.length - 1, i * historyStep);
                     if (histIndex < 0 || !this.history[histIndex]) continue;
                     
                     const pos = this.history[histIndex];
-                    const progress = i / segmentsCount; // 0 en la cola, 1 en la cabeza
-                    const segmentSize = this.size * (0.4 + progress * 0.6); // Se hace más delgada en la cola
+                    const progress = i / segmentsCount; 
+                    const segmentSize = this.size * (0.4 + progress * 0.6); 
 
                     ctx.beginPath();
                     ctx.arc(pos.x, pos.y, segmentSize, 0, Math.PI * 2);
                     
-                    // Si el jugador ya escribió esta letra, brilla en verde
                     if (i < this.typedIndex) {
                         ctx.fillStyle = '#39ff14';
                         ctx.shadowBlur = 10;
                         ctx.shadowColor = '#39ff14';
                     } else {
-                        // El resto del cuerpo conserva el color de la serpiente
                         ctx.fillStyle = this.color;
                         ctx.shadowBlur = 0;
                     }
@@ -640,7 +721,6 @@
                     ctx.closePath();
                 }
 
-                // Dibujar cabeza de la serpiente (última posición registrada)
                 const headX = this.x;
                 const headY = this.y;
 
@@ -662,7 +742,6 @@
                 ctx.stroke();
                 ctx.closePath();
 
-                // Ojitos de la serpiente
                 ctx.fillStyle = '#000000';
                 ctx.beginPath();
                 ctx.arc(headX + 4, headY - 4, 2.5, 0, Math.PI * 2);
@@ -670,7 +749,6 @@
                 ctx.fill();
                 ctx.closePath();
 
-                // Lengua de serpiente (bifurcada roja)
                 ctx.strokeStyle = '#ff3131';
                 ctx.lineWidth = 2;
                 ctx.beginPath();
@@ -684,12 +762,11 @@
 
                 ctx.restore();
 
-                // --- DIBUJAR PALABRA ENCIMA DE LA CABEZA ---
+                // --- DIBUJAR PALABRA ---
                 ctx.save();
                 ctx.font = "bold 16px " + varFont();
                 ctx.textAlign = "center";
                 
-                // Fondo semi-transparente para la etiqueta de texto
                 const textWidth = ctx.measureText(this.word).width;
                 ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
                 ctx.fillRect(headX - (textWidth/2) - 8, headY - 38, textWidth + 16, 24);
@@ -697,18 +774,17 @@
                 ctx.lineWidth = 1;
                 ctx.strokeRect(headX - (textWidth/2) - 8, headY - 38, textWidth + 16, 24);
 
-                // Dibujar letras de la palabra
                 let currentXOffset = headX - (textWidth / 2);
                 for (let j = 0; j < this.word.length; j++) {
                     const char = this.word[j];
                     const isTyped = j < this.typedIndex;
 
                     if (isTyped) {
-                        ctx.fillStyle = '#39ff14'; // Verde neón acierto
+                        ctx.fillStyle = '#39ff14'; 
                         ctx.shadowBlur = 8;
                         ctx.shadowColor = '#39ff14';
                     } else {
-                        ctx.fillStyle = '#ffffff'; // Blanco restante
+                        ctx.fillStyle = '#ffffff'; 
                         ctx.shadowBlur = 0;
                     }
 
@@ -723,7 +799,7 @@
             return getComputedStyle(document.documentElement).getPropertyValue('--font-family').trim();
         }
 
-        // --- SISTEMA DE PARTÍCULAS (EFECTO DE EXPLOSIÓN Y GOLPES) ---
+        // --- SISTEMA DE PARTÍCULAS ---
         class Particle {
             constructor(x, y, color, speedX, speedY, life) {
                 this.x = x;
@@ -731,7 +807,7 @@
                 this.color = color;
                 this.speedX = speedX;
                 this.speedY = speedY;
-                this.life = life; // Duración en ciclos
+                this.life = life; 
                 this.maxLife = life;
             }
 
@@ -782,16 +858,11 @@
                 speed = 1.8;
             }
 
-            // Seleccionar palabra al azar de la lista correspondiente
             const word = list[Math.floor(Math.random() * list.length)];
-            
-            // Elegir un tubo de salida aleatorio
             const tubeIndex = Math.floor(Math.random() * tubes.length);
             
-            // Evitar duplicados de palabras en pantalla para no causar colisión de tipeo
             const activeWords = snakes.map(s => s.word);
             if (activeWords.includes(word) && list.length > 5) {
-                // Volver a intentar el spawn para buscar otra palabra diferente
                 setTimeout(spawnSnake, 100);
                 return;
             }
@@ -804,11 +875,8 @@
         // --- MANEJO DE CONTROL DE DIFICULTAD ---
         function checkDifficultyProgression() {
             const lastDiff = difficulty;
-            
-            // Si el jugador eligió comenzar en un nivel alto, no desciende de ahí
             let targetDifficulty = selectedStartDifficulty;
 
-            // Progreso dinámico según serpientes derrotadas desde el punto de inicio
             if (defeatedCount >= 25) {
                 targetDifficulty = 'HARD';
             } else if (defeatedCount >= 10) {
@@ -819,7 +887,6 @@
 
             difficulty = targetDifficulty;
 
-            // Ajustar el intervalo de spawn según la dificultad activa
             if (difficulty === 'HARD') {
                 spawnInterval = 1800;
             } else if (difficulty === 'MEDIUM') {
@@ -828,7 +895,6 @@
                 spawnInterval = 3200;
             }
 
-            // Al cambiar de dificultad, lanzar un banner indicador y efectos
             if (lastDiff !== difficulty) {
                 const banner = document.getElementById('level-up-banner');
                 let diffText = 'FÁCIL';
@@ -845,8 +911,62 @@
             }
         }
 
+        // --- MECÁNICA DE DETONACIÓN DE BOMBA DE EMERGENCIA ---
+        function triggerEmergencyBomb() {
+            if (gameState !== 'PLAYING') return;
+
+            const totalBombsEarned = Math.floor(score / 50);
+            const currentBombs = Math.max(0, totalBombsEarned - bombsSpent);
+
+            if (currentBombs > 0 && snakes.length > 0) {
+                let closestSnake = null;
+                let maxDistX = -1;
+                let closestIndex = -1;
+
+                // Encontrar la serpiente con la coordenada X más alta (más cercana a la base del jugador)
+                for (let i = 0; i < snakes.length; i++) {
+                    const snake = snakes[i];
+                    if (snake.x > maxDistX) {
+                        maxDistX = snake.x;
+                        closestSnake = snake;
+                        closestIndex = i;
+                    }
+                }
+
+                if (closestSnake) {
+                    bombsSpent++;
+                    createExplosion(closestSnake.x, closestSnake.y, '#ffff00', 50); 
+                    playSynthSound('kill');
+
+                    if (activeSnakeId === closestSnake.id) {
+                        activeSnakeId = null;
+                    }
+
+                    snakes.splice(closestIndex, 1);
+                    defeatedCount++;
+                    updateHUD();
+                    checkWinCondition();
+                }
+            } else {
+                playSynthSound('error');
+            }
+        }
+
         // --- DETECTOR DE ENTRADA DE TECLADO ---
         window.addEventListener('keydown', (e) => {
+            // DETECTAR PAUSA CON LA TECLA ESCAPE (ESC)
+            if (e.key === 'Escape') {
+                togglePause();
+                return;
+            }
+
+            // DETECTAR ACTIVACIÓN DE BOMBA CON LA TECLA ESPACIO (SPACEBAR)
+            if (e.key === ' ' || e.code === 'Space') {
+                e.preventDefault(); // Evita que la página haga scroll con la barra espaciadora
+                triggerEmergencyBomb();
+                return;
+            }
+
             if (gameState !== 'PLAYING') return;
 
             const charPressed = e.key.toLowerCase();
@@ -858,9 +978,7 @@
 
             // CASO 1: No hay ninguna serpiente activa / seleccionada
             if (activeSnakeId === null) {
-                // Buscar si alguna serpiente viva inicia con esta letra
                 let targetSnake = null;
-                // Preferir la serpiente que esté más cerca de la base (mayor x)
                 let maxDistX = -1;
 
                 for (let snake of snakes) {
@@ -873,13 +991,11 @@
                 }
 
                 if (targetSnake) {
-                    // Fijar como objetivo y registrar la primera letra escrita
                     activeSnakeId = targetSnake.id;
                     targetSnake.typedIndex = 1;
                     createHitSpark(targetSnake.x, targetSnake.y);
                     playSynthSound('hit');
                 } else {
-                    // No hay coincidencia con ninguna primera letra
                     playSynthSound('error');
                     flashScreenRed();
                 }
@@ -892,18 +1008,14 @@
                     const expectedChar = activeSnake.word[activeSnake.typedIndex];
                     
                     if (charPressed === expectedChar) {
-                        // Letra correcta
                         activeSnake.typedIndex++;
                         createHitSpark(activeSnake.x, activeSnake.y);
                         playSynthSound('hit');
 
-                        // ¿Se ha completado la palabra?
                         if (activeSnake.typedIndex >= activeSnake.word.length) {
-                            // Destrucción total de la serpiente
                             createExplosion(activeSnake.x, activeSnake.y, activeSnake.color, 35);
                             playSynthSound('kill');
 
-                            // Calcular recompensa según dificultad y combo
                             let basePoints = 10;
                             if (difficulty === 'MEDIUM') basePoints = 20;
                             if (difficulty === 'HARD') basePoints = 35;
@@ -914,36 +1026,46 @@
                             score += basePoints * (1 + Math.floor(combo / 5));
                             defeatedCount++;
 
-                            // Remover serpiente de la lista
                             snakes = snakes.filter(s => s.id !== activeSnakeId);
-                            activeSnakeId = null; // Liberar foco de mira
+                            activeSnakeId = null; 
 
-                            // Actualizar UI
                             checkDifficultyProgression();
                             updateHUD();
+                            checkWinCondition();
                         }
                     } else {
-                        // Error de mecanografía: Rompe el combo actual
                         combo = 0;
                         updateHUD();
                         playSynthSound('error');
                         flashScreenRed();
                     }
                 } else {
-                    // Por seguridad, si la serpiente ya no existe liberar el foco
                     activeSnakeId = null;
                 }
             }
         });
 
-        // Feedback visual al errar
         let flashOpacity = 0;
         function flashScreenRed() {
-            flashOpacity = 0.3; // Incrementa opacidad que luego se desvanece
+            flashOpacity = 0.3; 
         }
 
         function updateHUD() {
             document.getElementById('score-val').textContent = String(score).padStart(4, '0');
+            
+            const totalBombsEarned = Math.floor(score / 50);
+            const currentBombs = Math.max(0, totalBombsEarned - bombsSpent);
+            document.getElementById('bombs-val').textContent = currentBombs;
+
+            let hearts = '';
+            if (lives > 0) {
+                for (let i = 0; i < lives; i++) {
+                    hearts += '❤️';
+                }
+            } else {
+                hearts = '💀';
+            }
+            document.getElementById('lives-val').textContent = hearts;
             
             let diffDisplay = 'FÁCIL';
             if (difficulty === 'MEDIUM') diffDisplay = 'MEDIO';
@@ -951,12 +1073,8 @@
             document.getElementById('diff-val').textContent = diffDisplay;
             
             document.getElementById('combo-val').textContent = `x${combo}`;
-            document.getElementById('defeated-val').textContent = defeatedCount;
+            document.getElementById('defeated-val').textContent = `${defeatedCount} / ${MAX_SNAKES_TO_WIN}`;
 
-            // Renderizar corazones de vida o calavera en caso de derrota
-            document.getElementById('lives-val').textContent = '❤️'.repeat(Math.max(0, lives)) || '💀';
-
-            // Cambiar color de combo según racha
             const comboValueEl = document.getElementById('combo-val');
             if (combo >= 15) {
                 comboValueEl.style.color = 'var(--neon-pink)';
@@ -969,7 +1087,6 @@
 
         // --- SISTEMA DE RENDERIZADO DEL ENTORNO ---
         function drawEnvironment() {
-            // Fondo cibernético estructurado en cuadrícula
             ctx.fillStyle = '#05050a';
             ctx.fillRect(0, 0, VIEW_WIDTH, VIEW_HEIGHT);
 
@@ -991,14 +1108,11 @@
                 ctx.stroke();
             }
 
-            // Dibujar TUBOS de ventilación por donde emergen las serpientes
             tubes.forEach((tube, index) => {
                 ctx.save();
-                // Sombra de neón azul para simular radiación/salida peligrosa
                 ctx.shadowBlur = 15;
                 ctx.shadowColor = 'rgba(0, 240, 255, 0.4)';
                 
-                // Cuerpo del tubo cilíndrico metálico
                 const grad = ctx.createLinearGradient(0, tube.y - 30, 0, tube.y + 30);
                 grad.addColorStop(0, '#111122');
                 grad.addColorStop(0.5, '#333355');
@@ -1006,12 +1120,10 @@
                 ctx.fillStyle = grad;
                 ctx.fillRect(0, tube.y - 30, tube.x, 60);
 
-                // Bordes externos de neón
                 ctx.strokeStyle = varColor('--neon-blue');
                 ctx.lineWidth = 3;
                 ctx.strokeRect(0, tube.y - 30, tube.x, 60);
 
-                // Núcleo de escape brillante (dentro del tubo)
                 ctx.beginPath();
                 ctx.arc(tube.x, tube.y, tube.radius, -Math.PI/2, Math.PI/2);
                 ctx.fillStyle = 'rgba(0, 240, 255, 0.2)';
@@ -1019,14 +1131,12 @@
                 ctx.stroke();
                 ctx.closePath();
 
-                // Detalle indicador
                 ctx.fillStyle = '#00f0ff';
                 ctx.fillRect(tube.x - 12, tube.y - 8, 4, 16);
 
                 ctx.restore();
             });
 
-            // Dibujar la BASE DEL JUGADOR a defender (Núcleo de energía)
             ctx.save();
             const baseGrad = ctx.createLinearGradient(playerBase.x, 0, VIEW_WIDTH, 0);
             baseGrad.addColorStop(0, 'rgba(255, 0, 127, 0.15)');
@@ -1035,7 +1145,6 @@
             ctx.fillStyle = baseGrad;
             ctx.fillRect(playerBase.x, playerBase.y, playerBase.width, playerBase.height);
 
-            // Escudo de fuerza activo (Línea de neón rosa/roja vertical)
             ctx.strokeStyle = 'var(--neon-pink)';
             ctx.lineWidth = 5;
             ctx.shadowBlur = 20;
@@ -1046,7 +1155,6 @@
             ctx.stroke();
             ctx.closePath();
 
-            // Patrón geométrico en el interior de la base
             ctx.strokeStyle = '#33112a';
             ctx.lineWidth = 1;
             for (let i = 0; i < VIEW_HEIGHT; i += 30) {
@@ -1071,42 +1179,36 @@
             if (gameState === 'PLAYING') {
                 updateGame(dt, timestamp);
                 renderGame();
+            } else if (gameState === 'PAUSED') {
+                renderGame();
             }
 
             requestAnimationFrame(gameLoop);
         }
 
         function updateGame(dt, timestamp) {
-            // Manejador del intervalo del spawn
             if (timestamp - lastSpawnTime > spawnInterval) {
                 spawnSnake();
                 lastSpawnTime = timestamp;
             }
 
-            // Actualizar todas las serpientes vivas
             for (let i = snakes.length - 1; i >= 0; i--) {
                 const snake = snakes[i];
                 snake.update(dt);
 
-                // Detección de colisión: si llega a la base del jugador
                 if (snake.x >= playerBase.x - 10) {
-                    // Restar una vida
-                    lives--;
-                    
-                    // Efectos de sonido de impacto y explosión en el escudo
+                    lives--; 
+                    createExplosion(snake.x, snake.y, '#ff3131', 40); 
                     playSynthSound('error');
-                    createExplosion(snake.x, snake.y, '#ff3131', 40);
                     flashScreenRed();
-                    
-                    // Remover la serpiente agresora del juego
-                    snakes.splice(i, 1);
+
                     if (activeSnakeId === snake.id) {
                         activeSnakeId = null;
                     }
-                    
+
+                    snakes.splice(i, 1);
                     updateHUD();
 
-                    // Comprobar estado de derrota
                     if (lives <= 0) {
                         triggerGameOver();
                         return;
@@ -1114,7 +1216,6 @@
                 }
             }
 
-            // Actualizar partículas de explosiones
             for (let i = particles.length - 1; i >= 0; i--) {
                 const p = particles[i];
                 p.update();
@@ -1123,23 +1224,16 @@
                 }
             }
 
-            // Efecto de desvanecimiento de flash rojo por errores
             if (flashOpacity > 0) {
                 flashOpacity -= 0.015;
             }
         }
 
         function renderGame() {
-            // Limpieza y dibujo del escenario
             drawEnvironment();
-
-            // Dibujar serpientes
             snakes.forEach(snake => snake.draw());
-
-            // Dibujar partículas
             particles.forEach(p => p.draw());
 
-            // Renderizar filtro de destello rojo de error si aplica
             if (flashOpacity > 0) {
                 ctx.fillStyle = `rgba(255, 49, 49, ${flashOpacity})`;
                 ctx.fillRect(0, 0, VIEW_WIDTH, VIEW_HEIGHT);
@@ -1151,7 +1245,6 @@
             gameState = 'GAMEOVER';
             playSynthSound('gameover');
 
-            // Detener el juego e inyectar datos de fin de juego en la UI
             document.getElementById('go-score').textContent = score;
             
             let levelLabel = 'Fácil';
@@ -1162,23 +1255,46 @@
             document.getElementById('go-defeated').textContent = defeatedCount;
             document.getElementById('go-max-combo').textContent = maxCombo;
 
-            // Mostrar la pantalla de Game Over de forma visual
             document.getElementById('gameover-screen').classList.remove('hidden');
         }
 
-        // --- SISTEMA DE REINICIO DE PARTIDA ---
+        // --- MANEJO DE VICTORIA ---
+        function triggerVictory() {
+            gameState = 'VICTORY';
+            playSynthSound('victory');
+
+            document.getElementById('vic-score').textContent = score;
+            
+            let levelLabel = 'Fácil';
+            if (selectedStartDifficulty === 'MEDIUM') levelLabel = 'Medio';
+            if (selectedStartDifficulty === 'HARD') levelLabel = 'Difícil';
+            document.getElementById('vic-level').textContent = levelLabel;
+            
+            document.getElementById('vic-max-combo').textContent = maxCombo;
+            document.getElementById('vic-lives').textContent = lives;
+
+            document.getElementById('victory-screen').classList.remove('hidden');
+        }
+
+        function checkWinCondition() {
+            if (defeatedCount >= MAX_SNAKES_TO_WIN && gameState === 'PLAYING') {
+                triggerVictory();
+            }
+        }
+
+        // --- SISTEMA DE INICIO Y REINICIO DE PARTIDA ---
         function startNewGame() {
             score = 0;
+            lives = 3;
+            bombsSpent = 0;
             difficulty = selectedStartDifficulty;
             combo = 0;
             maxCombo = 0;
             defeatedCount = 0;
-            lives = 3; // Restaurar 3 vidas en nueva partida
             snakes = [];
             particles = [];
             activeSnakeId = null;
             
-            // Ajustar spawn inicial segun dificultad elegida
             if (difficulty === 'EASY') {
                 spawnInterval = 3200;
             } else if (difficulty === 'MEDIUM') {
@@ -1187,32 +1303,25 @@
                 spawnInterval = 1800;
             }
             
-            // Ocultar pantallas superpuestas
             document.getElementById('start-screen').classList.add('hidden');
             document.getElementById('gameover-screen').classList.add('hidden');
+            document.getElementById('victory-screen').classList.add('hidden');
+            document.getElementById('pause-screen').classList.add('hidden');
             
             updateHUD();
 
-            // Lanzar el bucle
             lastSpawnTime = performance.now();
             gameState = 'PLAYING';
             playSynthSound('level');
         }
 
         // --- MANEJADORES DE ELEMENTOS DEL DOM / EVENTOS ---
-        
-        // Configuración de los botones selectores de dificultad
         const diffOptions = document.querySelectorAll('.diff-opt');
         diffOptions.forEach(opt => {
             opt.addEventListener('click', () => {
-                // Remover clase active de todos los botones y añadirla al pulsado
                 diffOptions.forEach(b => b.classList.remove('active'));
                 opt.classList.add('active');
-                
-                // Actualizar la variable de estado inicial
                 selectedStartDifficulty = opt.dataset.diff;
-                
-                // Sonido táctil de respuesta
                 playSynthSound('hit');
             });
         });
@@ -1226,16 +1335,21 @@
             startNewGame();
         });
 
-        // Configurar interruptor de muteo de audio
+        document.getElementById('btn-victory-restart').addEventListener('click', () => {
+            startNewGame();
+        });
+
+        document.getElementById('btn-resume').addEventListener('click', () => {
+            togglePause();
+        });
+
         document.getElementById('sound-toggle').addEventListener('click', () => {
             audioMuted = !audioMuted;
             document.getElementById('sound-toggle').textContent = `Sonido: ${audioMuted ? 'Desactivado' : 'Activado'}`;
             initAudio();
         });
 
-        // Iniciar el bucle de renderizado inactivo
         requestAnimationFrame(gameLoop);
-        // Primer render de escenario base para el fondo del menú inicial
         drawEnvironment();
     </script>
 </body>
