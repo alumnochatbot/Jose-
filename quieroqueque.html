@@ -3,28 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>¡Quiero Queque! - Edición Extrema</title>
+    <title>¡Quiero Queque! - Edición Gráfica HD</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { margin: 0; overflow: hidden; background-color: #111827; font-family: 'Inter', sans-serif; }
         canvas { display: block; }
         #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
-        .dizzy-effect {
-            animation: shake 0.5s infinite;
-        }
-        @keyframes shake {
-            0% { transform: translate(1px, 1px) rotate(0deg); }
-            10% { transform: translate(-1px, -2px) rotate(-1deg); }
-            20% { transform: translate(-3px, 0px) rotate(1deg); }
-            30% { transform: translate(0px, 2px) rotate(0deg); }
-            40% { transform: translate(1px, -1px) rotate(1deg); }
-            50% { transform: translate(-1px, 2px) rotate(-1deg); }
-            60% { transform: translate(-3px, 1px) rotate(0deg); }
-            70% { transform: translate(2px, 1px) rotate(-1deg); }
-            80% { transform: translate(-1px, -1px) rotate(1deg); }
-            90% { transform: translate(2px, 2px) rotate(0deg); }
-            100% { transform: translate(1px, -2px) rotate(-1deg); }
-        }
+        .item-icon { display: inline-block; vertical-align: middle; }
     </style>
 </head>
 <body>
@@ -36,13 +21,13 @@
                 <h1 class="text-3xl md:text-4xl font-black italic tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-red-500 to-yellow-500 drop-shadow">
                     ¡QUIERO QUEQUE!
                 </h1>
-                <span class="text-xs font-semibold bg-red-600 text-white px-2 py-0.5 rounded-full w-max animate-pulse">MODO EXTREMO</span>
+                <span id="mode-badge" class="text-xs font-semibold bg-red-600 text-white px-2 py-0.5 rounded-full w-max animate-pulse">MODO EXTREMO</span>
             </div>
             
             <div class="flex gap-4 items-center">
                 <!-- Vidas -->
-                <div id="lives-container" class="flex gap-1 text-2xl md:text-3xl drop-shadow-md bg-black/40 px-3 py-1 rounded-full">
-                    ❤️❤️❤️
+                <div id="lives-container" class="flex gap-1.5 items-center drop-shadow-md bg-black/50 px-3 py-1.5 rounded-full border border-white/10">
+                    <!-- Injected dynamically via JS -->
                 </div>
                 <!-- Puntuación -->
                 <div id="score" class="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-pink-600 to-red-600 px-5 py-1.5 rounded-full shadow-2xl border-2 border-white/20">
@@ -52,39 +37,116 @@
         </div>
 
         <!-- Indicador de Alerta de Viento o Efectos -->
-        <div class="absolute top-24 left-1/2 transform -translate-x-1/2 flex flex-col items-center gap-2 pointer-events-none">
-            <div id="wind-alert" class="hidden bg-blue-600/90 text-white font-bold px-4 py-2 rounded-lg text-lg animate-bounce flex items-center gap-2 shadow-lg">
-                <span>💨 ¡VIENTO FUERTE EN CAMINO!</span>
+        <div class="absolute top-24 left-1/2 transform -translate-x-1/2 flex flex-col items-center gap-2 pointer-events-none w-full max-w-lg px-4">
+            <div id="wind-alert" class="hidden bg-blue-600/95 text-white font-bold px-4 py-2 rounded-xl text-lg animate-bounce flex items-center justify-center gap-2 shadow-2xl border border-blue-400">
+                <svg class="w-6 h-6 text-cyan-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <span>¡VIENTO FUERTE EN CAMINO!</span>
             </div>
-            <div id="effect-alert" class="hidden bg-purple-600/90 text-white font-bold px-4 py-2 rounded-lg text-lg animate-pulse flex items-center gap-2 shadow-lg">
-                <span id="effect-text">🌶️ ¡CONTROLES INVERTIDOS!</span>
+            <div id="advincula-alert" class="hidden bg-yellow-500 text-black font-extrabold px-5 py-2.5 rounded-xl text-lg animate-pulse flex items-center justify-center gap-2 shadow-2xl border-2 border-black">
+                <img id="alert-advincula-icon" class="w-7 h-7 rounded-full border border-black object-cover" alt="Advíncula">
+                <span>¡ADVÍNCULA HA ENTRADO AL CAMPO! ¡ESQUIVA EL BRÓCOLI!</span>
+            </div>
+            <div id="effect-alert" class="hidden bg-purple-600/95 text-white font-bold px-4 py-2 rounded-xl text-lg animate-pulse flex items-center justify-center gap-2 shadow-2xl border border-purple-400">
+                <span id="effect-text" class="flex items-center gap-2">¡CONTROLES INVERTIDOS!</span>
             </div>
         </div>
 
         <!-- Leyenda rápida para sobrevivir -->
-        <div class="hidden md:flex justify-around bg-black/50 backdrop-blur-sm py-2 px-4 rounded-xl text-xs gap-6 w-max mx-auto border border-white/10 mb-2">
-            <span class="flex items-center gap-1">🍰 / 🧁 Queques: +10 / +50 pts (¡No los dejes caer!)</span>
-            <span class="flex items-center gap-1 text-green-400">🥦 Brócoli: -20 pts y te achica</span>
-            <span class="flex items-center gap-1 text-red-400">🌶️ Chile: ¡Controles invertidos!</span>
-            <span class="flex items-center gap-1 text-yellow-400">💣 Bomba: Game Over</span>
+        <div class="hidden md:flex justify-around bg-black/60 backdrop-blur-md py-2.5 px-5 rounded-2xl text-xs gap-6 w-max mx-auto border border-white/10 mb-2 shadow-2xl">
+            <span class="flex items-center gap-1.5"><img id="leg-cake" class="w-5 h-5"> Queque: +10 pts (¡No lo dejes caer!)</span>
+            <span class="flex items-center gap-1.5 text-yellow-400"><img id="leg-gold" class="w-5 h-5"> Súper Queque: +50 pts (No quita vidas)</span>
+            <span class="flex items-center gap-1.5 text-green-400"><img id="leg-broccoli" class="w-5 h-5"> Brócoli: -20 pts y te achica</span>
+            <span class="flex items-center gap-1.5 text-red-400"><img id="leg-chili" class="w-5 h-5"> Chile: ¡Controles invertidos!</span>
+            <span class="flex items-center gap-1.5 text-yellow-500"><img id="leg-bomb" class="w-5 h-5"> Advíncula / Bomba</span>
         </div>
 
-        <!-- Pantalla de Inicio / Game Over -->
+        <!-- Menú Principal de Selección -->
+        <div id="main-menu" class="absolute inset-0 bg-black/90 backdrop-blur-md flex flex-col items-center justify-center pointer-events-auto">
+            <div class="text-center w-full max-w-md px-6 py-8 bg-gray-900 rounded-3xl border border-pink-500/30 shadow-[0_0_50px_rgba(236,72,153,0.3)] mx-4">
+                <h1 class="text-5xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-red-500 to-yellow-500 drop-shadow mb-2 italic">
+                    ¡QUIERO QUEQUE!
+                </h1>
+                <p class="text-gray-400 text-sm mb-4">Elige tu skin y dificultad para La Cobra:</p>
+                
+                <!-- Selector de Skins de La Cobra -->
+                <div class="mb-6 bg-gray-800/60 p-3 rounded-2xl border border-gray-700/50">
+                    <p class="text-xs font-bold text-gray-300 uppercase tracking-wider mb-2 text-center">Aspecto de La Cobra:</p>
+                    <div class="flex justify-center gap-3" id="skin-selector">
+                        <button onclick="selectSkin(0)" id="skin-btn-0" class="skin-btn active p-1.5 rounded-xl border-2 border-pink-500 bg-pink-500/20 transition transform hover:scale-105 flex flex-col items-center shadow-lg">
+                            <img src="https://i.pinimg.com/345x/c8/fd/2f/c8fd2fae706955493dbd7a31c7f24657.jpg" class="w-12 h-12 md:w-14 md:h-14 object-cover rounded-full shadow-md border border-white/20">
+                            <span class="text-[10px] font-extrabold text-white mt-1">Clásico</span>
+                        </button>
+                        <button onclick="selectSkin(1)" id="skin-btn-1" class="skin-btn p-1.5 rounded-xl border-2 border-transparent bg-gray-700/50 hover:bg-gray-700 transition transform hover:scale-105 flex flex-col items-center opacity-60">
+                            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRjwJIUo2N_O-u4IJbUvLqjr4M87mHxK9SrCV8tATeqVQ&s=10" class="w-12 h-12 md:w-14 md:h-14 object-cover rounded-full shadow-md border border-white/20">
+                            <span class="text-[10px] font-extrabold text-gray-300 mt-1">Enojado</span>
+                        </button>
+                        <button onclick="selectSkin(2)" id="skin-btn-2" class="skin-btn p-1.5 rounded-xl border-2 border-transparent bg-gray-700/50 hover:bg-gray-700 transition transform hover:scale-105 flex flex-col items-center opacity-60">
+                            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRThhTKKBt_tbw2pUxI-q1YUDL0vBraoXfvU1DZ2Z6liQ&s=10" class="w-12 h-12 md:w-14 md:h-14 object-cover rounded-full shadow-md border border-white/20">
+                            <span class="text-[10px] font-extrabold text-gray-300 mt-1">Prime</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex flex-col gap-4">
+                    <!-- Botón Modo Fácil -->
+                    <button onclick="startGame('easy')" class="group relative w-full p-4 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-2xl font-bold hover:scale-105 transition transform shadow-lg hover:shadow-emerald-500/20 active:scale-95 text-left flex justify-between items-center border border-emerald-400/20">
+                        <div class="flex flex-col">
+                            <span class="text-xl font-extrabold flex items-center gap-2">
+                                🟢 MODO FÁCIL
+                            </span>
+                            <span class="text-xs text-emerald-100 font-normal mt-1 leading-relaxed">
+                                Sin viento, 5 vidas, más queques, sin bombas y Advíncula relajado.
+                            </span>
+                        </div>
+                        <img id="btn-cake-img" class="w-10 h-10 group-hover:animate-bounce">
+                    </button>
+                    
+                    <!-- Botón Modo Extremo -->
+                    <button onclick="startGame('extreme')" class="group relative w-full p-4 bg-gradient-to-r from-rose-600 via-red-600 to-pink-600 text-white rounded-2xl font-bold hover:scale-105 transition transform shadow-lg hover:shadow-red-500/20 active:scale-95 text-left flex justify-between items-center border border-red-500/20">
+                        <div class="flex flex-col">
+                            <span class="text-xl font-extrabold flex items-center gap-2">
+                                🔥 MODO EXTREMO
+                            </span>
+                            <span class="text-xs text-rose-100 font-normal mt-1 leading-relaxed">
+                                3 vidas, viento fuerte, superbombas, chiles y Advíncula implacable cada 10s.
+                            </span>
+                        </div>
+                        <img id="btn-bomb-img" class="w-10 h-10 group-hover:rotate-12 transition transform">
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pantalla de Game Over -->
         <div id="game-over" class="hidden absolute inset-0 bg-black/90 backdrop-blur-md flex flex-col items-center justify-center pointer-events-auto">
-            <div class="text-center max-w-md px-6 py-8 bg-gray-900 rounded-3xl border border-pink-500/30 shadow-[0_0_50px_rgba(236,72,153,0.3)]">
+            <div class="text-center max-w-md px-6 py-8 bg-gray-900 rounded-3xl border border-pink-500/30 shadow-[0_0_50px_rgba(236,72,153,0.3)] mx-4">
                 <h2 id="over-title" class="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-b from-red-400 to-pink-600 mb-2">¡JUEGO TERMINADO!</h2>
                 <p id="final-score" class="text-xl text-gray-300 mb-6"></p>
                 <div class="bg-gray-800/80 p-4 rounded-xl mb-6 text-sm text-left text-gray-400 border border-gray-700">
                     <p class="font-bold text-white mb-2 text-center text-pink-400">Estadísticas de la ronda:</p>
-                    <ul class="space-y-1">
-                        <li>🍰 Queques atrapados: <span id="stat-cakes" class="text-white font-mono">0</span></li>
-                        <li>🧁 Súper Queques atrapados: <span id="stat-gold" class="text-white font-mono">0</span></li>
-                        <li>🥦 Brócolis consumidos: <span id="stat-broccoli" class="text-white font-mono">0</span></li>
+                    <ul class="space-y-2">
+                        <li class="flex justify-between items-center">
+                            <span class="flex items-center gap-2"><img id="stat-cake-img" class="w-5 h-5"> Queques atrapados:</span>
+                            <span id="stat-cakes" class="text-white font-mono font-bold">0</span>
+                        </li>
+                        <li class="flex justify-between items-center">
+                            <span class="flex items-center gap-2"><img id="stat-gold-img" class="w-5 h-5"> Súper Queques atrapados:</span>
+                            <span id="stat-gold" class="text-white font-mono font-bold">0</span>
+                        </li>
+                        <li class="flex justify-between items-center">
+                            <span class="flex items-center gap-2"><img id="stat-broccoli-img" class="w-5 h-5"> Brócolis consumidos:</span>
+                            <span id="stat-broccoli" class="text-white font-mono font-bold">0</span>
+                        </li>
                     </ul>
                 </div>
-                <button onclick="resetGame()" class="w-full px-8 py-4 bg-gradient-to-r from-pink-500 via-red-500 to-yellow-500 text-white text-xl rounded-2xl font-black hover:scale-105 transition transform shadow-xl hover:shadow-pink-500/20 active:scale-95">
-                    REINTENTAR DESAFÍO
-                </button>
+                <div class="flex flex-col md:flex-row gap-3">
+                    <button onclick="resetGame()" class="flex-1 px-6 py-4 bg-gradient-to-r from-pink-500 via-red-500 to-yellow-500 text-white text-lg rounded-2xl font-black hover:scale-105 transition transform shadow-xl active:scale-95">
+                        REINTENTAR
+                    </button>
+                    <button onclick="showMainMenu()" class="flex-1 px-6 py-4 bg-gray-800 hover:bg-gray-750 text-white text-lg rounded-2xl font-black border border-gray-700 hover:scale-105 transition transform active:scale-95">
+                        MENÚ PRINCIPAL
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -92,6 +154,49 @@
     <canvas id="gameCanvas"></canvas>
 
     <script>
+        // Definición de Ilustraciones Vectoriales SVG en formato Data URI para renderizado cristalino
+        const CAKE_SVG = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M10 70 L90 70 L80 35 L20 35 Z" fill="%23f9a8d4"/><path d="M10 70 L90 70 L90 85 C90 88 88 90 85 90 L15 90 C12 90 10 88 10 85 Z" fill="%23be185d"/><path d="M10 70 Q 25 78 40 70 Q 55 78 70 70 Q 85 78 90 70 L90 60 Q 75 68 60 60 Q 45 68 30 60 Q 15 68 10 60 Z" fill="%23fdf2f8"/><path d="M20 35 Q 35 42 50 35 Q 65 42 80 35 L80 30 Q 65 37 50 30 Q 35 37 20 30 Z" fill="%23f43f5e"/><circle cx="50" cy="20" r="10" fill="%23e11d48"/><path d="M50 10 Q 53 3 58 6" stroke="%2315803d" stroke-width="3" fill="none" stroke-linecap="round"/></svg>`;
+        
+        const GOLD_CAKE_SVG = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M25 50 L32 88 C33 92 36 95 40 95 L60 95 C64 95 67 92 68 88 L75 50 Z" fill="%23f59e0b" stroke="%23b45309" stroke-width="2"/><path d="M20 52 Q 50 15 80 52 C85 45 80 30 68 25 C60 12 40 12 32 25 C20 30 15 45 20 52 Z" fill="%23fbbf24"/><circle cx="50" cy="18" r="9" fill="%23ef4444"/><polygon points="50,2 53,10 62,10 55,15 57,23 50,18 43,23 45,15 38,10 47,10" fill="%23fef08a"/><polygon points="15,20 17,25 22,25 18,28 19,33 15,30 11,33 12,28 8,25 13,25" fill="%23fef08a"/></svg>`;
+        
+        const BROCCOLI_SVG = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M42 55 L38 90 C38 93 42 96 46 96 L54 96 C58 96 62 93 62 90 L58 55 Z" fill="%23a3e635" stroke="%234d7c0f" stroke-width="3"/><circle cx="32" cy="45" r="22" fill="%2322c55e"/><circle cx="68" cy="45" r="22" fill="%2322c55e"/><circle cx="50" cy="28" r="26" fill="%2316a34a"/><circle cx="38" cy="32" r="16" fill="%234ade80"/><circle cx="62" cy="32" r="16" fill="%234ade80"/><circle cx="50" cy="48" r="18" fill="%2315803d"/></svg>`;
+        
+        // Rediseño de Chile: Ají picante curvo con brillo y tallo verde estilizado
+        const CHILI_SVG = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M78 18 C84 34 76 60 56 80 C40 95 22 95 12 89 C8 85 10 79 16 77 C28 73 46 61 56 47 C66 33 68 20 68 20 Z' fill='%23ef4444'/><path d='M78 18 C80 28 74 50 58 68 C46 82 32 87 16 86 C12 85 10 81 13 77 C16 74 22 73 30 71 C45 67 54 56 62 44 C70 32 70 20 70 20 Z' fill='%23b91c1c'/><path d='M68 26 C72 34 65 50 52 66 C42 78 30 82 20 82' stroke='%23fca5a5' stroke-width='3' fill='none' stroke-linecap='round'/><path d='M70 16 Q82 4 88 8 Q82 18 74 18 Z' fill='%2316a34a'/><path d='M68 18 Q60 12 64 22 Z' fill='%2315803d'/><path d='M74 14 Q78 22 82 18 Z' fill='%2322c55e'/></svg>`;
+        
+        const BOMB_SVG = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="48" cy="58" r="36" fill="%231e293b" stroke="%230f172a" stroke-width="3"/><ellipse cx="38" cy="42" rx="10" ry="5" fill="%2364748b" transform="rotate(-30 38 42)"/><rect x="42" y="16" width="12" height="10" rx="2" fill="%2394a3b8"/><path d="M48 16 Q 52 4 65 8 Q 72 12 78 4" stroke="%23d97706" stroke-width="4" fill="none"/><circle cx="78" cy="4" r="6" fill="%23ef4444"/><circle cx="78" cy="4" r="3" fill="%23fef08a"/></svg>`;
+
+        // Corazones vectoriales para el HUD de vidas
+        const HEART_RED_SVG = `<svg class="w-6 h-6 inline-block text-red-500 fill-current drop-shadow-md animate-pulse" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>`;
+        const HEART_GRAY_SVG = `<svg class="w-6 h-6 inline-block text-gray-600 fill-current opacity-40" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>`;
+
+        const ITEM_SVGS = {
+            cake: CAKE_SVG,
+            gold: GOLD_CAKE_SVG,
+            broccoli: BROCCOLI_SVG,
+            chili: CHILI_SVG,
+            bomb: BOMB_SVG
+        };
+
+        const ITEM_IMAGES = {};
+        Object.keys(ITEM_SVGS).forEach(key => {
+            const img = new Image();
+            img.src = ITEM_SVGS[key];
+            ITEM_IMAGES[key] = img;
+        });
+
+        // Poblar imágenes de interfaz HTML estáticas
+        document.getElementById('leg-cake').src = CAKE_SVG;
+        document.getElementById('leg-gold').src = GOLD_CAKE_SVG;
+        document.getElementById('leg-broccoli').src = BROCCOLI_SVG;
+        document.getElementById('leg-chili').src = CHILI_SVG;
+        document.getElementById('leg-bomb').src = BOMB_SVG;
+        document.getElementById('btn-cake-img').src = CAKE_SVG;
+        document.getElementById('btn-bomb-img').src = BOMB_SVG;
+        document.getElementById('stat-cake-img').src = CAKE_SVG;
+        document.getElementById('stat-gold-img').src = GOLD_CAKE_SVG;
+        document.getElementById('stat-broccoli-img').src = BROCCOLI_SVG;
+
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const scoreEl = document.getElementById('score');
@@ -99,6 +204,7 @@
         const finalScoreEl = document.getElementById('final-score');
         const livesContainer = document.getElementById('lives-container');
         const windAlert = document.getElementById('wind-alert');
+        const advinculaAlert = document.getElementById('advincula-alert');
         const effectAlert = document.getElementById('effect-alert');
         const effectText = document.getElementById('effect-text');
         
@@ -110,9 +216,10 @@
         // Estado del Juego
         let score = 0;
         let lives = 3;
-        let gameRunning = true;
-        let animationId;
-        let spawnTimeout;
+        let gameRunning = false;
+        let currentMode = 'extreme';
+        let animationId = null;
+        let spawnTimeout = null;
 
         // Estadísticas de ronda
         let stats = { cakes: 0, gold: 0, broccoli: 0 };
@@ -128,27 +235,91 @@
             targetX: 0
         };
 
-        // Efectos del Jugador
-        let effects = {
-            dizzy: 0,     // Duración de controles invertidos (frames o ticks)
-            shrunk: 0     // Duración de tamaño reducido
+        // Súper Enemigo: Advíncula
+        let advincula = {
+            active: false,
+            x: 0,
+            y: 80,
+            width: 110,
+            height: 110,
+            speed: 6,
+            dir: 1,
+            shootTimer: 0,
+            duration: 0, 
+            spawnTimer: 180 
         };
 
-        // Lista de elementos cayendo
+        // Definición de Skins para La Cobra
+        const SKINS = [
+            {
+                name: "Clásico",
+                url: "https://i.pinimg.com/345x/c8/fd/2f/c8fd2fae706955493dbd7a31c7f24657.jpg"
+            },
+            {
+                name: "Enojado",
+                url: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRjwJIUo2N_O-u4IJbUvLqjr4M87mHxK9SrCV8tATeqVQ&s=10"
+            },
+            {
+                name: "Prime",
+                url: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRThhTKKBt_tbw2pUxI-q1YUDL0vBraoXfvU1DZ2Z6liQ&s=10"
+            }
+        ];
+
+        let currentSkinIndex = 0;
+        const skinImages = SKINS.map((s) => {
+            const img = new Image();
+            img.loaded = false;
+            img.onload = () => { img.loaded = true; };
+            img.onerror = () => {
+                if (img.crossOrigin) {
+                    img.crossOrigin = null;
+                    img.src = s.url;
+                } else {
+                    img.loaded = false;
+                }
+            };
+            img.crossOrigin = "Anonymous";
+            img.src = s.url;
+            return img;
+        });
+
+        function selectSkin(index) {
+            currentSkinIndex = index;
+            for (let i = 0; i < SKINS.length; i++) {
+                const btn = document.getElementById(`skin-btn-${i}`);
+                if (!btn) continue;
+                if (i === index) {
+                    btn.className = "skin-btn active p-1.5 rounded-xl border-2 border-pink-500 bg-pink-500/20 transition transform hover:scale-105 flex flex-col items-center shadow-lg";
+                } else {
+                    btn.className = "skin-btn p-1.5 rounded-xl border-2 border-transparent bg-gray-700/50 hover:bg-gray-700 transition transform hover:scale-105 flex flex-col items-center opacity-60";
+                }
+            }
+        }
+
+        const advinculaImg = new Image();
+        advinculaImg.crossOrigin = "Anonymous";
+        advinculaImg.src = "https://images.weserv.nl/?url=drive.google.com/uc?id=1fZjpAbwjE8Q4yuG5IS0zkMMskPSaLZ5L";
+        let isAdvinculaLoaded = false;
+        advinculaImg.onload = () => { 
+            isAdvinculaLoaded = true; 
+            document.getElementById('alert-advincula-icon').src = advinculaImg.src;
+        };
+        advinculaImg.onerror = () => { isAdvinculaLoaded = false; };
+
+        // Efectos del Jugador
+        let effects = {
+            dizzy: 0,
+            shrunk: 0
+        };
+
+        // Lista de elementos cayendo y partículas
         let items = [];
         let particles = [];
 
         // Viento dinámico
-        let wind = 0; // Fuerza horizontal
+        let wind = 0; 
         let windTarget = 0;
         let windTimer = 100;
-
-        // Carga de la Imagen de "La Cobra Gordo"
-        const playerImg = new Image();
-        playerImg.src = "https://i.pinimg.com/345x/c8/fd/2f/c8fd2fae706955493dbd7a31c7f24657.jpg";
-        let isImgLoaded = false;
-        playerImg.onload = () => { isImgLoaded = true; };
-        playerImg.onerror = () => { isImgLoaded = false; }; // Fallback en caso de que falle la carga
 
         function resize() {
             canvas.width = window.innerWidth;
@@ -157,15 +328,11 @@
             player.targetX = canvas.width / 2 - player.width / 2;
         }
         window.addEventListener('resize', resize);
-        resize();
 
-        // Control del movimiento
         function handleMove(clientX) {
             if (!gameRunning) return;
             
-            // Si tiene efecto picante, los controles se invierten
             if (effects.dizzy > 0) {
-                // Invertir posición respecto al centro del canvas
                 const relativeX = clientX - canvas.width / 2;
                 player.targetX = (canvas.width / 2 - relativeX) - player.width / 2;
             } else {
@@ -180,7 +347,6 @@
             }
         }, { passive: true });
 
-        // Crear partículas bonitas para las colisiones
         function spawnParticles(x, y, color, count = 12) {
             for (let i = 0; i < count; i++) {
                 particles.push({
@@ -196,87 +362,178 @@
             }
         }
 
-        // Generar items con dificultad progresiva
         function createItem() {
             if (!gameRunning) return;
 
             const rand = Math.random();
-            let type = '🍰';
+            let type = 'cake';
             let speedModifier = 1;
             let size = 52;
             
-            // Tabla de probabilidad según puntuación
-            // A más puntuación, más bombas y verduras
             const difficultyMultiplier = Math.min(2.5, 1 + score / 150);
 
-            if (rand < 0.45) {
-                type = '🍰'; // Queque común
-            } else if (rand < 0.55) {
-                type = '🧁'; // Queque Dorado (¡Súper veloz!)
-                speedModifier = 1.7;
-                size = 42;
-            } else if (rand < 0.72) {
-                type = '🥦'; // Brócoli
-                speedModifier = 1.1;
-            } else if (rand < 0.80) {
-                type = '🌶️'; // Chile Picante (¡Efecto loco!)
-                speedModifier = 1.3;
+            if (currentMode === 'easy') {
+                if (rand < 0.60) {
+                    type = 'cake';
+                } else if (rand < 0.80) {
+                    type = 'gold';
+                    speedModifier = 1.3;
+                    size = 48;
+                } else if (rand < 0.93) {
+                    type = 'broccoli';
+                    speedModifier = 0.8;
+                } else {
+                    type = 'chili';
+                    speedModifier = 0.9;
+                }
             } else {
-                type = '💣'; // Bomba
-                speedModifier = 1.2 * difficultyMultiplier;
+                if (rand < 0.45) {
+                    type = 'cake';
+                } else if (rand < 0.55) {
+                    type = 'gold';
+                    speedModifier = 1.7;
+                    size = 48;
+                } else if (rand < 0.72) {
+                    type = 'broccoli';
+                    speedModifier = 1.1;
+                } else if (rand < 0.80) {
+                    type = 'chili';
+                    speedModifier = 1.3;
+                } else {
+                    type = 'bomb';
+                    speedModifier = 1.2 * difficultyMultiplier;
+                }
             }
 
+            const baseMinSpeed = currentMode === 'easy' ? 2 : 3;
+            const baseRandomSpeed = currentMode === 'easy' ? 3 : 4;
+            const scoreDivider = currentMode === 'easy' ? 600 : 350;
+
             items.push({
-                x: Math.random() * (canvas.width - 60) + 10,
+                x: Math.random() * (canvas.width - 70) + 10,
                 y: -60,
                 type: type,
-                speed: (3 + Math.random() * 4) * speedModifier * (1 + (score / 350)),
+                speed: (baseMinSpeed + Math.random() * baseRandomSpeed) * speedModifier * (1 + (score / scoreDivider)),
                 size: size,
                 angle: 0,
                 rotSpeed: (Math.random() - 0.5) * 0.05,
-                zigzag: type === '🧁' ? 4 : 0, // El queque dorado zigzaguea
+                zigzag: type === 'gold' ? (currentMode === 'easy' ? 2 : 4) : 0,
                 zigzagDir: Math.random() > 0.5 ? 1 : -1
             });
 
-            // El intervalo se reduce drásticamente mientras suben los puntos
-            const nextSpawn = Math.max(300, 1500 - score * 6);
+            const baseInterval = currentMode === 'easy' ? 2000 : 1500;
+            const stepReduction = currentMode === 'easy' ? 4 : 6;
+            const minInterval = currentMode === 'easy' ? 500 : 300;
+            const nextSpawn = Math.max(minInterval, baseInterval - score * stepReduction);
+            
             spawnTimeout = setTimeout(createItem, nextSpawn);
         }
 
-        // Bucle de física, lógica y dibujo
         function update() {
             if (!gameRunning) return;
 
-            // 1. Fondo dinámico (se vuelve más rojo/infernal a medida que hay más dificultad)
+            // Fondo dinámico
             const redIntensity = Math.min(100, Math.floor(score / 5));
             ctx.fillStyle = `rgb(${17 + redIntensity}, 15, 30)`;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // 2. Dibujar Viento Lateral Visual
-            if (Math.abs(wind) > 0.2) {
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
-                for (let i = 0; i < 5; i++) {
-                    const y = (Date.now() / 10 + i * 200) % canvas.height;
-                    ctx.fillRect(0, y, canvas.width, 2);
+            // Viento lateral visual (Modo Extremo)
+            if (currentMode === 'extreme') {
+                if (Math.abs(wind) > 0.2) {
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+                    for (let i = 0; i < 5; i++) {
+                        const y = (Date.now() / 10 + i * 200) % canvas.height;
+                        ctx.fillRect(0, y, canvas.width, 2);
+                    }
                 }
+
+                windTimer--;
+                if (windTimer <= 0) {
+                    if (Math.random() > 0.6) {
+                        windTarget = (Math.random() - 0.5) * 5;
+                        windAlert.classList.remove('hidden');
+                        setTimeout(() => windAlert.classList.add('hidden'), 3000);
+                    } else {
+                        windTarget = 0;
+                    }
+                    windTimer = 300 + Math.random() * 300;
+                }
+                wind += (windTarget - wind) * 0.05;
+            } else {
+                wind = 0;
             }
 
-            // Actualizar viento aleatorio
-            windTimer--;
-            if (windTimer <= 0) {
-                if (Math.random() > 0.6) {
-                    windTarget = (Math.random() - 0.5) * 5; // Viento hacia izq o der
-                    windAlert.classList.remove('hidden');
-                    setTimeout(() => windAlert.classList.add('hidden'), 3000);
+            if (!advincula.active) {
+                advincula.spawnTimer--;
+                if (advincula.spawnTimer <= 0) {
+                    advincula.active = true;
+                    advincula.duration = 300; // Activo por 5 segundos
+                    advincula.x = canvas.width / 2 - advincula.width / 2; // Aparece en el medio
+                    advincula.y = 80;
+                    advincula.shootTimer = 0;
+                    advinculaAlert.classList.remove('hidden');
+                }
+            } else {
+                advincula.x += advincula.speed * advincula.dir;
+                if (advincula.x <= 10) {
+                    advincula.x = 10;
+                    advincula.dir = 1;
+                } else if (advincula.x >= canvas.width - advincula.width - 10) {
+                    advincula.x = canvas.width - advincula.width - 10;
+                    advincula.dir = -1;
+                }
+
+                advincula.shootTimer++;
+                const shootInterval = currentMode === 'easy' ? 45 : 30;
+                if (advincula.shootTimer >= shootInterval) {
+                    advincula.shootTimer = 0;
+                    items.push({
+                        x: advincula.x + advincula.width / 2 - 20,
+                        y: advincula.y + advincula.height,
+                        type: 'broccoli',
+                        speed: currentMode === 'easy' ? 4 : 6,
+                        size: 48,
+                        angle: 0,
+                        rotSpeed: 0.1,
+                        zigzag: 0,
+                        zigzagDir: 1
+                    });
+                }
+
+                advincula.duration--;
+                if (advincula.duration <= 0) {
+                    advincula.active = false;
+                    advinculaAlert.classList.add('hidden');
+                    advincula.spawnTimer = currentMode === 'easy' ? 1200 : 600; // 10s en extremo, 20s en fácil
+                }
+
+                // Renderizar Advíncula circular con aura brillante
+                ctx.save();
+                ctx.shadowBlur = 25;
+                ctx.shadowColor = '#eab308';
+                
+                ctx.strokeStyle = '#eab308';
+                ctx.lineWidth = 6;
+                ctx.beginPath();
+                ctx.arc(advincula.x + advincula.width / 2, advincula.y + advincula.height / 2, advincula.width / 2, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.closePath();
+                
+                ctx.beginPath();
+                ctx.arc(advincula.x + advincula.width / 2, advincula.y + advincula.height / 2, advincula.width / 2 - 3, 0, Math.PI * 2);
+                ctx.closePath();
+                ctx.clip();
+                
+                if (isAdvinculaLoaded) {
+                    ctx.drawImage(advinculaImg, advincula.x, advincula.y, advincula.width, advincula.height);
                 } else {
-                    windTarget = 0;
+                    ctx.fillStyle = '#eab308';
+                    ctx.fillRect(advincula.x, advincula.y, advincula.width, advincula.height);
                 }
-                windTimer = 300 + Math.random() * 300;
+                ctx.restore();
             }
-            // Interpolación de viento suave
-            wind += (windTarget - wind) * 0.05;
 
-            // Actualizar efectos de estado activos en el jugador
+            // Actualizar efectos de estado del jugador
             if (effects.dizzy > 0) {
                 effects.dizzy--;
                 if (effects.dizzy <= 0) effectAlert.classList.add('hidden');
@@ -289,39 +546,44 @@
                 }
             }
 
-            // 3. Mover jugador suavemente hacia el targetX (suavizado elástico)
+            // Movimiento suave del jugador
             player.x += (player.targetX - player.x) * 0.25;
-            // Limitar dentro de la pantalla
             if (player.x < 0) player.x = 0;
             if (player.x > canvas.width - player.width) player.x = canvas.width - player.width;
 
-            // 4. Dibujar Jugador ("La Cobra")
             ctx.save();
-            // Si el control está invertido, vibra
             if (effects.dizzy > 0) {
                 ctx.translate((Math.random() - 0.5) * 6, (Math.random() - 0.5) * 6);
             }
 
-            if (isImgLoaded) {
-                // Dibujar imagen redondeada con un borde luminoso
-                ctx.beginPath();
-                ctx.arc(player.x + player.width / 2, player.y + player.height / 2, player.width / 2, 0, Math.PI * 2);
-                ctx.closePath();
-                ctx.clip();
-                
-                ctx.drawImage(playerImg, player.x, player.y, player.width, player.height);
+            ctx.shadowBlur = 25;
+            ctx.shadowColor = '#f43f5e';
+            ctx.strokeStyle = '#f43f5e';
+            ctx.lineWidth = 6;
+            ctx.beginPath();
+            ctx.arc(player.x + player.width / 2, player.y + player.height / 2, player.width / 2, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.closePath();
+
+            ctx.beginPath();
+            ctx.arc(player.x + player.width / 2, player.y + player.height / 2, player.width / 2 - 3, 0, Math.PI * 2);
+            ctx.closePath();
+            ctx.clip();
+
+            const activeSkinImg = skinImages[currentSkinIndex];
+            if (activeSkinImg && activeSkinImg.loaded) {
+                ctx.drawImage(activeSkinImg, player.x, player.y, player.width, player.height);
             } else {
-                // Fallback divertido: Cara de cobra desesperada comiendo
-                ctx.font = `${player.width * 0.8}px Arial`;
-                ctx.fillText('🐍', player.x, player.y + player.height * 0.8);
+                ctx.fillStyle = '#db2777';
+                ctx.fillRect(player.x, player.y, player.width, player.height);
             }
             ctx.restore();
 
-            // Dibujar boca o indicador de atrape
+            // Indicador de zona de captura
             ctx.fillStyle = 'rgba(236, 72, 153, 0.3)';
-            ctx.fillRect(player.x, player.y, player.width, 10); // Línea indicadora de colisión arriba
+            ctx.fillRect(player.x, player.y, player.width, 10);
 
-            // 5. Partículas
+            // Renderizado de partículas
             particles.forEach((p, index) => {
                 p.x += p.vx;
                 p.y += p.vy;
@@ -339,136 +601,165 @@
                 }
             });
 
-            // 6. Actualizar y Dibujar Items cayendo
-            items.forEach((item, index) => {
-                // Aplicar viento a todos los items
+            for (let index = items.length - 1; index >= 0; index--) {
+                const item = items[index];
+
                 item.x += wind;
-                // Efecto de zigzag para el queque dorado
+
                 if (item.zigzag > 0) {
                     item.x += item.zigzagDir * item.zigzag;
-                    if (item.x < 20 || item.x > canvas.width - 60) {
-                        item.zigzagDir *= -1;
-                    }
+                }
+
+                // Clampear para que NO se salgan de la pantalla
+                if (item.x < 10) {
+                    item.x = 10;
+                    item.zigzagDir = 1;
+                } else if (item.x > canvas.width - item.size - 10) {
+                    item.x = canvas.width - item.size - 10;
+                    item.zigzagDir = -1;
                 }
 
                 item.y += item.speed;
                 item.angle += item.rotSpeed;
 
-                // Rotación cosmética de emojis
+                // Renderizar la Imagen Gráfica del objeto
                 ctx.save();
                 ctx.translate(item.x + item.size / 2, item.y + item.size / 2);
                 ctx.rotate(item.angle);
-                ctx.font = `${item.size}px Arial`;
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText(item.type, 0, 0);
+                
+                const itemImg = ITEM_IMAGES[item.type];
+                if (itemImg) {
+                    ctx.drawImage(itemImg, -item.size / 2, -item.size / 2, item.size, item.size);
+                }
                 ctx.restore();
 
-                // Detección de colisión sofisticada (Alineación superior de la cobra)
                 const isColliding = item.y + item.size >= player.y &&
                                     item.y <= player.y + 30 &&
                                     item.x + item.size >= player.x &&
                                     item.x <= player.x + player.width;
 
                 if (isColliding) {
-                    // Acciones según el objeto atrapado
-                    if (item.type === '🍰') {
+                    if (item.type === 'cake') {
                         score += 10;
                         stats.cakes++;
-                        spawnParticles(item.x + 25, item.y + 25, '#f43f5e'); // Chispas rosas
-                    } else if (item.type === '🧁') {
+                        spawnParticles(item.x + 25, item.y + 25, '#f43f5e');
+                    } else if (item.type === 'gold') {
                         score += 50;
                         stats.gold++;
-                        spawnParticles(item.x + 25, item.y + 25, '#fbbf24', 25); // Chispas doradas explosivas
-                    } else if (item.type === '🥦') {
+                        spawnParticles(item.x + 25, item.y + 25, '#fbbf24', 25);
+                    } else if (item.type === 'broccoli') {
                         score = Math.max(0, score - 20);
                         stats.broccoli++;
-                        // Achicar cobra temporalmente
                         player.width = player.baseWidth * 0.55;
                         player.height = player.baseHeight * 0.55;
-                        effects.shrunk = 300; // ~5 segundos
-                        spawnParticles(item.x + 25, item.y + 25, '#22c55e', 15); // Humo verde
-                    } else if (item.type === '🌶️') {
-                        effects.dizzy = 240; // ~4 segundos invertidos
-                        effectText.innerText = "🌶️ ¡CONTROLES INVERTIDOS!";
+                        effects.shrunk = 300;
+                        spawnParticles(item.x + 25, item.y + 25, '#22c55e', 15);
+                    } else if (item.type === 'chili') {
+                        effects.dizzy = currentMode === 'easy' ? 120 : 240; 
+                        effectText.innerHTML = `<img src="${CHILI_SVG}" class="w-6 h-6 inline mr-1"> ¡CONTROLES INVERTIDOS!`;
                         effectAlert.classList.remove('hidden');
-                        spawnParticles(item.x + 25, item.y + 25, '#ef4444', 15); // Chispas rojas
-                    } else if (item.type === '💣') {
-                        // ¡Explosión letal!
+                        spawnParticles(item.x + 25, item.y + 25, '#ef4444', 15);
+                    } else if (item.type === 'bomb') {
                         spawnParticles(item.x + 25, item.y + 25, '#ffffff', 40);
-                        endGame(true); // Termina por bomba
+                        endGame(true);
                         return;
                     }
 
                     scoreEl.innerText = `Puntos: ${score}`;
                     items.splice(index, 1);
+                    continue;
                 }
 
-                // Si cae al vacío (suelo)
+                // Caída al suelo (Únicamente el queque normal resta vidas)
                 if (item.y > canvas.height) {
-                    // Si dejamos caer comida nutritiva de queque, perdemos vida
-                    if (item.type === '🍰' || item.type === '🧁') {
+                    if (item.type === 'cake') {
                         loseLife();
                     }
                     items.splice(index, 1);
                 }
-            });
+            }
 
             animationId = requestAnimationFrame(update);
         }
 
-        // Sistema de perder vidas
         function loseLife() {
             lives--;
             updateLivesUI();
             
-            // Efecto de parpadeo rojo de alerta en pantalla
             ctx.fillStyle = 'rgba(239, 68, 68, 0.4)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
             if (lives <= 0) {
-                endGame(false); // Termina por quedarse sin vidas
+                endGame(false);
             }
         }
 
         function updateLivesUI() {
             let hearts = '';
-            for (let i = 0; i < 3; i++) {
+            const maxLives = currentMode === 'easy' ? 5 : 3;
+            for (let i = 0; i < maxLives; i++) {
                 if (i < lives) {
-                    hearts += '❤️';
+                    hearts += HEART_RED_SVG;
                 } else {
-                    hearts += '🖤';
+                    hearts += HEART_GRAY_SVG;
                 }
             }
             livesContainer.innerHTML = hearts;
         }
 
+        function startGame(mode) {
+            currentMode = mode;
+            
+            const modeBadge = document.getElementById('mode-badge');
+            if (currentMode === 'easy') {
+                modeBadge.innerText = "MODO FÁCIL";
+                modeBadge.className = "text-xs font-semibold bg-emerald-600 text-white px-2 py-0.5 rounded-full w-max animate-pulse";
+            } else {
+                modeBadge.innerText = "MODO EXTREMO";
+                modeBadge.className = "text-xs font-semibold bg-red-600 text-white px-2 py-0.5 rounded-full w-max animate-pulse";
+            }
+
+            document.getElementById('main-menu').classList.add('hidden');
+            resetGame();
+        }
+
+        function showMainMenu() {
+            gameRunning = false;
+            if (animationId) cancelAnimationFrame(animationId);
+            if (spawnTimeout) clearTimeout(spawnTimeout);
+            
+            gameOverEl.classList.add('hidden');
+            document.getElementById('main-menu').classList.remove('hidden');
+            
+            items = [];
+            particles = [];
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
         function endGame(hitBomb) {
             gameRunning = false;
-            cancelAnimationFrame(animationId);
-            clearTimeout(spawnTimeout);
+            if (animationId) cancelAnimationFrame(animationId);
+            if (spawnTimeout) clearTimeout(spawnTimeout);
             
             gameOverEl.classList.remove('hidden');
             
             const overTitle = document.getElementById('over-title');
             if (hitBomb) {
-                overTitle.innerText = "💥 ¡BOOOOM! 💥";
+                overTitle.innerText = "¡BOOOOM!";
                 finalScoreEl.innerText = `¡Te comiste una bomba! Conseguiste ${score} puntos.`;
             } else {
-                overTitle.innerText = "🚨 ¡SIN VIDAS! 🚨";
+                overTitle.innerText = "¡SIN VIDAS!";
                 finalScoreEl.innerText = `Dejaste caer demasiados queques deliciosos. Conseguiste ${score} puntos.`;
             }
 
-            // Llenar estadísticas de la ronda
             statCakes.innerText = stats.cakes;
             statGold.innerText = stats.gold;
             statBroccoli.innerText = stats.broccoli;
         }
 
         function resetGame() {
-            // Reiniciar estados del juego
             score = 0;
-            lives = 3;
+            lives = currentMode === 'easy' ? 5 : 3;
             items = [];
             particles = [];
             effects.dizzy = 0;
@@ -479,6 +770,10 @@
             windTarget = 0;
             windTimer = 100;
             
+            // Resetear Advíncula (Primera entrada rápida a los 3 segundos)
+            advincula.active = false;
+            advincula.spawnTimer = currentMode === 'easy' ? 600 : 180;
+
             stats = { cakes: 0, gold: 0, broccoli: 0 };
 
             scoreEl.innerText = `Puntos: 0`;
@@ -486,23 +781,21 @@
             
             gameOverEl.classList.add('hidden');
             windAlert.classList.add('hidden');
+            advinculaAlert.classList.add('hidden');
             effectAlert.classList.add('hidden');
             
             gameRunning = true;
             
-            // Cancelar procesos previos por si acaso
-            cancelAnimationFrame(animationId);
-            clearTimeout(spawnTimeout);
+            if (animationId) cancelAnimationFrame(animationId);
+            if (spawnTimeout) clearTimeout(spawnTimeout);
 
-            // Iniciar de nuevo
             createItem();
             update();
         }
 
-        // Iniciar primer juego de manera fluida al cargar todo
+        // Ajustar canvas en carga inicial y render inicial de vidas
+        resize();
         updateLivesUI();
-        createItem();
-        update();
     </script>
 </body>
 </html>
