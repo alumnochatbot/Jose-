@@ -1,0 +1,1520 @@
+<!DOCTYPE html>
+<html lang="es" class="dark h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>MAZE-CORE v4.0 - Hardcore Dungeon Crawler</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0fdf4',
+              500: '#22c55e',
+              600: '#16a34a',
+              900: '#14532d',
+              950: '#052e16',
+            },
+            cyber: {
+              bg: '#05070c',
+              panel: '#0e131f',
+              border: '#1e293b',
+              accent: '#38bdf8',
+              gold: '#f59e0b',
+              danger: '#f43f5e',
+              poison: '#a855f7',
+              hunger: '#eab308'
+            }
+          },
+          fontFamily: {
+            mono: ['"JetBrains Mono"', 'monospace'],
+            sans: ['Inter', 'sans-serif'],
+            display: ['Orbitron', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&family=Orbitron:wght@600;800;900&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      background-color: #05070c;
+      color: #e2e8f0;
+      font-family: 'Inter', sans-serif;
+      overflow: hidden;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .font-orbitron { font-family: 'Orbitron', sans-serif; }
+    .font-mono-code { font-family: 'JetBrains Mono', monospace; }
+
+    .glass-panel {
+      background: rgba(14, 19, 31, 0.9);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: #080b11; }
+    ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #38bdf8; }
+
+    @keyframes pulsePoison {
+      0%, 100% { box-shadow: inset 0 0 15px rgba(168, 85, 247, 0.3); }
+      50% { box-shadow: inset 0 0 30px rgba(168, 85, 247, 0.7); }
+    }
+    .status-poisoned { animation: pulsePoison 1.5s infinite; }
+
+    @keyframes dieRotate {
+      0% { transform: rotate(0deg) scale(0.8); }
+      50% { transform: rotate(180deg) scale(1.2); }
+      100% { transform: rotate(360deg) scale(1); }
+    }
+    .rolling-die { animation: dieRotate 0.4s ease-out forwards; }
+
+    .dpad-btn:active {
+      transform: scale(0.92);
+      background-color: rgba(56, 189, 248, 0.3) !important;
+    }
+  </style>
+</head>
+<body class="h-full flex flex-col antialiased selection:bg-brand-500 selection:text-black">
+
+  <div id="app" class="flex flex-col h-screen max-h-screen overflow-hidden">
+    
+    <!-- HEADER BAR WITH STATS & METERS -->
+    <header class="h-16 bg-cyber-panel border-b border-cyber-border px-3 md:px-5 flex items-center justify-between shrink-0 z-20">
+      <div class="flex items-center space-x-3">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-rose-600 via-cyber-gold to-cyber-accent flex items-center justify-center font-orbitron font-black text-black text-xl shadow-lg shadow-rose-500/20">
+          M
+        </div>
+        <div>
+          <h1 class="font-orbitron font-bold text-sm md:text-base tracking-wider text-white flex items-center gap-2">
+            MAZE-CORE <span class="text-[10px] px-2 py-0.5 rounded bg-rose-950 text-rose-400 border border-rose-600/40 font-mono-code font-bold">v4.0 HARDCORE</span>
+          </h1>
+          <p class="text-[10px] text-gray-400 font-mono-code tracking-tight hidden sm:block">Dungeon Crawler Hardcore con Antorcha y Jefes</p>
+        </div>
+      </div>
+
+      <!-- Live Player Stats Gauges -->
+      <div id="headerStats" class="hidden flex items-center gap-2 sm:gap-4">
+        <!-- Floor Gauge -->
+        <div class="flex flex-col items-center px-2 py-1 rounded-lg bg-cyber-bg border border-cyber-border">
+          <span class="text-[9px] font-mono-code text-gray-400">PISO</span>
+          <span id="headerFloor" class="text-xs font-orbitron font-bold text-cyber-gold">1 / 3</span>
+        </div>
+
+        <!-- Health Bar -->
+        <div class="flex flex-col gap-0.5 bg-cyber-bg px-2.5 py-1 rounded-lg border border-cyber-border">
+          <div class="flex items-center justify-between text-[10px] font-orbitron">
+            <span class="text-rose-400 flex items-center gap-1">❤️ HP</span>
+            <span id="hpText" class="font-mono-code text-white font-bold">25/25</span>
+          </div>
+          <div class="w-20 sm:w-28 bg-gray-800 h-2 rounded-full overflow-hidden border border-gray-700 relative">
+            <div id="hpFill" class="bg-gradient-to-r from-rose-600 to-emerald-500 h-full w-full transition-all duration-300"></div>
+          </div>
+        </div>
+
+        <!-- Hunger / Stamina Bar -->
+        <div class="flex flex-col gap-0.5 bg-cyber-bg px-2.5 py-1 rounded-lg border border-cyber-border">
+          <div class="flex items-center justify-between text-[10px] font-orbitron">
+            <span class="text-cyber-hunger flex items-center gap-1">🍖 HAMBRE</span>
+            <span id="hungerText" class="font-mono-code text-white font-bold">100%</span>
+          </div>
+          <div class="w-16 sm:w-24 bg-gray-800 h-2 rounded-full overflow-hidden border border-gray-700 relative">
+            <div id="hungerFill" class="bg-gradient-to-r from-amber-600 to-amber-400 h-full w-full transition-all duration-300"></div>
+          </div>
+        </div>
+
+        <!-- Status Badges -->
+        <div id="statusBadges" class="hidden sm:flex items-center gap-1">
+          <!-- Dynamically inserted badges like [VENENO] -->
+        </div>
+      </div>
+
+      <!-- Header Action Controls -->
+      <div class="flex items-center space-x-2">
+        <button id="toggleAudioBtn" class="p-2 rounded-lg bg-cyber-border/40 hover:bg-cyber-border text-gray-300 transition-colors" title="Audio On/Off">
+          <svg id="audioOnIcon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path></svg>
+          <svg id="audioOffIcon" class="w-4 h-4 hidden text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15zM17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"></path></svg>
+        </button>
+
+        <button id="openMapBtn" class="hidden px-2.5 py-1.5 rounded-lg bg-cyber-accent/10 hover:bg-cyber-accent/20 border border-cyber-accent/30 text-cyber-accent text-xs font-mono-code flex items-center gap-1 transition-colors">
+          🗺️ <span class="hidden sm:inline">Mapa Radar</span>
+        </button>
+
+        <button id="resetGameBtn" class="px-2.5 py-1.5 rounded-lg bg-rose-950/40 hover:bg-rose-900/50 border border-rose-800/40 text-rose-300 text-xs font-mono-code transition-colors">
+          Rendirse
+        </button>
+      </div>
+    </header>
+
+    <!-- MAIN VIEWPORT SCREEN -->
+    <main class="flex-1 overflow-hidden relative">
+
+      <!-- ========================================== -->
+      <!-- SCREEN 1: PREGAME DIFFICULTY & HERO WIZARD  -->
+      <!-- ========================================== -->
+      <section id="pregameWizard" class="h-full overflow-y-auto p-4 md:p-8 flex items-center justify-center">
+        <div class="max-w-3xl w-full glass-panel rounded-2xl p-5 md:p-8 border border-cyber-border relative my-auto">
+          
+          <div class="text-center mb-6">
+            <span class="text-xs font-mono-code text-rose-400 uppercase tracking-widest px-3 py-1 rounded-full bg-rose-950/50 border border-rose-800/50">Edición de Alta Dificultad</span>
+            <h2 class="text-2xl md:text-3xl font-orbitron font-bold text-white mt-3">Configura tu Incursión Hardcore</h2>
+            <p class="text-xs md:text-sm text-gray-400 mt-1 max-w-lg mx-auto">Te adentrarás en un laberinto de 3 pisos con niebla de antorcha, hambre activa, venenos mortales y un Gran Jefe en la profundidad.</p>
+          </div>
+
+          <!-- DIFFICULTY SELECTOR -->
+          <div class="mb-5">
+            <label class="block text-xs font-orbitron text-gray-300 mb-2 uppercase tracking-wider">1. Selecciona la Dificultad</label>
+            <div class="grid grid-cols-3 gap-2.5" id="difficultyGrid">
+              <!-- Dynamically injected difficulty options -->
+            </div>
+          </div>
+
+          <!-- CLASS PRESET SELECTION -->
+          <div class="mb-5">
+            <label class="block text-xs font-orbitron text-gray-300 mb-2 uppercase tracking-wider">2. Elige la Clase de tu Héroe</label>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-2.5" id="classPresetsGrid">
+              <!-- Class Cards Injected by JS -->
+            </div>
+          </div>
+
+          <!-- WORLD THEME SELECTION -->
+          <div class="mb-6">
+            <label class="block text-xs font-orbitron text-gray-300 mb-2 uppercase tracking-wider">3. Entorno de la Mazmorra</label>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-2.5" id="worldOptionsGrid">
+              <!-- World Cards Injected by JS -->
+            </div>
+          </div>
+
+          <button onclick="quickStartSimulation()" class="w-full py-4 rounded-xl bg-gradient-to-r from-rose-600 via-cyber-gold to-cyber-accent hover:opacity-95 text-black font-orbitron font-black text-base tracking-wider uppercase transition-all shadow-xl shadow-rose-600/25 active:scale-[0.99] flex items-center justify-center gap-2">
+            <span>🔥</span> ¡Descender al Laberinto Hardcore!
+          </button>
+
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- SCREEN 2: ACTIVE GAMEPLAY DASHBOARD        -->
+      <!-- ========================================== -->
+      <section id="gameplayDashboard" class="hidden h-full flex flex-col md:flex-row overflow-hidden">
+        
+        <!-- LEFT COLUMN: GRAPHIC DUNGEON CANVAS & CONTROLS -->
+        <div class="flex-1 flex flex-col h-full border-r border-cyber-border overflow-hidden bg-cyber-bg/95 relative">
+          
+          <!-- Event / Boss / Combat Modal Overlay -->
+          <div id="eventBanner" class="hidden absolute top-3 left-3 right-3 z-30 glass-panel rounded-xl p-4 border border-rose-500/50 shadow-2xl animate-fade-in">
+            <div class="flex items-start justify-between gap-3 mb-2">
+              <div class="flex items-center gap-3">
+                <span id="eventIcon" class="text-3xl p-2 rounded-lg bg-cyber-bg border border-cyber-border">👾</span>
+                <div>
+                  <h4 id="eventTitle" class="text-sm font-orbitron font-bold text-white">¡Encuentro de Combate!</h4>
+                  <p id="eventDesc" class="text-xs text-gray-300">Te has topado con un Espectro Oscuro.</p>
+                </div>
+              </div>
+              
+              <!-- Enemy HP Bar (if in combat) -->
+              <div id="enemyHpContainer" class="hidden flex-col items-end">
+                <span class="text-[10px] font-mono-code text-rose-400 font-bold" id="enemyHpText">HP Enemigo: 15/15</span>
+                <div class="w-24 bg-gray-800 h-2 rounded-full overflow-hidden border border-gray-700 mt-1">
+                  <div id="enemyHpFill" class="bg-rose-500 h-full w-full transition-all duration-300"></div>
+                </div>
+              </div>
+            </div>
+
+            <div id="eventActions" class="flex flex-wrap items-center gap-2 mt-3 pt-2 border-t border-cyber-border/60">
+              <!-- Actions injected dynamically -->
+            </div>
+          </div>
+
+          <!-- Dice Roll Visual Overlay -->
+          <div id="diceRollArea" class="hidden absolute top-16 left-1/2 -translate-x-1/2 z-40 bg-cyber-panel/95 border border-cyber-accent px-4 py-2.5 rounded-xl flex items-center gap-3 shadow-2xl">
+            <div id="diceVisual" class="w-10 h-10 rounded-lg bg-cyber-accent/20 border border-cyber-accent text-cyber-accent font-orbitron font-black text-xl flex items-center justify-center shadow-lg">
+              6
+            </div>
+            <div>
+              <div id="diceTitle" class="text-[10px] font-mono-code text-gray-400">Tirada de Vigor</div>
+              <div id="diceResultDetails" class="text-xs font-semibold text-white">Éxito (6+5 = 11 vs 7)</div>
+            </div>
+          </div>
+
+          <!-- CANVAS GRAPHICAL MAP CONTAINER WITH TORCH FOG -->
+          <div class="flex-1 relative flex items-center justify-center p-2 min-h-[220px] overflow-hidden">
+            <canvas id="dungeonCanvas" class="max-w-full max-h-full rounded-xl border border-cyber-border/80 shadow-2xl bg-black"></canvas>
+            
+            <!-- Controls Overlay Tip -->
+            <div class="absolute bottom-2 left-2 hidden sm:flex items-center gap-2 text-[10px] font-mono-code bg-black/70 px-2.5 py-1 rounded-lg border border-gray-800 text-gray-400">
+              <span class="px-1 py-0.5 rounded bg-gray-800 border border-gray-700 text-white font-bold">W A S D / Flechas</span> Mover
+              <span class="ml-2 px-1 py-0.5 rounded bg-gray-800 border border-gray-700 text-white font-bold">Espacio</span> Inspeccionar
+            </div>
+          </div>
+
+          <!-- DIRECT ACTION & D-PAD CONTROLS PANEL -->
+          <div class="p-3 bg-cyber-panel border-t border-cyber-border shrink-0 flex flex-col sm:flex-row items-center justify-between gap-3">
+            
+            <!-- D-PAD VIRTUAL TOUCH CONTROLS -->
+            <div class="flex items-center justify-center gap-1 select-none">
+              <div class="grid grid-cols-3 gap-1 w-36 h-28">
+                <div></div>
+                <button onclick="handleDirectMove(0, -1)" class="dpad-btn rounded-lg bg-cyber-bg border border-cyber-border hover:border-cyber-accent text-cyber-accent font-bold flex items-center justify-center text-lg shadow">⬆️</button>
+                <div></div>
+
+                <button onclick="handleDirectMove(-1, 0)" class="dpad-btn rounded-lg bg-cyber-bg border border-cyber-border hover:border-cyber-accent text-cyber-accent font-bold flex items-center justify-center text-lg shadow">⬅️</button>
+                <button onclick="handleInspectTile()" class="dpad-btn rounded-lg bg-cyber-accent/10 border border-cyber-accent text-cyber-accent font-bold flex items-center justify-center text-xs shadow" title="Inspeccionar">🔍</button>
+                <button onclick="handleDirectMove(1, 0)" class="dpad-btn rounded-lg bg-cyber-bg border border-cyber-border hover:border-cyber-accent text-cyber-accent font-bold flex items-center justify-center text-lg shadow">➡️</button>
+
+                <div></div>
+                <button onclick="handleDirectMove(0, 1)" class="dpad-btn rounded-lg bg-cyber-bg border border-cyber-border hover:border-cyber-accent text-cyber-accent font-bold flex items-center justify-center text-lg shadow">⬇️</button>
+                <div></div>
+              </div>
+            </div>
+
+            <!-- QUICK CONSUMABLES & ACTION BUTTONS -->
+            <div class="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-2 w-full">
+              <button onclick="handleUsePotion()" class="p-2 rounded-lg bg-emerald-950/40 hover:bg-emerald-900/50 border border-emerald-800/50 text-xs font-orbitron text-emerald-300 flex flex-col items-center justify-center gap-0.5">
+                <span>🧪 Poción</span>
+                <span id="btnPotionCount" class="text-[10px] text-gray-400 font-mono-code">(0)</span>
+              </button>
+
+              <button onclick="handleEatRation()" class="p-2 rounded-lg bg-amber-950/40 hover:bg-amber-900/50 border border-amber-800/50 text-xs font-orbitron text-amber-300 flex flex-col items-center justify-center gap-0.5">
+                <span>🍖 Ración</span>
+                <span id="btnRationCount" class="text-[10px] text-gray-400 font-mono-code">(0)</span>
+              </button>
+
+              <button onclick="handleUseAntidote()" class="p-2 rounded-lg bg-purple-950/40 hover:bg-purple-900/50 border border-purple-800/50 text-xs font-orbitron text-purple-300 flex flex-col items-center justify-center gap-0.5">
+                <span>💊 Antídoto</span>
+                <span id="btnAntidoteCount" class="text-[10px] text-gray-400 font-mono-code">(0)</span>
+              </button>
+
+              <button onclick="handleInspectTile()" class="p-2 rounded-lg bg-cyber-bg hover:bg-cyber-border border border-cyber-border text-xs font-orbitron text-white flex flex-col items-center justify-center gap-0.5">
+                <span>🔍 Buscar</span>
+                <span class="text-[10px] text-gray-400 font-mono-code">Aparato</span>
+              </button>
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- RIGHT COLUMN: EVENT LOG, INVENTORY & CHARACTER stats -->
+        <div class="w-full md:w-80 lg:w-96 bg-cyber-panel flex flex-col h-auto md:h-full overflow-y-auto shrink-0 border-t md:border-t-0 border-cyber-border">
+          
+          <!-- Event Terminal Log -->
+          <div class="p-3 border-b border-cyber-border bg-cyber-bg/90 flex flex-col h-44 md:h-56">
+            <span class="text-[10px] font-orbitron text-gray-400 uppercase tracking-wider mb-2 flex items-center justify-between">
+              <span>REGISTRO TÁCTICO</span>
+              <span id="coordsDisplay" class="text-cyber-accent font-mono-code">Piso 1 (1,1)</span>
+            </span>
+            <div id="terminalNarrative" class="flex-1 overflow-y-auto space-y-1.5 font-mono-code text-xs pr-1">
+              <!-- Logs injected dynamically -->
+            </div>
+          </div>
+
+          <!-- Inventory, Equipment & Stats -->
+          <div class="p-3 space-y-3 flex-1">
+            
+            <!-- Level & EXP Progress Bar -->
+            <div class="bg-cyber-bg p-2.5 rounded-xl border border-cyber-border">
+              <div class="flex justify-between items-center text-xs font-orbitron mb-1">
+                <span class="text-cyber-gold flex items-center gap-1">⭐ Nivel <span id="heroLevelText">1</span></span>
+                <span id="xpText" class="text-[10px] font-mono-code text-gray-400">XP: 0/50</span>
+              </div>
+              <div class="w-full bg-gray-800 h-2 rounded-full overflow-hidden border border-gray-700">
+                <div id="xpFill" class="bg-cyber-gold h-full w-0% transition-all duration-300"></div>
+              </div>
+            </div>
+
+            <!-- Equipment Slots -->
+            <div>
+              <span class="text-[11px] font-orbitron text-gray-300 block mb-1.5">EQUIPAMIENTO ACTIVO</span>
+              <div class="grid grid-cols-2 gap-2" id="equipmentSlots">
+                <!-- Dynamically Injected Equipments -->
+              </div>
+            </div>
+
+            <!-- Consumable Inventory Ledger -->
+            <div>
+              <span class="text-[11px] font-orbitron text-gray-300 block mb-1.5">OBJETOS Y MOCHILA</span>
+              <div id="ledgerInventory" class="grid grid-cols-2 gap-2">
+                <!-- Dynamically Injected Items -->
+              </div>
+            </div>
+
+            <!-- Hero Attribute Values -->
+            <div>
+              <span class="text-[11px] font-orbitron text-gray-300 block mb-1.5">ATRIBUTOS Y ESTADÍSTICAS</span>
+              <div id="ledgerAttributes" class="grid grid-cols-2 gap-1.5 font-mono-code text-xs">
+                <!-- Attributes injected dynamically -->
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+      </section>
+
+    </main>
+  </div>
+
+  <!-- MODAL: FULL RADAR MAP VIEWER -->
+  <div id="fullMapModal" class="hidden fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
+    <div class="glass-panel rounded-2xl max-w-xl w-full p-5 border border-cyber-border flex flex-col max-h-[85vh]">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="font-orbitron font-bold text-white text-base flex items-center gap-2">
+          🗺️ Mapa Radar de Exploración
+        </h3>
+        <button onclick="closeFullMap()" class="p-1 rounded-lg text-gray-400 hover:text-white">✕</button>
+      </div>
+
+      <div class="flex-1 overflow-auto bg-black rounded-xl p-3 border border-cyber-border flex items-center justify-center font-mono-code text-xs leading-none select-none">
+        <pre id="fullMapGridDisplay" class="text-emerald-500 tracking-widest"></pre>
+      </div>
+
+      <div class="mt-3 flex justify-between items-center text-xs text-gray-400 font-mono-code">
+        <span>Niebla de Antorcha Activa</span>
+        <button onclick="closeFullMap()" class="px-4 py-1.5 rounded-lg bg-cyber-border hover:bg-cyber-accent hover:text-black font-orbitron text-xs">
+          Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: LEVEL UP STAT ALLOCATION -->
+  <div id="levelUpModal" class="hidden fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
+    <div class="glass-panel rounded-2xl max-w-md w-full p-6 border border-cyber-gold text-center space-y-4 shadow-2xl">
+      <div class="w-14 h-14 rounded-full bg-cyber-gold/20 border border-cyber-gold text-cyber-gold mx-auto flex items-center justify-center font-orbitron text-2xl font-black">
+        ⭐
+      </div>
+      <div>
+        <h3 class="text-xl font-orbitron font-bold text-white">¡Nivel Alcanzado!</h3>
+        <p class="text-xs text-gray-300 mt-1">Selecciona qué atributo deseas incrementar permanentemente en +1:</p>
+      </div>
+
+      <div id="levelUpOptions" class="grid grid-cols-1 gap-2 text-left">
+        <!-- Injected options -->
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: POSTGAME PROTOCOL SUMMARY -->
+  <div id="postgameModal" class="hidden fixed inset-0 bg-black/95 backdrop-blur-lg z-50 flex items-center justify-center p-4">
+    <div class="glass-panel rounded-2xl max-w-md w-full p-6 border border-cyber-border text-center space-y-5">
+      
+      <div id="postgameIcon" class="w-16 h-16 rounded-full mx-auto flex items-center justify-center font-orbitron text-3xl font-black">
+        🏆
+      </div>
+
+      <div>
+        <h2 id="postgameTitle" class="text-2xl font-orbitron font-bold text-white">¡Incursión Completada!</h2>
+        <p id="postgameNarrative" class="text-xs text-gray-300 mt-2">Has derrotado al Jefe del Piso Final y escapado del Laberinto.</p>
+      </div>
+
+      <!-- Stats breakdown -->
+      <div class="grid grid-cols-3 gap-2 bg-cyber-bg p-3 rounded-xl border border-cyber-border font-mono-code text-xs">
+        <div>
+          <span class="text-gray-500 text-[10px] block">TURNOS</span>
+          <span id="summaryTurnCount" class="font-bold text-white">0</span>
+        </div>
+        <div>
+          <span class="text-gray-500 text-[10px] block">PISO ALCANZADO</span>
+          <span id="summaryFloorReached" class="font-bold text-cyber-gold">3</span>
+        </div>
+        <div>
+          <span class="text-gray-500 text-[10px] block">ENEMIGOS</span>
+          <span id="summaryKills" class="font-bold text-rose-400">0</span>
+        </div>
+      </div>
+
+      <button onclick="restartFullGame()" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-rose-600 via-cyber-gold to-cyber-accent text-black font-orbitron font-black uppercase text-xs tracking-wider shadow-lg">
+        🔄 Iniciar Nueva Incursión
+      </button>
+
+    </div>
+  </div>
+
+
+  <script>
+    /* =========================================================================
+       AUDIO SYNTHESIZER ENGINE (Web Audio API)
+       ========================================================================= */
+    class SoundEngine {
+      constructor() {
+        this.ctx = null;
+        this.muted = false;
+      }
+      init() {
+        if (!this.ctx) {
+          this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+      }
+      playTone(freq, type, duration, vol = 0.1) {
+        if (this.muted) return;
+        try {
+          this.init();
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = type;
+          osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+          gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start();
+          osc.stop(this.ctx.currentTime + duration);
+        } catch(e){}
+      }
+      step() { this.playTone(160, 'sine', 0.04, 0.02); }
+      click() { this.playTone(600, 'sine', 0.05, 0.04); }
+      diceRoll() { 
+        this.playTone(280, 'triangle', 0.08, 0.06); 
+        setTimeout(() => this.playTone(480, 'sine', 0.09, 0.08), 70);
+      }
+      hit() { this.playTone(110, 'sawtooth', 0.25, 0.15); }
+      chest() {
+        this.playTone(380, 'sine', 0.1, 0.1);
+        setTimeout(() => this.playTone(760, 'triangle', 0.2, 0.12), 90);
+      }
+      potion() {
+        this.playTone(320, 'sine', 0.1, 0.08);
+        setTimeout(() => this.playTone(520, 'sine', 0.2, 0.08), 90);
+      }
+      doorUnlock() {
+        this.playTone(220, 'sawtooth', 0.15, 0.08);
+        setTimeout(() => this.playTone(420, 'sine', 0.2, 0.08), 90);
+      }
+      levelUp() {
+        [400, 520, 660, 880].forEach((f, i) => setTimeout(() => this.playTone(f, 'triangle', 0.2, 0.1), i * 80));
+      }
+      bossRoar() {
+        this.playTone(80, 'sawtooth', 0.6, 0.25);
+        setTimeout(() => this.playTone(60, 'sawtooth', 0.8, 0.3), 200);
+      }
+      victory() {
+        [523, 659, 783, 1046].forEach((f, i) => setTimeout(() => this.playTone(f, 'triangle', 0.3, 0.12), i * 100));
+      }
+      death() {
+        this.playTone(130, 'sawtooth', 0.3, 0.2);
+        setTimeout(() => this.playTone(80, 'sawtooth', 0.6, 0.25), 200);
+      }
+    }
+
+    const sound = new SoundEngine();
+
+    /* =========================================================================
+       GAME PRESETS & CONFIGURATION
+       ========================================================================= */
+    const DIFFICULTIES = [
+      { id: 'normal', name: 'Explorador', torchRadius: 4, hungerRate: 0.8, desc: 'Visión amplia, menor hambre.' },
+      { id: 'hardcore', name: 'Hardcore', torchRadius: 3, hungerRate: 1.2, desc: 'Niebla estrecha, hambre constante.' },
+      { id: 'nightmare', name: 'Pesadilla', torchRadius: 2, hungerRate: 1.8, desc: 'Visión extrema de 2 casillas y hambre voraz.' }
+    ];
+
+    const HERO_CLASSES = [
+      { id: 'warrior', name: 'Guerrero del Hierro', icon: '⚔️', hp: 30, attrs: { Vigor: 6, Finesse: 4, Wits: 3, Charm: 2, Deception: 3 }, desc: 'Tanque resistente con alto Vigor.' },
+      { id: 'mage', name: 'Mago Arcano', icon: '🧙‍♂️', hp: 20, attrs: { Vigor: 2, Finesse: 4, Wits: 6, Charm: 5, Deception: 3 }, desc: 'Estratega con alta Astucia Wits.' },
+      { id: 'rogue', name: 'Pícaro de la Sombra', icon: '🥷', hp: 22, attrs: { Vigor: 3, Finesse: 6, Wits: 4, Charm: 2, Deception: 5 }, desc: 'Especialista en esquivas y velocidad.' },
+      { id: 'ranger', name: 'Cazador de Ruinas', icon: '🏹', hp: 25, attrs: { Vigor: 4, Finesse: 5, Wits: 5, Charm: 3, Deception: 2 }, desc: 'Equilibrado con supervivencia superior.' }
+    ];
+
+    const WORLDS = [
+      { id: 'fantasy', title: 'Fantasía Medieval', icon: '🏰', desc: 'Goblins, esqueletos y dragón ancestral.' },
+      { id: 'scifi', title: 'Estación Burocrática', icon: '🚀', desc: 'Drones, androides y Super-IA corrupta.' },
+      { id: 'cyberpunk', title: 'Cyber-Subterráneo', icon: '⚡', desc: 'Ciber-ninjas, trampas láser y Mech-Boss.' }
+    ];
+
+    let state = {
+      difficulty: DIFFICULTIES[1],
+      heroClass: HERO_CLASSES[0],
+      world: WORLDS[0].id,
+      floor: 1,
+      maxFloor: 3,
+      hp: 30,
+      maxHp: 30,
+      hunger: 100,
+      level: 1,
+      xp: 0,
+      xpNext: 50,
+      attributes: { ...HERO_CLASSES[0].attrs },
+      inventory: {
+        potions: 1,
+        rations: 2,
+        antidotes: 1,
+        keys: 0
+      },
+      equipment: {
+        weapon: null,
+        shield: null
+      },
+      status: {
+        poisoned: false,
+        poisonTurns: 0
+      },
+      stats: {
+        turns: 0,
+        kills: 0
+      },
+      mapSize: 15,
+      map: [],
+      explored: new Set(),
+      pos: { x: 1, y: 1 },
+      isGameOver: false,
+      activeEncounter: null
+    };
+
+    /* =========================================================================
+       PROCEDURAL MULTI-FLOOR MAZE GENERATOR
+       ========================================================================= */
+    function generateMazeForFloor(floorNum) {
+      state.mapSize = 13 + floorNum * 2; // Floor 1: 15x15, Floor 2: 17x17, Floor 3: 19x19
+      const size = state.mapSize;
+      let grid = Array(size).fill(null).map(() => Array(size).fill('#'));
+
+      function walk(cx, cy) {
+        grid[cy][cx] = '.';
+        const dirs = [[0, -2], [0, 2], [-2, 0], [2, 0]].sort(() => Math.random() - 0.5);
+
+        for (let [dx, dy] of dirs) {
+          let nx = cx + dx, ny = cy + dy;
+          if (nx > 0 && nx < size - 1 && ny > 0 && ny < size - 1 && grid[ny][nx] === '#') {
+            grid[cy + dy/2][cx + dx/2] = '.';
+            walk(nx, ny);
+          }
+        }
+      }
+
+      walk(1, 1);
+      grid[1][1] = '.';
+
+      let floors = [];
+      for (let y = 1; y < size - 1; y++) {
+        for (let x = 1; x < size - 1; x++) {
+          if (grid[y][x] === '.' && !(x === 1 && y === 1)) {
+            floors.push({ x, y });
+          }
+        }
+      }
+      floors.sort(() => Math.random() - 0.5);
+
+      // Place Key & Door/Stairs
+      if (floors.length > 0) grid[floors.pop().y][floors.pop().x] = 'K';
+      if (floors.length > 0) grid[floors.pop().y][floors.pop().x] = 'D';
+      
+      // Exit Stairs or Boss Portal
+      if (floors.length > 0) {
+        const exitPos = floors.pop();
+        grid[exitPos.y][exitPos.x] = (floorNum === state.maxFloor) ? 'B' : 'E'; // 'B' for Boss
+      }
+
+      // Populate Monsters, Chests, Traps, Supplies, Weapons
+      const monsterCount = 3 + floorNum * 2;
+      for (let i = 0; i < monsterCount && floors.length > 0; i++) {
+        let p = floors.pop();
+        grid[p.y][p.x] = (Math.random() < 0.3) ? 'M2' : 'M'; // M2 = Elite Monster
+      }
+
+      for (let i = 0; i < 3 && floors.length > 0; i++) {
+        let p = floors.pop();
+        grid[p.y][p.x] = (Math.random() < 0.5) ? 'T_SPIKE' : 'T_POISON';
+      }
+
+      for (let i = 0; i < 3 && floors.length > 0; i++) {
+        let p = floors.pop();
+        grid[p.y][p.x] = 'C'; // Chest
+      }
+
+      for (let i = 0; i < 2 && floors.length > 0; i++) {
+        let p = floors.pop();
+        grid[p.y][p.x] = 'H'; // Health Potion
+      }
+
+      for (let i = 0; i < 2 && floors.length > 0; i++) {
+        let p = floors.pop();
+        grid[p.y][p.x] = 'R'; // Food Ration
+      }
+
+      if (floors.length > 0 && Math.random() < 0.7) {
+        let p = floors.pop();
+        grid[p.y][p.x] = 'W'; // Weapon/Equip drop
+      }
+
+      return grid;
+    }
+
+    /* =========================================================================
+       CANVAS 2D VISUAL GRAPHICS & DYNAMIC TORCHLIGHT FOG
+       ========================================================================= */
+    const canvas = document.getElementById('dungeonCanvas');
+    const ctx = canvas.getContext('2d');
+    const TILE_SIZE = 36;
+
+    function renderCanvasMap() {
+      const size = state.mapSize;
+      canvas.width = size * TILE_SIZE;
+      canvas.height = size * TILE_SIZE;
+
+      ctx.fillStyle = '#05070c';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      const torchRadius = state.difficulty.torchRadius;
+
+      for (let y = 0; y < size; y++) {
+        for (let x = 0; x < size; x++) {
+          const px = x * TILE_SIZE;
+          const py = y * TILE_SIZE;
+
+          const distToPlayer = Math.hypot(x - state.pos.x, y - state.pos.y);
+          const inTorchRange = distToPlayer <= torchRadius;
+          const isExplored = state.explored.has(`${x},${y}`);
+
+          if (!inTorchRange && !isExplored) {
+            ctx.fillStyle = '#020305';
+            ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+            continue;
+          }
+
+          const tile = state.map[y]?.[x] || '#';
+
+          // Base tile rendering
+          if (tile === '#') {
+            ctx.fillStyle = inTorchRange ? '#1e293b' : '#0f172a';
+            ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+            ctx.strokeStyle = '#080d1a';
+            ctx.strokeRect(px, py, TILE_SIZE, TILE_SIZE);
+          } else {
+            ctx.fillStyle = inTorchRange ? '#0b101d' : '#060911';
+            ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+            ctx.strokeStyle = '#1e293b';
+            ctx.strokeRect(px, py, TILE_SIZE, TILE_SIZE);
+          }
+
+          // Render Tile Icons only if in active torchlight
+          if (inTorchRange) {
+            ctx.font = '18px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            if (tile === 'K') ctx.fillText('🔑', px + TILE_SIZE/2, py + TILE_SIZE/2);
+            else if (tile === 'D') ctx.fillText('🚪', px + TILE_SIZE/2, py + TILE_SIZE/2);
+            else if (tile === 'M') ctx.fillText('👾', px + TILE_SIZE/2, py + TILE_SIZE/2);
+            else if (tile === 'M2') ctx.fillText('👹', px + TILE_SIZE/2, py + TILE_SIZE/2);
+            else if (tile === 'B') ctx.fillText('🐲', px + TILE_SIZE/2, py + TILE_SIZE/2);
+            else if (tile === 'C') ctx.fillText('📦', px + TILE_SIZE/2, py + TILE_SIZE/2);
+            else if (tile === 'T_SPIKE') ctx.fillText('⚠️', px + TILE_SIZE/2, py + TILE_SIZE/2);
+            else if (tile === 'T_POISON') ctx.fillText('☣️', px + TILE_SIZE/2, py + TILE_SIZE/2);
+            else if (tile === 'H') ctx.fillText('🧪', px + TILE_SIZE/2, py + TILE_SIZE/2);
+            else if (tile === 'R') ctx.fillText('🍖', px + TILE_SIZE/2, py + TILE_SIZE/2);
+            else if (tile === 'W') ctx.fillText('🗡️', px + TILE_SIZE/2, py + TILE_SIZE/2);
+            else if (tile === 'E') ctx.fillText('🌀', px + TILE_SIZE/2, py + TILE_SIZE/2);
+          } else if (isExplored) {
+            // Render subtle fog overlay for remembered tiles
+            ctx.fillStyle = 'rgba(5, 7, 12, 0.65)';
+            ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+          }
+
+          // Render Player Avatar
+          if (state.pos.x === x && state.pos.y === y) {
+            // Torch Glow Radial Gradient
+            const grad = ctx.createRadialGradient(
+              px + TILE_SIZE/2, py + TILE_SIZE/2, 2,
+              px + TILE_SIZE/2, py + TILE_SIZE/2, TILE_SIZE * 1.5
+            );
+            grad.addColorStop(0, 'rgba(251, 191, 36, 0.35)');
+            grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.arc(px + TILE_SIZE/2, py + TILE_SIZE/2, TILE_SIZE * 1.5, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.font = '20px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(state.heroClass.icon, px + TILE_SIZE/2, py + TILE_SIZE/2);
+          }
+        }
+      }
+    }
+
+    /* =========================================================================
+       MOVEMENT, HUNGER & TURN ENGINE
+       ========================================================================= */
+    function handleDirectMove(dx, dy) {
+      if (state.isGameOver || state.activeEncounter) return;
+
+      const nx = state.pos.x + dx;
+      const ny = state.pos.y + dy;
+
+      if (nx < 0 || nx >= state.mapSize || ny < 0 || ny >= state.mapSize) return;
+
+      const targetTile = state.map[ny][nx];
+
+      if (targetTile === '#') {
+        logEvent('⛔ Una pared de piedra firme bloquea el paso.');
+        sound.hit();
+        return;
+      }
+
+      if (targetTile === 'D') {
+        if (state.inventory.keys > 0) {
+          state.inventory.keys -= 1;
+          state.map[ny][nx] = '.';
+          logEvent('🔑 Usaste una llave para abrir la Puerta Reforzada.');
+          sound.doorUnlock();
+        } else {
+          logEvent('🔒 Puerta con Cerrojo. Requieres una Llave (🔑).');
+          sound.hit();
+          return;
+        }
+      }
+
+      // Execute Movement
+      state.pos = { x: nx, y: ny };
+      state.stats.turns += 1;
+
+      // Tick Hunger Rate
+      state.hunger = Math.max(0, state.hunger - (1.2 * state.difficulty.hungerRate));
+      if (state.hunger === 0) {
+        state.hp = Math.max(0, state.hp - 1);
+        logEvent('⚠️ ¡Estás famélico y sufriendo inanición (-1 HP)!');
+        sound.hit();
+        if (state.hp <= 0) return triggerGameOver('Inanición por Hambre');
+      }
+
+      // Tick Poison Effect
+      if (state.status.poisoned) {
+        state.status.poisonTurns -= 1;
+        state.hp = Math.max(0, state.hp - 2);
+        logEvent('☣️ El veneno recorre tus venas (-2 HP).');
+        sound.hit();
+        if (state.status.poisonTurns <= 0) {
+          state.status.poisoned = false;
+          logEvent('✨ El veneno finalmente se ha disipado.');
+        }
+        if (state.hp <= 0) return triggerGameOver('Envenenamiento Mortal');
+      }
+
+      revealAround(nx, ny);
+      sound.step();
+
+      // Evaluate Special Tile Triggers
+      if (targetTile === 'K') {
+        state.inventory.keys += 1;
+        state.map[ny][nx] = '.';
+        logEvent('✨ Encuestras una Llave de la Mazmorra (🔑).');
+        sound.chest();
+      } else if (targetTile === 'H') {
+        state.inventory.potions += 1;
+        state.map[ny][nx] = '.';
+        logEvent('🧪 ¡Poción de Salud hallada!');
+        sound.potion();
+      } else if (targetTile === 'R') {
+        state.inventory.rations += 1;
+        state.map[ny][nx] = '.';
+        logEvent('🍖 ¡Ración de Comida encontrada!');
+        sound.chest();
+      } else if (targetTile === 'W') {
+        triggerEquipmentDrop(nx, ny);
+      } else if (targetTile === 'M') {
+        triggerCombatEncounter(nx, ny, 'normal');
+      } else if (targetTile === 'M2') {
+        triggerCombatEncounter(nx, ny, 'elite');
+      } else if (targetTile === 'B') {
+        triggerBossEncounter(nx, ny);
+      } else if (targetTile === 'C') {
+        triggerChestEncounter(nx, ny);
+      } else if (targetTile === 'T_SPIKE') {
+        triggerSpikeTrap(nx, ny);
+      } else if (targetTile === 'T_POISON') {
+        triggerPoisonTrap(nx, ny);
+      } else if (targetTile === 'E') {
+        advanceToNextFloor();
+      }
+
+      updateUI();
+    }
+
+    function revealAround(x, y) {
+      const radius = state.difficulty.torchRadius;
+      for (let dy = -radius; dy <= radius; dy++) {
+        for (let dx = -radius; dx <= radius; dx++) {
+          let rx = x + dx, ry = y + dy;
+          if (rx >= 0 && rx < state.mapSize && ry >= 0 && ry < state.mapSize) {
+            if (Math.hypot(dx, dy) <= radius) {
+              state.explored.add(`${rx},${ry}`);
+            }
+          }
+        }
+      }
+    }
+
+    /* =========================================================================
+       COMBAT & ENCOUNTER ENGINE WITH ENEMY HP
+       ========================================================================= */
+    function triggerCombatEncounter(x, y, type) {
+      let enemyName = type === 'elite' ? 'Guardián Esqueleto' : 'Goblin de Sombras';
+      let enemyIcon = type === 'elite' ? '👹' : '👾';
+      let enemyHp = type === 'elite' ? 22 : 12;
+
+      state.activeEncounter = { type: 'combat', x, y, enemyName, enemyIcon, hp: enemyHp, maxHp: enemyHp, isElite: type === 'elite' };
+      sound.hit();
+
+      showCombatUI();
+    }
+
+    function triggerBossEncounter(x, y) {
+      sound.bossRoar();
+      state.activeEncounter = { 
+        type: 'combat', 
+        x, y, 
+        enemyName: '🐲 DRAGÓN ANCESTRAL DEL NÚCLEO', 
+        enemyIcon: '🐲', 
+        hp: 45, 
+        maxHp: 45, 
+        isBoss: true 
+      };
+      showCombatUI();
+    }
+
+    function showCombatUI() {
+      const enc = state.activeEncounter;
+      document.getElementById('enemyHpContainer').classList.remove('hidden');
+      updateEnemyHpBar();
+
+      showEventBanner(
+        `${enc.enemyIcon} ${enc.enemyName}`,
+        `¡Enemigo hostil bloqueando la zona! Salud: ${enc.hp}/${enc.maxHp}`,
+        `
+          <button onclick="resolveCombatAttack()" class="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-orbitron text-xs font-bold shadow">⚔️ Atacar (Vigor)</button>
+          <button onclick="resolveCombatMagic()" class="px-3 py-1.5 rounded-lg bg-cyber-accent hover:bg-cyan-400 text-black font-orbitron text-xs font-bold shadow">✨ Magia (Wits)</button>
+          <button onclick="resolveCombatFlee()" class="px-3 py-1.5 rounded-lg bg-cyber-border hover:bg-gray-700 text-gray-200 font-orbitron text-xs">🏃 Huir (Finesse)</button>
+        `
+      );
+    }
+
+    function updateEnemyHpBar() {
+      const enc = state.activeEncounter;
+      if (!enc) return;
+      const pct = Math.max(0, (enc.hp / enc.maxHp) * 100);
+      document.getElementById('enemyHpFill').style.width = `${pct}%`;
+      document.getElementById('enemyHpText').innerText = `HP Enemigo: ${enc.hp}/${enc.maxHp}`;
+    }
+
+    function resolveCombatAttack() {
+      const weaponBonus = state.equipment.weapon ? state.equipment.weapon.bonus : 0;
+      const roll = executeSkillCheck('Vigor', 7);
+      const dmgToEnemy = Math.max(2, roll.total - 3 + weaponBonus);
+
+      if (roll.isSuccess) {
+        state.activeEncounter.hp -= dmgToEnemy;
+        logEvent(`⚔️ Asestaste un golpe certero infligiendo ${dmgToEnemy} de daño.`);
+        sound.chest();
+      } else {
+        logEvent(`❌ Tu ataque falló o fue bloqueado.`);
+      }
+
+      if (state.activeEncounter.hp <= 0) {
+        defeatActiveEnemy();
+      } else {
+        enemyCounterAttack();
+      }
+      updateUI();
+    }
+
+    function resolveCombatMagic() {
+      const roll = executeSkillCheck('Wits', 6);
+      const dmgToEnemy = Math.max(3, roll.total - 2);
+
+      if (roll.isSuccess) {
+        state.activeEncounter.hp -= dmgToEnemy;
+        logEvent(`✨ Ráfaga arcana impacta infligiendo ${dmgToEnemy} de daño.`);
+        sound.potion();
+      } else {
+        logEvent(`❌ El hechizo falló.`);
+      }
+
+      if (state.activeEncounter.hp <= 0) {
+        defeatActiveEnemy();
+      } else {
+        enemyCounterAttack();
+      }
+      updateUI();
+    }
+
+    function enemyCounterAttack() {
+      const shieldBonus = state.equipment.shield ? state.equipment.shield.bonus : 0;
+      const baseDmg = state.activeEncounter.isBoss ? 8 : (state.activeEncounter.isElite ? 5 : 3);
+      const netDmg = Math.max(1, baseDmg - shieldBonus);
+
+      state.hp = Math.max(0, state.hp - netDmg);
+      logEvent(`💥 ${state.activeEncounter.enemyName} contraataca causando ${netDmg} de daño.`);
+      sound.hit();
+
+      if (state.hp <= 0) {
+        closeEventBanner();
+        triggerGameOver('Caído en Combate');
+      } else {
+        updateEnemyHpBar();
+      }
+    }
+
+    function defeatActiveEnemy() {
+      const enc = state.activeEncounter;
+      logEvent(`🎉 ¡Has derrotado a ${enc.enemyName}!`);
+      state.stats.kills += 1;
+
+      // Gain XP
+      const xpGained = enc.isBoss ? 150 : (enc.isElite ? 45 : 20);
+      addExperience(xpGained);
+
+      state.map[enc.y][enc.x] = '.';
+      closeEventBanner();
+
+      if (enc.isBoss) {
+        triggerVictory();
+      }
+    }
+
+    function resolveCombatFlee() {
+      const roll = executeSkillCheck('Finesse', 7);
+      if (roll.isSuccess) {
+        logEvent('🏃 Esqui vaste al enemigo y te pones a salvo.');
+        closeEventBanner();
+      } else {
+        logEvent('💥 Tropezaste al huir y el enemigo te golpea por la espalda.');
+        enemyCounterAttack();
+      }
+      updateUI();
+    }
+
+    /* =========================================================================
+       EQUIPMENT, CHESTS & TRAP RESOLUTION
+       ========================================================================= */
+    function triggerEquipmentDrop(x, y) {
+      const items = [
+        { type: 'weapon', name: 'Espada de Hierro', bonus: 3, icon: '🗡️' },
+        { type: 'weapon', name: 'Maza de Guerra', bonus: 4, icon: '🔨' },
+        { type: 'shield', name: 'Escudo de Roble', bonus: 2, icon: '🛡️' }
+      ];
+      const item = items[Math.floor(Math.random() * items.length)];
+
+      if (item.type === 'weapon') state.equipment.weapon = item;
+      if (item.type === 'shield') state.equipment.shield = item;
+
+      state.map[y][x] = '.';
+      logEvent(`🛡️ ¡Equipaste: ${item.icon} ${item.name} (+${item.bonus} Bonificación)!`);
+      sound.chest();
+    }
+
+    function triggerChestEncounter(x, y) {
+      state.activeEncounter = { type: 'chest', x, y };
+      showEventBanner(
+        '📦 Cofre de Botín Trampeado',
+        'Cofre sellado con runas antiguas.',
+        `<button onclick="resolveOpenChest()" class="px-3 py-1.5 rounded-lg bg-cyber-gold hover:bg-amber-400 text-black font-orbitron text-xs font-bold shadow">🔓 Ganzúa (Wits)</button>`
+      );
+    }
+
+    function resolveOpenChest() {
+      const roll = executeSkillCheck('Wits', 6);
+      if (roll.isSuccess) {
+        state.inventory.potions += 1;
+        state.inventory.rations += 1;
+        state.inventory.antidotes += 1;
+        logEvent('🎉 ¡Cofre abierto con éxito! Recibiste Poción, Ración y Antídoto.');
+        sound.chest();
+      } else {
+        state.inventory.rations += 1;
+        logEvent('🔒 Cofre dañando. Solo rescataste 1 Ración.');
+        sound.potion();
+      }
+      state.map[state.activeEncounter.y][state.activeEncounter.x] = '.';
+      closeEventBanner();
+      updateUI();
+    }
+
+    function triggerSpikeTrap(x, y) {
+      logEvent('⚠️ ¡Activaste una Trampa de Pinchos!');
+      const roll = executeSkillCheck('Finesse', 7);
+      if (roll.isSuccess) {
+        logEvent('✨ Salto reflejo oportuno. Esquivaste los pinchos.');
+      } else {
+        const dmg = 5;
+        state.hp = Math.max(0, state.hp - dmg);
+        logEvent(`💥 Los pinchos te hirieron gravemente (-${dmg} HP).`);
+        sound.hit();
+        if (state.hp <= 0) triggerGameOver('Trampa Mortífera');
+      }
+      state.map[y][x] = '.';
+    }
+
+    function triggerPoisonTrap(x, y) {
+      logEvent('☣️ ¡Trampa de Gas Venenoso activada!');
+      state.status.poisoned = true;
+      state.status.poisonTurns = 5;
+      sound.hit();
+      state.map[y][x] = '.';
+    }
+
+    /* =========================================================================
+       EXPERIENCE & LEVEL UP SYSTEM
+       ========================================================================= */
+    function addExperience(amount) {
+      state.xp += amount;
+      logEvent(`⭐ Ganaste +${amount} Puntos de Experiencia.`);
+      if (state.xp >= state.xpNext) {
+        state.level += 1;
+        state.xp -= state.xpNext;
+        state.xpNext = Math.floor(state.xpNext * 1.5);
+        state.maxHp += 5;
+        state.hp = state.maxHp;
+        sound.levelUp();
+        promptLevelUpStat();
+      }
+    }
+
+    function promptLevelUpStat() {
+      const modal = document.getElementById('levelUpModal');
+      const container = document.getElementById('levelUpOptions');
+      
+      container.innerHTML = Object.keys(state.attributes).map(attr => `
+        <button onclick="applyLevelUpStat('${attr}')" class="w-full p-2.5 rounded-xl bg-cyber-bg hover:bg-cyber-border border border-cyber-border text-left font-orbitron text-xs flex justify-between items-center text-white">
+          <span>Aumentar ${attr}</span>
+          <span class="text-cyber-gold font-mono-code font-bold">${state.attributes[attr]} ➔ ${state.attributes[attr] + 1}</span>
+        </button>
+      `).join('');
+
+      modal.classList.remove('hidden');
+    }
+
+    function applyLevelUpStat(attr) {
+      state.attributes[attr] += 1;
+      logEvent(`⭐ ¡Subida de Nivel! ${attr} aumentó a ${state.attributes[attr]}.`);
+      document.getElementById('levelUpModal').classList.add('hidden');
+      updateUI();
+    }
+
+    /* =========================================================================
+       FLOOR PROGRESSION & CONSUMABLES
+       ========================================================================= */
+    function advanceToNextFloor() {
+      if (state.floor < state.maxFloor) {
+        state.floor += 1;
+        sound.victory();
+        logEvent(`🌀 ¡Descendiste al Piso ${state.floor} de la Mazmorra! El ambiente es más peligroso.`);
+        state.map = generateMazeForFloor(state.floor);
+        state.explored = new Set();
+        state.pos = { x: 1, y: 1 };
+        revealAround(1, 1);
+      }
+    }
+
+    function handleUsePotion() {
+      if (state.inventory.potions > 0) {
+        state.inventory.potions -= 1;
+        state.hp = Math.min(state.maxHp, state.hp + 12);
+        logEvent('🧪 Usaste una Poción (+12 HP).');
+        sound.potion();
+        updateUI();
+      } else {
+        logEvent('❌ No posees pociones.');
+      }
+    }
+
+    function handleEatRation() {
+      if (state.inventory.rations > 0) {
+        state.inventory.rations -= 1;
+        state.hunger = Math.min(100, state.hunger + 40);
+        logEvent('🍖 Consumiste una Ración de Comida (+40 Hambre).');
+        sound.potion();
+        updateUI();
+      } else {
+        logEvent('❌ No tienes raciones.');
+      }
+    }
+
+    function handleUseAntidote() {
+      if (state.inventory.antidotes > 0) {
+        state.inventory.antidotes -= 1;
+        state.status.poisoned = false;
+        state.status.poisonTurns = 0;
+        logEvent('💊 Consumiste un Antídoto. Veneno curado.');
+        sound.potion();
+        updateUI();
+      } else {
+        logEvent('❌ No posees antídotos.');
+      }
+    }
+
+    function handleInspectTile() {
+      logEvent('🔍 Buscando trampas ocultas en la zona...');
+      executeSkillCheck('Wits', 6);
+      sound.click();
+    }
+
+    /* =========================================================================
+       DICE MECHANICS & UI UPDATES
+       ========================================================================= */
+    function executeSkillCheck(attrName, threshold) {
+      sound.diceRoll();
+      const attrVal = state.attributes[attrName] || 0;
+      const rawDice = Math.floor(Math.random() * 6) + 1;
+      const total = rawDice + attrVal;
+      const isSuccess = total >= threshold;
+
+      if (rawDice === 6) {
+        state.attributes[attrName] += 1;
+        logEvent(`⭐ ¡Éxito Crítico! ${attrName} subió permanentemente (+1).`);
+      }
+
+      showDiceRollUI(rawDice, attrVal, total, threshold, isSuccess, attrName);
+      return { isSuccess, total, rawDice };
+    }
+
+    function showDiceRollUI(raw, attrVal, total, target, success, attrName) {
+      const area = document.getElementById('diceRollArea');
+      const visual = document.getElementById('diceVisual');
+      const title = document.getElementById('diceTitle');
+      const details = document.getElementById('diceResultDetails');
+
+      area.classList.remove('hidden');
+      visual.innerText = raw;
+      title.innerText = `Prueba de ${attrName}`;
+      
+      if (success) {
+        visual.className = "w-10 h-10 rounded-lg bg-emerald-500/20 border border-emerald-500 text-emerald-400 font-orbitron font-black text-xl flex items-center justify-center shadow-lg";
+        details.innerHTML = `<span class="text-emerald-400 font-bold">ÉXITO:</span> ${raw}+${attrVal} = <span class="text-white">${total}</span> vs ${target}`;
+      } else {
+        visual.className = "w-10 h-10 rounded-lg bg-rose-500/20 border border-rose-500 text-rose-400 font-orbitron font-black text-xl flex items-center justify-center shadow-lg";
+        details.innerHTML = `<span class="text-rose-400 font-bold">FALLO:</span> ${raw}+${attrVal} = <span class="text-white">${total}</span> vs ${target}`;
+      }
+
+      setTimeout(() => area.classList.add('hidden'), 3000);
+    }
+
+    function showEventBanner(title, desc, actionsHtml) {
+      const banner = document.getElementById('eventBanner');
+      document.getElementById('eventTitle').innerText = title;
+      document.getElementById('eventDesc').innerText = desc;
+      document.getElementById('eventActions').innerHTML = actionsHtml;
+      banner.classList.remove('hidden');
+    }
+
+    function closeEventBanner() {
+      document.getElementById('eventBanner').classList.add('hidden');
+      document.getElementById('enemyHpContainer').classList.add('hidden');
+      state.activeEncounter = null;
+    }
+
+    function logEvent(msg) {
+      const narrativeEl = document.getElementById('terminalNarrative');
+      const logEntry = document.createElement('div');
+      logEntry.className = "p-1.5 rounded bg-cyber-panel/80 border border-cyber-border/40 text-[11px] leading-snug";
+      logEntry.innerHTML = `<span class="text-gray-500">[T${state.stats.turns}]</span> ${msg}`;
+      narrativeEl.appendChild(logEntry);
+      narrativeEl.scrollTop = narrativeEl.scrollHeight;
+    }
+
+    function updateUI() {
+      // Health & Hunger Gauges
+      const hpPct = Math.max(0, (state.hp / state.maxHp) * 100);
+      document.getElementById('hpFill').style.width = `${hpPct}%`;
+      document.getElementById('hpText').innerText = `${state.hp}/${state.maxHp}`;
+
+      const hungerPct = Math.max(0, state.hunger);
+      document.getElementById('hungerFill').style.width = `${hungerPct}%`;
+      document.getElementById('hungerText').innerText = `${Math.round(hungerPct)}%`;
+
+      document.getElementById('headerFloor').innerText = `${state.floor} / ${state.maxFloor}`;
+      document.getElementById('coordsDisplay').innerText = `Piso ${state.floor} (${state.pos.x}, ${state.pos.y})`;
+
+      // Level & XP
+      document.getElementById('heroLevelText').innerText = state.level;
+      document.getElementById('xpText').innerText = `XP: ${state.xp}/${state.xpNext}`;
+      document.getElementById('xpFill').style.width = `${Math.min(100, (state.xp / state.xpNext) * 100)}%`;
+
+      // Status Badges
+      const badgesContainer = document.getElementById('statusBadges');
+      badgesContainer.innerHTML = state.status.poisoned ? 
+        `<span class="px-1.5 py-0.5 rounded bg-purple-950 text-purple-400 border border-purple-600 font-mono-code text-[10px] font-bold">☣️ VENENO (${state.status.poisonTurns})</span>` : '';
+
+      // Item Counts on Action Buttons
+      document.getElementById('btnPotionCount').innerText = `(${state.inventory.potions})`;
+      document.getElementById('btnRationCount').innerText = `(${state.inventory.rations})`;
+      document.getElementById('btnAntidoteCount').innerText = `(${state.inventory.antidotes})`;
+
+      // Ledger Equipment
+      const equipEl = document.getElementById('equipmentSlots');
+      equipEl.innerHTML = `
+        <div class="p-1.5 rounded bg-cyber-bg border border-cyber-border text-[10px] font-mono-code">
+          <span class="text-gray-400 block">Arma:</span>
+          <span class="text-cyber-accent font-bold">${state.equipment.weapon ? state.equipment.weapon.icon + ' ' + state.equipment.weapon.name : 'Ninguna'}</span>
+        </div>
+        <div class="p-1.5 rounded bg-cyber-bg border border-cyber-border text-[10px] font-mono-code">
+          <span class="text-gray-400 block">Escudo:</span>
+          <span class="text-cyber-accent font-bold">${state.equipment.shield ? state.equipment.shield.icon + ' ' + state.equipment.shield.name : 'Ninguno'}</span>
+        </div>
+      `;
+
+      // Ledger Inventory Items
+      const invEl = document.getElementById('ledgerInventory');
+      invEl.innerHTML = `
+        <div class="p-1.5 rounded bg-cyber-bg border border-cyber-border flex justify-between text-[11px] font-mono-code">
+          <span>🧪 Pociones:</span>
+          <span class="text-emerald-400 font-bold">${state.inventory.potions}</span>
+        </div>
+        <div class="p-1.5 rounded bg-cyber-bg border border-cyber-border flex justify-between text-[11px] font-mono-code">
+          <span>🍖 Raciones:</span>
+          <span class="text-amber-400 font-bold">${state.inventory.rations}</span>
+        </div>
+        <div class="p-1.5 rounded bg-cyber-bg border border-cyber-border flex justify-between text-[11px] font-mono-code">
+          <span>💊 Antídotos:</span>
+          <span class="text-purple-400 font-bold">${state.inventory.antidotes}</span>
+        </div>
+        <div class="p-1.5 rounded bg-cyber-bg border border-cyber-border flex justify-between text-[11px] font-mono-code">
+          <span>🔑 Llaves:</span>
+          <span class="text-cyber-gold font-bold">${state.inventory.keys}</span>
+        </div>
+      `;
+
+      // Ledger Attributes
+      const attrEl = document.getElementById('ledgerAttributes');
+      attrEl.innerHTML = Object.keys(state.attributes).map(a => `
+        <div class="flex items-center justify-between p-1.5 rounded bg-cyber-bg border border-cyber-border">
+          <span class="text-gray-400 text-[10px]">${a}</span>
+          <span class="text-cyber-accent font-bold text-xs">${state.attributes[a]}</span>
+        </div>
+      `).join('');
+
+      renderCanvasMap();
+    }
+
+    /* =========================================================================
+       KEYBOARD BINDINGS & WIZARD INITIALIZATION
+       ========================================================================= */
+    window.addEventListener('keydown', (e) => {
+      if (document.getElementById('gameplayDashboard').classList.contains('hidden')) return;
+
+      switch(e.key) {
+        case 'ArrowUp': case 'w': case 'W': handleDirectMove(0, -1); break;
+        case 'ArrowDown': case 's': case 'S': handleDirectMove(0, 1); break;
+        case 'ArrowLeft': case 'a': case 'A': handleDirectMove(-1, 0); break;
+        case 'ArrowRight': case 'd': case 'D': handleDirectMove(1, 0); break;
+        case ' ': handleInspectTile(); break;
+        case '1': handleUsePotion(); break;
+        case '2': handleEatRation(); break;
+        case '3': handleUseAntidote(); break;
+      }
+    });
+
+    window.onload = function() {
+      renderDifficultyOptions();
+      renderClassPresets();
+      renderWorldOptions();
+    };
+
+    function renderDifficultyOptions() {
+      const container = document.getElementById('difficultyGrid');
+      container.innerHTML = DIFFICULTIES.map((d, index) => `
+        <label class="flex flex-col p-2.5 rounded-xl border border-cyber-border bg-cyber-bg/80 hover:border-rose-500 cursor-pointer transition-all ${index === 1 ? 'border-rose-500 bg-rose-950/20' : ''}">
+          <input type="radio" name="difficulty" value="${d.id}" ${index === 1 ? 'checked' : ''} class="hidden">
+          <span class="text-xs font-bold text-white font-orbitron">${d.name}</span>
+          <span class="text-[10px] text-gray-400 mt-1">${d.desc}</span>
+        </label>
+      `).join('');
+
+      container.querySelectorAll('label').forEach(lbl => {
+        lbl.addEventListener('click', () => {
+          container.querySelectorAll('label').forEach(l => l.classList.remove('border-rose-500', 'bg-rose-950/20'));
+          lbl.classList.add('border-rose-500', 'bg-rose-950/20');
+          lbl.querySelector('input').checked = true;
+        });
+      });
+    }
+
+    function renderClassPresets() {
+      const container = document.getElementById('classPresetsGrid');
+      container.innerHTML = HERO_CLASSES.map((cls, index) => `
+        <label class="flex flex-col justify-between p-2.5 rounded-xl border border-cyber-border bg-cyber-bg/80 hover:border-cyber-accent cursor-pointer transition-all ${index === 0 ? 'border-cyber-accent bg-cyber-accent/5' : ''}">
+          <div>
+            <input type="radio" name="heroClass" value="${cls.id}" ${index === 0 ? 'checked' : ''} class="hidden">
+            <div class="text-2xl mb-1">${cls.icon}</div>
+            <div class="text-xs font-bold text-white font-orbitron">${cls.name}</div>
+            <div class="text-[10px] text-gray-400 mt-0.5">${cls.desc}</div>
+          </div>
+          <div class="mt-2 text-[10px] font-mono-code text-cyber-accent font-bold">HP: ${cls.hp}</div>
+        </label>
+      `).join('');
+
+      container.querySelectorAll('label').forEach(lbl => {
+        lbl.addEventListener('click', () => {
+          container.querySelectorAll('label').forEach(l => l.classList.remove('border-cyber-accent', 'bg-cyber-accent/5'));
+          lbl.classList.add('border-cyber-accent', 'bg-cyber-accent/5');
+          lbl.querySelector('input').checked = true;
+        });
+      });
+    }
+
+    function renderWorldOptions() {
+      const container = document.getElementById('worldOptionsGrid');
+      container.innerHTML = WORLDS.map((w, index) => `
+        <label class="flex items-start gap-2 p-2.5 rounded-xl border border-cyber-border bg-cyber-bg/80 hover:border-cyber-accent cursor-pointer transition-all ${index === 0 ? 'border-cyber-accent bg-cyber-accent/5' : ''}">
+          <input type="radio" name="world" value="${w.id}" ${index === 0 ? 'checked' : ''} class="mt-0.5 text-cyber-accent">
+          <div>
+            <div class="text-xs font-bold text-white font-orbitron flex items-center gap-1">${w.icon} ${w.title}</div>
+            <div class="text-[10px] text-gray-400 mt-0.5">${w.desc}</div>
+          </div>
+        </label>
+      `).join('');
+    }
+
+    function quickStartSimulation() {
+      sound.click();
+      const diffId = document.querySelector('input[name="difficulty"]:checked').value;
+      state.difficulty = DIFFICULTIES.find(d => d.id === diffId) || DIFFICULTIES[1];
+
+      const selectedClassId = document.querySelector('input[name="heroClass"]:checked').value;
+      state.heroClass = HERO_CLASSES.find(c => c.id === selectedClassId) || HERO_CLASSES[0];
+      state.world = document.querySelector('input[name="world"]:checked').value;
+
+      state.floor = 1;
+      state.hp = state.heroClass.hp;
+      state.maxHp = state.heroClass.hp;
+      state.hunger = 100;
+      state.level = 1;
+      state.xp = 0;
+      state.xpNext = 50;
+      state.attributes = { ...state.heroClass.attrs };
+      state.inventory = { potions: 1, rations: 2, antidotes: 1, keys: 0 };
+      state.equipment = { weapon: null, shield: null };
+      state.status = { poisoned: false, poisonTurns: 0 };
+      state.stats = { turns: 0, kills: 0 };
+      state.isGameOver = false;
+
+      // Generate Floor 1
+      state.map = generateMazeForFloor(1);
+      state.explored = new Set();
+      state.pos = { x: 1, y: 1 };
+      revealAround(1, 1);
+
+      // Switch Screens
+      document.getElementById('pregameWizard').classList.add('hidden');
+      document.getElementById('gameplayDashboard').classList.remove('hidden');
+      document.getElementById('headerStats').classList.remove('hidden');
+      document.getElementById('openMapBtn').classList.remove('hidden');
+
+      document.getElementById('terminalNarrative').innerHTML = '';
+      logEvent(`⚔️ ¡Incursión Hardcore iniciada! Te adentras con tu antorcha en el Piso 1.`);
+
+      updateUI();
+    }
+
+    /* =========================================================================
+       POSTGAME & MAP MODALS
+       ========================================================================= */
+    function triggerVictory() {
+      state.isGameOver = true;
+      sound.victory();
+      showPostgameModal(true, 'Derrotaste al Dragón Ancestral y escapaste con gloria.');
+    }
+
+    function triggerGameOver(reason) {
+      state.isGameOver = true;
+      sound.death();
+      showPostgameModal(false, `Petición interrumpida: ${reason}.`);
+    }
+
+    function showPostgameModal(isVictory, msg) {
+      const modal = document.getElementById('postgameModal');
+      const icon = document.getElementById('postgameIcon');
+      const title = document.getElementById('postgameTitle');
+      const narrative = document.getElementById('postgameNarrative');
+
+      modal.classList.remove('hidden');
+      document.getElementById('summaryTurnCount').innerText = state.stats.turns;
+      document.getElementById('summaryFloorReached').innerText = state.floor;
+      document.getElementById('summaryKills').innerText = state.stats.kills;
+
+      if (isVictory) {
+        icon.innerText = '🏆';
+        icon.className = 'w-16 h-16 rounded-full mx-auto flex items-center justify-center font-orbitron text-3xl bg-emerald-500/20 text-emerald-400 border border-emerald-500';
+        title.innerText = '¡Incursión Exitosa!';
+        narrative.innerText = msg;
+      } else {
+        icon.innerText = '💀';
+        icon.className = 'w-16 h-16 rounded-full mx-auto flex items-center justify-center font-orbitron text-3xl bg-rose-500/20 text-rose-400 border border-rose-500';
+        title.innerText = 'Incursión Fallida';
+        narrative.innerText = msg;
+      }
+    }
+
+    function restartFullGame() {
+      sound.click();
+      document.getElementById('postgameModal').classList.add('hidden');
+      document.getElementById('gameplayDashboard').classList.add('hidden');
+      document.getElementById('headerStats').classList.add('hidden');
+      document.getElementById('openMapBtn').classList.add('hidden');
+      document.getElementById('pregameWizard').classList.remove('hidden');
+    }
+
+    document.getElementById('openMapBtn').addEventListener('click', () => {
+      sound.click();
+      renderFullMapGrid();
+      document.getElementById('fullMapModal').classList.remove('hidden');
+    });
+
+    function closeFullMap() {
+      sound.click();
+      document.getElementById('fullMapModal').classList.add('hidden');
+    }
+
+    function renderFullMapGrid() {
+      let display = '';
+      const size = state.mapSize;
+      for (let y = 0; y < size; y++) {
+        let row = '';
+        for (let x = 0; x < size; x++) {
+          if (state.pos.x === x && state.pos.y === y) {
+            row += '<span class="text-yellow-400 font-bold">P</span> ';
+          } else if (state.explored.has(`${x},${y}`)) {
+            const tile = state.map[y][x];
+            if (tile === '#') row += '<span class="text-gray-800">#</span> ';
+            else if (tile === 'K') row += '<span class="text-amber-400">K</span> ';
+            else if (tile === 'D') row += '<span class="text-rose-400">D</span> ';
+            else if (tile === 'M' || tile === 'M2') row += '<span class="text-rose-500">M</span> ';
+            else if (tile === 'B') row += '<span class="text-rose-600 font-bold">B</span> ';
+            else if (tile === 'E') row += '<span class="text-emerald-400 font-bold">E</span> ';
+            else row += '<span class="text-gray-600">.</span> ';
+          } else {
+            row += '<span class="text-gray-950">?</span> ';
+          }
+        }
+        display += row + '\n';
+      }
+      document.getElementById('fullMapGridDisplay').innerHTML = display;
+    }
+
+    document.getElementById('resetGameBtn').addEventListener('click', () => restartFullGame());
+
+    document.getElementById('toggleAudioBtn').addEventListener('click', () => {
+      sound.muted = !sound.muted;
+      document.getElementById('audioOnIcon').classList.toggle('hidden', sound.muted);
+      document.getElementById('audioOffIcon').classList.toggle('hidden', !sound.muted);
+    });
+
+  </script>
+</body>
+</html>
