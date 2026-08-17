@@ -39,7 +39,7 @@ Incluye:
 * Funcionalidades esenciales.
 * Ideal para proyectos simples.
 
-**Precio:** [AGREGAR PRECIO]
+**Precio:** 20bs
 
 ## PLAN PREMIUM
 
@@ -53,7 +53,7 @@ Incluye:
 * Mayor personalización.
 * Ideal para proyectos más completos.
 
-**Precio:** [AGREGAR PRECIO]
+**Precio:** 50
 
 ## PLAN DELUXE
 
@@ -67,7 +67,7 @@ Incluye:
 * Mejor experiencia para los jugadores.
 * Desarrollo de un proyecto más completo.
 
-**Precio:** [AGREGAR PRECIO]
+**Precio:** 60
 
 # JUEGO DEL LABERINTO
 
