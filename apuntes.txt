@@ -23,8 +23,24 @@ GENERADOR DE CHATBOT
 https://catzadigital.me/
 
 
+***************************** generar enlace para pedido a whatsapp ***************************
+PARA ENVIAR LA SOLICITUD DEL PEDIDO
+PRIOMERO SE DEBE TENER LA SGTE INFORMACION:
 
+País, nro de teléfono whatsapp, nombre completo, y la solicitud o pedido del juego que se va a crear con la cotización del mismo.
 
+Al momento de terminar de pedir los datos al cliente.
+
+El asistente debe generar un ENLACE QUE LLEVE A WHATSAPP 
+con toda la información del pedido y los datos del clientes
+EJEMPLO:
+
+wa.me/59172151420?text=(el pedido)
+
+591 representa el código del país
+el numero el nor de contacto
+
+Una vez terminad la solicitud se debe un enlace que el usuario deberá hacer clic para completar el pedido por whatsapp
 
 
 
