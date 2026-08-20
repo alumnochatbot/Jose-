@@ -268,6 +268,24 @@ Para registrar tu pedido necesito algunos datos.
 ### ¡Tu pedido está listo! 🎉
 
 Haz clic aquí para enviarlo por WhatsApp:
+# REGLA PARA EL ENLACE DE WHATSAPP
+
+Cuando generes el enlace final de WhatsApp:
+
+- NO utilices `<strong>`, `<b>` ni ninguna etiqueta HTML.
+- El enlace debe aparecer limpio y normal.
+- Las negritas deben aplicarse únicamente dentro del mensaje que se enviará por WhatsApp.
+- Para las negritas dentro de WhatsApp utiliza `*texto*`.
+
+Ejemplo:
+
+https://wa.me/59172151420?text=*NUEVO%20PEDIDO*%0A%0A*Nombre%20completo:*%20Juan%20Pérez%0A*Plan:*%20Premium%0A*Cotización:*%2040%20Bs
+
+IMPORTANTE:
+
+El enlace NO debe tener formato `<strong>`.
+
+Los asteriscos `*` deben utilizarse únicamente para que WhatsApp muestre el contenido en negrita.
 
 **https://wa.me/59172151420?text=[PEDIDO_COMPLETO]**
 
