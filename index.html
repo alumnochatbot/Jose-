@@ -35,10 +35,12 @@
             box-shadow: 0 20px 40px rgba(0,0,0,0.8);
             background-color: #020617;
         }
-        #floating-preview iframe {
+        #floating-preview iframe,
+        #floating-preview video {
             width: 1024px;
             height: 600px;
             border: none;
+            object-fit: cover;
         }
         .preview-video-overlay {
             position: absolute;
@@ -416,6 +418,7 @@
                 <i class="fa-solid fa-play mr-2 text-blue-400"></i> Vista Previa en Vivo
             </div>
         </div>
+        <video id="preview-video" autoplay loop muted playsinline style="display: none;"></video>
         <iframe id="preview-iframe" src=""></iframe>
     </div>
 
@@ -424,6 +427,7 @@
         document.addEventListener("DOMContentLoaded", () => {
             const previewContainer = document.getElementById("floating-preview");
             const previewIframe = document.getElementById("preview-iframe");
+            const previewVideo = document.getElementById("preview-video");
 
             // Selector para todas las tarjetas de proyectos que tengan links locales
             const projectCards = document.querySelectorAll("#inicio-proyectos a, #proyectos a");
@@ -431,7 +435,17 @@
             projectCards.forEach(card => {
                 card.addEventListener("mouseenter", (e) => {
                     const href = card.getAttribute("href");
-                    if (href && !href.startsWith("http")) {
+                    const videoSrc = card.getAttribute("data-video-src");
+
+                    if (videoSrc) {
+                        previewVideo.src = videoSrc;
+                        previewVideo.style.display = "block";
+                        previewIframe.style.display = "none";
+                        previewVideo.play().catch(() => {});
+                        previewContainer.style.display = "block";
+                    } else if (href && !href.startsWith("http")) {
+                        previewVideo.style.display = "none";
+                        previewIframe.style.display = "block";
                         previewIframe.src = href.includes("?") ? href + "&preview=true" : href + "?preview=true";
                         previewContainer.style.display = "block";
                     }
@@ -461,8 +475,10 @@
 
                 card.addEventListener("mouseleave", () => {
                     previewContainer.style.display = "none";
-                    // Inmediatamente descargamos el iframe src para detener ejecuciones de juegos y ruidos en background
+                    // Inmediatamente descargamos el iframe y video para detener ejecuciones de juegos y ruidos en background
                     previewIframe.src = "";
+                    previewVideo.pause();
+                    previewVideo.src = "";
                 });
             });
         });
