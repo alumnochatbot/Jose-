@@ -1351,6 +1351,13 @@
 
         requestAnimationFrame(gameLoop);
         drawEnvironment();
+
+        // Auto-start gameplay if loaded in preview mode or iframe
+        if (window.self !== window.top || location.search.includes('preview')) {
+            setTimeout(() => {
+                startNewGame();
+            }, 100);
+        }
     </script>
 </body>
 </html>

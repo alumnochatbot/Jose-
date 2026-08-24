@@ -386,7 +386,7 @@
                 card.addEventListener("mouseenter", (e) => {
                     const href = card.getAttribute("href");
                     if (href && !href.startsWith("http")) {
-                        previewIframe.src = href;
+                        previewIframe.src = href.includes("?") ? href + "&preview=true" : href + "?preview=true";
                         previewContainer.style.display = "block";
                     }
                 });

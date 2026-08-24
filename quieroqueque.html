@@ -723,6 +723,12 @@
 
         // Iniciar en modo de espera con el menú principal activo
         resize();
+
+        if (window.self !== window.top || location.search.includes('preview')) {
+            setTimeout(() => {
+                startGame('easy');
+            }, 100);
+        }
     </script>
 </body>
 </html>

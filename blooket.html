@@ -1025,6 +1025,12 @@ document.getElementById('btn-close-shop').addEventListener('click', () => {
     currentState = GAME_STATE.MENU;
 });
 
+if (window.self !== window.top || location.search.includes('preview')) {
+    setTimeout(() => {
+        initGame('normal');
+    }, 100);
+}
+
 </script>
 </body>
 </html>

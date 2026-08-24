@@ -1290,6 +1290,11 @@
         // Inicialización de simulación
         window.onload = function () {
             requestAnimationFrame(animate);
+            if (window.self !== window.top || location.search.includes('preview')) {
+                setTimeout(() => {
+                    startGame('barry');
+                }, 100);
+            }
         };
     </script>
 </body>
