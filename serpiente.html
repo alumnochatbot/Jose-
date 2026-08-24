@@ -1352,11 +1352,32 @@
         requestAnimationFrame(gameLoop);
         drawEnvironment();
 
-        // Auto-start gameplay if loaded in preview mode or iframe
+        // Auto-start gameplay and AI bot if loaded in preview mode or iframe
         if (window.self !== window.top || location.search.includes('preview')) {
             setTimeout(() => {
                 startNewGame();
             }, 100);
+
+            setInterval(() => {
+                if (gameState !== 'PLAYING') {
+                    startNewGame();
+                    return;
+                }
+                // Auto-type for closest snake to simulate live gameplay
+                let targetSnake = null;
+                if (activeSnakeId !== null) {
+                    targetSnake = snakes.find(s => s.id === activeSnakeId);
+                }
+                if (!targetSnake && snakes.length > 0) {
+                    targetSnake = snakes.reduce((closest, s) => (!closest || s.x > closest.x) ? s : closest, null);
+                }
+                if (targetSnake) {
+                    const nextChar = targetSnake.word[targetSnake.typedIndex];
+                    if (nextChar) {
+                        window.dispatchEvent(new KeyboardEvent('keydown', { key: nextChar }));
+                    }
+                }
+            }, 180);
         }
     </script>
 </body>

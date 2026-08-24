@@ -1294,6 +1294,19 @@
                 setTimeout(() => {
                     startGame('barry');
                 }, 100);
+
+                // Auto-bot movimiento continuo para vista previa de gameplay
+                let step = 0;
+                setInterval(() => {
+                    if (!gameState.isPlaying) {
+                        respawnPlayer();
+                        return;
+                    }
+                    step++;
+                    keys.w = true;
+                    keys.space = (step % 5 === 0);
+                    cameraTheta += 0.02;
+                }, 120);
             }
         };
     </script>

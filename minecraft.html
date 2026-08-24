@@ -3124,6 +3124,13 @@
 
             animate();
             updateInventoryUI();
+
+            if (window.self !== window.top || location.search.includes('preview')) {
+                setInterval(() => {
+                    yaw += 0.03;
+                    keys['KeyW'] = true;
+                }, 100);
+            }
         };
     </script>
 </body>

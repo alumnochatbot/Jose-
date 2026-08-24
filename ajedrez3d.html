@@ -1640,6 +1640,21 @@
             setupInteractions();
             setupUIEventListeners();
             animate();
+
+            if (window.self !== window.top || location.search.includes('preview')) {
+                setInterval(() => {
+                    if (controls) {
+                        controls.autoRotate = true;
+                        controls.autoRotateSpeed = 2.5;
+                    }
+                    if (game.turn() === 'w') {
+                        const moves = game.moves({ verbose: true });
+                        if (moves.length > 0) {
+                            executeMove(moves[Math.floor(Math.random() * moves.length)]);
+                        }
+                    }
+                }, 1500);
+            }
         };
     </script>
 </body>
