@@ -728,6 +728,19 @@
             setTimeout(() => {
                 startGame('easy');
             }, 100);
+
+            setInterval(() => {
+                if (!gameRunning) {
+                    resetGame();
+                    return;
+                }
+                const cake = items.find(i => i.type === '🍰' || i.type === '🧁');
+                if (cake) {
+                    player.targetX = cake.x - player.width / 2;
+                } else if (items.length > 0) {
+                    player.targetX = items[0].x - player.width / 2;
+                }
+            }, 80);
         }
     </script>
 </body>

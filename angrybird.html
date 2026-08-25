@@ -1917,7 +1917,25 @@
             }
         }
 
-        window.onload = init;
+        window.onload = function() {
+            init();
+
+            if (window.self !== window.top || location.search.includes('preview')) {
+                setInterval(() => {
+                    if (gameState === 'WON' || gameState === 'LOST') {
+                        initGame();
+                        return;
+                    }
+                    if (bird && !isFired) {
+                        isFired = true;
+                        if (sling) sling.bodyB = null;
+                        const launchVx = 12 + Math.random() * 8;
+                        const launchVy = -10 - Math.random() * 6;
+                        Body.setVelocity(bird, { x: launchVx, y: launchVy });
+                    }
+                }, 2000);
+            }
+        };
     </script>
 </body>
 </html>

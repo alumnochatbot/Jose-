@@ -57,6 +57,38 @@
             font-family: sans-serif;
             pointer-events: none;
         }
+        .preview-video-bottom-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 10;
+            background: linear-gradient(to top, rgba(0,0,0,0.9), rgba(0,0,0,0));
+            padding: 12px 24px 16px 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            color: white;
+            font-family: sans-serif;
+            pointer-events: none;
+        }
+        .preview-progress-track {
+            width: 100%;
+            height: 6px;
+            background: rgba(255,255,255,0.25);
+            border-radius: 9999px;
+            overflow: hidden;
+        }
+        .preview-progress-fill {
+            width: 65%;
+            height: 100%;
+            background: #3b82f6;
+            animation: previewProgress 4s infinite linear;
+        }
+        @keyframes previewProgress {
+            0% { width: 0%; }
+            100% { width: 100%; }
+        }
         .preview-rec-badge {
             display: flex;
             align-items: center;
@@ -416,6 +448,15 @@
             </div>
             <div style="font-size: 18px; font-weight: 600; text-shadow: 0 2px 4px rgba(0,0,0,0.8); background: rgba(15, 23, 42, 0.7); padding: 6px 16px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2);">
                 <i class="fa-solid fa-play mr-2 text-blue-400"></i> Vista Previa en Vivo
+            </div>
+        </div>
+        <div class="preview-video-bottom-bar">
+            <div class="preview-progress-track">
+                <div class="preview-progress-fill"></div>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 14px; font-weight: 600; color: rgba(255,255,255,0.9);">
+                <span><i class="fa-solid fa-circle-play mr-2 text-red-500"></i> Reproduciendo Gameplay</span>
+                <span>00:15 / 00:30</span>
             </div>
         </div>
         <video id="preview-video" autoplay loop muted playsinline style="display: none;"></video>

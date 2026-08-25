@@ -1029,6 +1029,19 @@ if (window.self !== window.top || location.search.includes('preview')) {
     setTimeout(() => {
         initGame('normal');
     }, 100);
+
+    let angle = 0;
+    setInterval(() => {
+        if (currentState !== GAME_STATE.PLAYING) {
+            initGame('normal');
+            return;
+        }
+        angle += 0.2;
+        if (player) {
+            player.x += Math.cos(angle) * 8;
+            player.y += Math.sin(angle) * 8;
+        }
+    }, 80);
 }
 
 </script>
