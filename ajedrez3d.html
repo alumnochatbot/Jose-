@@ -762,9 +762,10 @@
             controls = new THREE.OrbitControls(camera, renderer.domElement);
             controls.enableDamping = true;
             controls.dampingFactor = 0.05;
-            controls.maxPolarAngle = Math.PI / 2.1; 
-            controls.minDistance = 6;
-            controls.maxDistance = 22;
+            controls.maxPolarAngle = Math.PI / 2.15; // Evita que la cámara baje del nivel del tablero
+            controls.minPolarAngle = 0.1; // Previene giros bruscos en vista cenital
+            controls.minDistance = 5;
+            controls.maxDistance = 20;
 
             const ambientLight = new THREE.AmbientLight(0xffffff, 0.35);
             scene.add(ambientLight);
@@ -1494,6 +1495,10 @@
         }
 
         function resetGame() {
+            if (currentMode === 'online' && game.history().length > 0) {
+                showToast("No se pueden reiniciar partidas multijugador online", true);
+                return;
+            }
             game.reset();
             clearHighlights();
             selectedSquare = null;
@@ -1524,6 +1529,12 @@
                 document.getElementById('online-info-badge').classList.add('hidden');
                 document.getElementById('btn-online-lobby').classList.add('hidden');
 
+                const resetBtn = document.getElementById('btn-reset');
+                if (resetBtn) {
+                    resetBtn.classList.remove('opacity-40', 'cursor-not-allowed');
+                    resetBtn.title = "Reiniciar Partida";
+                }
+
                 setPresetCamera('white');
                 resetGame();
                 showToast("Modo Campaña Bot activado");
@@ -1537,6 +1548,12 @@
                 document.getElementById('pve-info-badge').classList.add('hidden');
                 document.getElementById('online-info-badge').classList.remove('hidden');
                 document.getElementById('btn-online-lobby').classList.remove('hidden');
+
+                const resetBtn = document.getElementById('btn-reset');
+                if (resetBtn) {
+                    resetBtn.classList.add('opacity-40', 'cursor-not-allowed');
+                    resetBtn.title = "Reinicio no disponible en partidas online";
+                }
 
                 toggleModal('modal-online', true);
                 showViewInOnlineModal('create');
@@ -1606,9 +1623,21 @@
                 setPresetCamera(myOnlineRole === 'b' ? 'black' : 'white');
             };
 
-            document.getElementById('btn-reset').onclick = resetGame;
+            document.getElementById('btn-reset').onclick = () => {
+                if (currentMode === 'online') {
+                    showToast("No se pueden reiniciar partidas multijugador online", true);
+                    return;
+                }
+                resetGame();
+            };
 
             document.getElementById('endgame-retry-btn').onclick = () => {
+                if (currentMode === 'online') {
+                    showToast("En multijugador debes crear o unirte a una nueva sala", true);
+                    toggleModal('modal-endgame', false);
+                    toggleModal('modal-online', true);
+                    return;
+                }
                 toggleModal('modal-endgame', false);
                 resetGame();
             };
