@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Angry Birds Clone - Ultimate 50 Levels Edition</title>
+    <title>Angry Birds Clone - Ultimate 67 Levels Edition</title>
     <!-- Importar Matter.js para simulación física -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
-    <!-- Importar Tailwind CSS para la interfaz de usuario moderna -->
+    <!-- Importar Tailwind CSS para la interfaz de usuario -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Importar FontAwesome para iconos de la interfaz -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -46,7 +46,7 @@
             <div class="bg-slate-900/90 text-white border border-purple-500/30 rounded-2xl px-5 py-3 shadow-2xl backdrop-blur-md flex items-center gap-4">
                 <div class="flex flex-col">
                     <span class="text-xs text-purple-400 font-bold uppercase tracking-wider">Progreso</span>
-                    <span class="text-lg font-black text-yellow-300">Nivel <span id="current-level-num">1</span> / 50</span>
+                    <span class="text-lg font-black text-yellow-300">Nivel <span id="current-level-num">1</span> / 67</span>
                 </div>
                 <div class="h-8 w-[1px] bg-purple-500/30"></div>
                 <div class="flex flex-col">
@@ -58,7 +58,7 @@
             <!-- Controles de Selección de Nivel y Reinicio -->
             <div class="flex items-center gap-2">
                 <select id="level-select" onchange="selectLevel(this.value)" class="bg-slate-900/95 text-white border-2 border-purple-600 rounded-xl px-4 py-2.5 font-bold text-sm shadow-xl focus:outline-none focus:ring-2 focus:ring-purple-400 cursor-pointer max-w-[250px] md:max-w-none">
-                    <!-- Los 50 niveles se cargarán dinámicamente -->
+                    <!-- Se cargarán los 67 niveles dinámicamente -->
                 </select>
                 <button id="btn-restart" onclick="initGame()" class="bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white font-extrabold px-5 py-2.5 rounded-xl shadow-lg shadow-red-500/20 active:scale-95 transition-all flex items-center gap-2 text-sm border border-red-400/20">
                     <i class="fa-solid fa-rotate-right"></i> Reiniciar
@@ -121,32 +121,31 @@
                 <i class="fa-solid fa-xmark"></i>
             </button>
             <h3 class="text-2xl font-black text-purple-400 mb-4 flex items-center gap-2">
-                <i class="fa-solid fa-circle-info"></i> Cómo Jugar
+                <i class="fa-solid fa-circle-info"></i> Guía y Reglas del Juego
             </h3>
-            <ul class="space-y-4 text-sm text-slate-300">
-                <li class="flex gap-3">
-                    <span class="text-yellow-400 font-bold text-lg">1.</span>
-                    <p>Arrastra al **pájaro activo** desde la honda hacia atrás para apuntar, y suéltalo para disparar.</p>
+            <ul class="space-y-3 text-xs md:text-sm text-slate-300">
+                <li class="flex gap-2.5">
+                    <span class="text-yellow-400 font-bold">1.</span>
+                    <p>Arrastra el **pájaro activo** en la resortera hacia atrás para apuntar y suéltalo para disparar.</p>
                 </li>
-                <li class="flex gap-3">
-                    <span class="text-yellow-400 font-bold text-lg">2.</span>
-                    <p><strong class="text-white">Pájaro Amarillo:</strong> Haz clic o pulsa la pantalla en el aire para activar su **Super Velocidad**.</p>
+                <li class="flex gap-2.5">
+                    <span class="text-yellow-400 font-bold">2.</span>
+                    <p><strong class="text-cyan-300">Durabilidad de Materiales:</strong></p>
                 </li>
-                <li class="flex gap-3 border-2 border-purple-500/40 p-3 rounded-xl bg-purple-950/20">
-                    <span class="text-yellow-400 font-bold text-lg">3.</span>
+                <li class="pl-6 space-y-1 text-xs">
+                    <p>🧊 <strong>Cristal:</strong> Se destruye al 1.er impacto.</p>
+                    <p>🪵 <strong>Madera:</strong> Se agrieta al 1.er impacto y se rompe al 2.º.</p>
+                    <p>🪨 <strong>Piedra:</strong> Leve grieta al 1.º, grieta profunda al 2.º y rompe al 3.º.</p>
+                </li>
+                <li class="flex gap-2.5 border border-purple-500/40 p-2.5 rounded-xl bg-purple-950/20">
+                    <span class="text-yellow-400 font-bold">3.</span>
                     <div>
-                        <strong class="text-white">Pájaro Negro (Bomba):</strong>
-                        <p class="text-xs text-purple-300 mt-1">Comienza con un radio de explosión de <strong class="text-yellow-300">140</strong>. ¡Cada 1 segundo en vuelo aumenta su radio en <strong class="text-yellow-300">+5</strong>!</p>
-                        <p class="text-xs text-red-300 mt-1"><i class="fa-solid fa-triangle-exclamation"></i> Tienes un tiempo aleatorio de <strong class="text-yellow-300">3 a 7 segundos</strong> para presionarlo en pantalla. Si no lo haces, fallará (fizzle), se volverá gris inerte y no explotará.</p>
+                        <strong class="text-white">Pájaro Negro (Bomba):</strong> Radio inicial 140 (+5/seg en vuelo). Debe activarse manualmente tocando la pantalla antes de que expire el fusible (3-7s).
                     </div>
                 </li>
-                <li class="flex gap-3 text-red-400">
-                    <span class="font-bold text-lg"><i class="fa-solid fa-shield-halved"></i></span>
-                    <p><strong class="text-red-300">Anti-Trampas Absoluto:</strong> No se puede interactuar con ningún bloque, cerdito, bomba o estructura antes ni después de tirar. Tampoco podrás agarrar el pájaro en vuelo. ¡Solo se estira la resortera legalmente!</p>
-                </li>
-                <li class="flex gap-3 text-yellow-300">
-                    <span class="font-bold text-lg"><i class="fa-solid fa-gift"></i></span>
-                    <p><strong class="text-yellow-200">Sistema de Premios:</strong> Ganar un nivel te otorga un potenciador aleatorio (¡3 Bombas, Lluvia de Pájaros, Explosión x2 o Súper Propulsión!) aplicable en tu próximo intento.</p>
+                <li class="flex gap-2.5 text-red-400">
+                    <span class="font-bold"><i class="fa-solid fa-shield-halved"></i></span>
+                    <p><strong class="text-red-300">Anti-Trampas:</strong> Bloqueado mover cerdos, bloques u objetos manualmente.</p>
                 </li>
             </ul>
         </div>
@@ -170,48 +169,44 @@
 
         let engine, world, canvas, ctx, width, height;
         let bird, sling, pigs = [], blocks = [], ground, mouseConstraint;
-        let slingPos = { x: 220, y: 0 };
+        let slingPos = { x: 220, y: 500 };
         let isFired = false, score = 0, gameState = 'PLAYING';
         let birdQueue = [], currentBirdType = '', isAbilityUsed = false;
         let activeExplosions = []; 
         let currentLevel = 1;
-        const totalLevels = 50;
+        const totalLevels = 67;
         
-        // Guardas de asentamiento estructural para evitar auto-resoluciones de niveles al cargar
         let levelFrameCount = 0;
 
-        // Variables del Sistema de Recompensas
-        let pendingReward = null;  // Almacena la recompensa ganada para el siguiente nivel
-        let activeReward = null;   // Almacena la recompensa aplicada en el intento actual
+        let pendingReward = null;
+        let activeReward = null;
         
-        // Parámetros modificados por recompensas
-        let bonusExplosionRadius = 1; // Multiplicador de radio de explosión
-        let bonusBirdSpeed = 1;       // Multiplicador de velocidad de disparo / habilidad
+        let bonusExplosionRadius = 1;
+        let bonusBirdSpeed = 1;
 
-        // Definiciones de tipos de recompensas
         const REWARDS = {
             triple_bomb: {
                 id: 'triple_bomb',
                 name: 'Arsenal de Triple Bomba 💣',
-                desc: 'Inicia el próximo nivel con una alineación devastadora de 3 Pájaros Bomba Negros.',
+                desc: 'Inicia el próximo nivel con una alineación de 3 Pájaros Bomba Negros.',
                 apply: () => {} 
             },
             super_explosion: {
                 id: 'super_explosion',
                 name: 'Mega Detonación 💥',
-                desc: 'La onda expansiva de las explosiones de TNT y Pájaros Negros aumenta un 50% en tamaño y fuerza.',
+                desc: 'Aumenta un 50% la fuerza y radio de las explosiones de TNT y Pájaros Negros.',
                 apply: () => { bonusExplosionRadius = 1.5; }
             },
             extra_birds: {
                 id: 'extra_birds',
                 name: 'Lluvia de Pájaros 🐦',
-                desc: 'Añade 2 pájaros rojos adicionales a tu cola de reserva para tener más intentos de ataque.',
+                desc: 'Añade 2 pájaros rojos adicionales a tu reserva.',
                 apply: () => {} 
             },
             hyper_speed: {
                 id: 'hyper_speed',
                 name: 'Súper Propulsión 🚀',
-                desc: 'La habilidad del pájaro amarillo es un 50% más rápida y destructiva al activarse.',
+                desc: 'Duplica el impulso destructivo del pájaro amarillo.',
                 apply: () => { bonusBirdSpeed = 1.5; }
             }
         };
@@ -230,56 +225,23 @@
         const activeRewardText = document.getElementById('active-reward-text');
 
         const levelNames = [
-            "El Fuerte del Bosque (Muy Fácil)",
-            "Torres Gemelas de Piedra (Fácil)",
-            "Castillo de TNT del Rey (Fácil-Medio)",
-            "Fortaleza de Hielo (Medio)",
-            "Pirámide del Desierto (Medio-Alto)",
-            "El Puente Colgante (Alto)",
-            "Caos Aéreo (Desafiante)",
-            "La Muralla Inexpugnable (Muy Alto)",
-            "El Castillo de Cristal (Difícil)",
-            "La Venganza del Rey (Sin TNT - Experto)",
-            "El Bastión Volcánico (Experto)",
-            "Laberinto Glaciar (Extremo)",
-            "Columnas del Olimpo (Física Pura)",
-            "Plataforma Celeste (Complejo)",
-            "Búnker Subterráneo (Precisión)",
-            "TNT Oculto en las Ruinas (Estratégico)",
-            "La Puerta de Hierro (Piedra Pesada)",
-            "Torres Suspendidas en Hielo (Inestable)",
-            "El Último Castillo (Extremo)",
-            "Apocalipsis de Cerdos (Maestría Máxima)",
-            "La Cámara de los Secretos (Desafiante)",
-            "El Zigurat del Destino (Medio-Alto)",
-            "La Torre Inclinada (Complejo)",
-            "El Archipiélago Flotante (Gravedad Cero)",
-            "El Gran Laberinto de Piedra (Extremo)",
-            "La Guillotina de Piedra (Muy Alto)",
-            "El Gran Cañón (Precisión Parabólica)",
-            "El Cubo Geométrico (Simetría Física)",
-            "El Nido del Fénix (Aéreo)",
-            "La Muralla de Troya (Sin TNT - Extremo)",
-            "La Fortaleza de Obsidiana (Piedra Pesada)",
-            "El Desafío de la Gravedad (Física Teórica)",
-            "El Castillo en las Nubes (Complejo)",
-            "El Reactor Inestable (TNT Sensible)",
-            "El Trono de Hielo (Fricción Cero)",
-            "Columnas del Destino (Inestabilidad Crítica)",
-            "El Gran Búnker Blindado (Fuerza Bruta)",
-            "La Trampa del Embudo (Física de Rebote)",
-            "El Templo Sagrado (Madera y Piedra)",
-            "La Resistencia del Desierto (Muy Alto)",
-            "El Gran Acueducto (Estructural)",
-            "La Jaula de Cristal (Suspendido)",
-            "La Guarida del Dragón (Explosivo)",
-            "La Fortificación Angular (Rampas)",
-            "La Torre de la Magia (Vertical)",
-            "El Puente del Caos (Frágil)",
-            "La Telaraña de Cerdos (Complejo)",
-            "La Cueva del Rey Cerdo (Hielo Pesado)",
-            "La Ciudadela Militar (Piedra Dura)",
-            "El Último Bastión (Sin TNT - Leyenda)"
+            "El Fuerte del Bosque", "Torres Gemelas de Piedra", "Castillo de TNT del Rey", "Fortaleza de Hielo",
+            "Pirámide del Desierto", "El Puente Colgante", "Caos Aéreo", "La Muralla Inexpugnable",
+            "El Castillo de Cristal", "La Venganza del Rey", "El Bastión Volcánico", "Laberinto Glaciar",
+            "Columnas del Olimpo", "Plataforma Celeste", "Búnker Subterráneo", "TNT Oculto en las Ruinas",
+            "La Puerta de Hierro", "Torres Suspendidas en Hielo", "El Último Castillo", "Apocalipsis de Cerdos",
+            "La Cámara de los Secretos", "El Zigurat del Destino", "La Torre Inclinada", "El Archipiélago Flotante",
+            "El Gran Laberinto de Piedra", "La Guillotina de Piedra", "El Gran Cañón", "El Cubo Geométrico",
+            "El Nido del Fénix", "La Muralla de Troya", "La Fortaleza de Obsidiana", "El Desafío de la Gravedad",
+            "El Castillo en las Nubes", "El Reactor Inestable", "El Trono de Hielo", "Columnas del Destino",
+            "El Gran Búnker Blindado", "La Trampa del Embudo", "El Templo Sagrado", "La Resistencia del Desierto",
+            "El Gran Acueducto", "La Jaula de Cristal", "La Guarida del Dragón", "La Fortificación Angular",
+            "La Torre de la Magia", "El Puente del Caos", "La Telaraña de Cerdos", "La Cueva del Rey Cerdo",
+            "La Ciudadela Militar", "El Último Bastión", "El Búnker de Cristal de Obsidiana", "Laberinto de Doble Rey",
+            "La Bóveda Blindada", "Cúpula de Hielo Colosal", "Cámara de Alta Presión", "La Gran Muralla Vertical",
+            "Fortaleza de Hielo y Acero", "El Trono Impenetrable", "Laberinto Flotante de Cristal", "Torres Gemelas de Piedra Colosal",
+            "Búnker de TNT Blindado", "Bóveda Imperial de Hielo", "El Bastión de Obsidiana Pesada", "El Gran Coliseo Glaciar",
+            "El Puente del Juicio Final", "El Bastión de Cristal Colosal", "El Gran Coliseo Imperial"
         ];
 
         function populateLevelSelect() {
@@ -293,21 +255,24 @@
         }
 
         function toggleHelpModal() {
-            const modal = document.getElementById('help-modal');
-            modal.classList.toggle('hidden');
+            document.getElementById('help-modal').classList.toggle('hidden');
         }
 
         function init() {
             canvas = document.getElementById('game-canvas');
             ctx = canvas.getContext('2d', { alpha: false });
-            resizeCanvas();
-            window.addEventListener('resize', resizeCanvas);
             
             engine = Engine.create();
             world = engine.world;
-            engine.gravity.y = 1; // Gravedad terrestre
+            engine.gravity.y = 1;
 
-            // Configurar el ratón para apuntar con la honda
+            // Elevar las iteraciones de precisión para evitar que los pájaros atraviesen bloques a alta velocidad
+            engine.positionIterations = 14;
+            engine.velocityIterations = 14;
+
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+
             const mouse = Mouse.create(canvas);
             mouseConstraint = MouseConstraint.create(engine, {
                 mouse: mouse,
@@ -315,14 +280,12 @@
             });
             Composite.add(world, mouseConstraint);
 
-            // Evitar que el scroll interfiera en móviles y PC
             mouseConstraint.mouse.element.removeEventListener("mousewheel", mouseConstraint.mouse.mousewheel);
             mouseConstraint.mouse.element.removeEventListener("DOMMouseScroll", mouseConstraint.mouse.mousewheel);
             
             populateLevelSelect();
             initGame();
 
-            // Activar habilidades de los pájaros en el aire (Velocidad o Detonación de Bomba)
             ['mousedown', 'touchstart'].forEach(evt => {
                 window.addEventListener(evt, (e) => {
                     if (e.target !== canvas) return;
@@ -353,11 +316,25 @@
         }
 
         function resizeCanvas() {
-            width = window.innerWidth;
-            height = window.innerHeight;
+            width = window.innerWidth || document.documentElement.clientWidth || 800;
+            height = window.innerHeight || document.documentElement.clientHeight || 600;
             canvas.width = width;
             canvas.height = height;
-            slingPos.y = height - 160; // Posición de la honda de acuerdo a la pantalla
+            slingPos.x = Math.min(220, Math.floor(width * 0.22));
+            slingPos.y = Math.max(height - 160, 100);
+
+            if (ground) {
+                Body.setPosition(ground, { x: width / 2, y: height - 20 });
+            }
+
+            if (bird && !isFired) {
+                Body.setPosition(bird, { x: slingPos.x, y: slingPos.y });
+                Body.setVelocity(bird, { x: 0, y: 0 });
+                Body.setAngularVelocity(bird, 0);
+                if (sling) {
+                    sling.pointA = { x: slingPos.x, y: slingPos.y };
+                }
+            }
         }
 
         function applyRewards() {
@@ -366,11 +343,10 @@
 
             if (pendingReward) {
                 activeReward = pendingReward;
-                pendingReward = null; // Recompensa consumida
+                pendingReward = null;
 
                 if (REWARDS[activeReward]) {
                     REWARDS[activeReward].apply();
-                    
                     rewardBanner.classList.remove('opacity-0', 'translate-y-12');
                     rewardBanner.classList.add('opacity-100', 'translate-y-0');
                     document.getElementById('active-reward-text').innerText = REWARDS[activeReward].name;
@@ -383,42 +359,6 @@
         }
 
         function getBaseBirdQueue(level) {
-            if (level > 20) {
-                const queues = [
-                    ['yellow', 'red', 'red'],                      // 21 (Más difícil: sin pájaro negro)
-                    ['yellow', 'black', 'red'],                    // 22 (Más difícil: un pájaro negro menos)
-                    ['yellow', 'yellow', 'red'],                   // 23 (Más difícil: sin bomba)
-                    ['black', 'yellow', 'red'],                    // 24 (Más difícil: un pájaro negro menos)
-                    ['black', 'black', 'yellow'],                  // 25 (Más difícil: un pájaro negro menos)
-                    ['red', 'yellow', 'red', 'red'],               // 26 (Más difícil: sin bomba)
-                    ['yellow', 'black', 'black'],                  // 27 (Más difícil: un pájaro amarillo menos)
-                    ['black', 'yellow', 'red'],                    // 28 (Más difícil: un pájaro negro menos)
-                    ['yellow', 'yellow', 'black'],                 // 29 (Más difícil: reducción de munición)
-                    ['yellow', 'yellow', 'red', 'red'],            // 30 (Más difícil: cambiados amarillos por rojos)
-                    ['black', 'yellow', 'yellow', 'red'],          // 31 (Más difícil: un pájaro negro menos)
-                    ['yellow', 'red', 'red', 'red'],               // 32 (Más difícil: sin bomba)
-                    ['black', 'black', 'red'],                     // 33 (Más difícil: un pájaro negro menos)
-                    ['yellow', 'black', 'red'],                    // 34 (Más difícil: un amarillo y un negro menos)
-                    ['yellow', 'yellow', 'red', 'red'],            // 35 (Más difícil: un amarillo menos)
-                    ['black', 'yellow', 'red'],                    // 36 (Más difícil: un negro menos)
-                    ['black', 'black', 'yellow', 'yellow'],        // 37 (Más difícil: un negro menos)
-                    ['red', 'yellow', 'yellow', 'red'],            // 38 (Más difícil: sin bomba)
-                    ['yellow', 'yellow', 'red'],                   // 39 (Más difícil: sin bomba)
-                    ['black', 'yellow', 'yellow', 'yellow'],       // 40 (Más difícil: un negro menos)
-                    ['yellow', 'red', 'red', 'red'],               // 41 (Más difícil: sin bomba)
-                    ['black', 'black', 'red', 'red'],              // 42 (Más difícil: un negro menos)
-                    ['yellow', 'black', 'yellow'],                 // 43 (Más difícil: un negro menos)
-                    ['red', 'yellow', 'black', 'red'],             // 44 (Más difícil: un negro menos)
-                    ['yellow', 'yellow', 'black', 'red'],          // 45 (Más difícil: un negro menos)
-                    ['black', 'yellow', 'yellow', 'red'],          // 46 (Más difícil: un negro menos)
-                    ['yellow', 'black', 'yellow', 'red'],          // 47 (Más difícil: un negro menos)
-                    ['black', 'black', 'black', 'yellow'],         // 48 (Más difícil: un negro menos)
-                    ['yellow', 'black', 'black', 'red'],           // 49 (Más difícil: cambiado amarillo por rojo)
-                    ['yellow', 'yellow', 'black', 'red', 'red']    // 50 (Más difícil: un negro menos)
-                ];
-                return queues[(level - 21) % queues.length];
-            }
-
             switch(level) {
                 case 1:  return ['red', 'red'];
                 case 2:  return ['red', 'yellow', 'red'];
@@ -440,6 +380,53 @@
                 case 18: return ['black', 'yellow', 'yellow', 'black'];
                 case 19: return ['red', 'yellow', 'black', 'black', 'red'];
                 case 20: return ['yellow', 'black', 'yellow', 'black', 'red'];
+                case 21: return ['yellow', 'red', 'red'];
+                case 22: return ['yellow', 'black', 'red'];
+                case 23: return ['yellow', 'yellow', 'red'];
+                case 24: return ['black', 'yellow', 'red'];
+                case 25: return ['black', 'black', 'yellow'];
+                case 26: return ['red', 'yellow', 'red', 'red'];
+                case 27: return ['yellow', 'black', 'black'];
+                case 28: return ['black', 'yellow', 'red'];
+                case 29: return ['yellow', 'yellow', 'black'];
+                case 30: return ['yellow', 'yellow', 'red', 'red'];
+                case 31: return ['black', 'yellow', 'yellow', 'red'];
+                case 32: return ['yellow', 'red', 'red', 'red'];
+                case 33: return ['black', 'black', 'red'];
+                case 34: return ['yellow', 'black', 'red'];
+                case 35: return ['yellow', 'yellow', 'red', 'red'];
+                case 36: return ['black', 'yellow', 'red'];
+                case 37: return ['black', 'black', 'yellow', 'yellow'];
+                case 38: return ['red', 'yellow', 'yellow', 'red'];
+                case 39: return ['yellow', 'yellow', 'red'];
+                case 40: return ['black', 'yellow', 'yellow', 'yellow'];
+                case 41: return ['yellow', 'red', 'red', 'red'];
+                case 42: return ['black', 'black', 'red', 'red'];
+                case 43: return ['yellow', 'black', 'yellow'];
+                case 44: return ['red', 'yellow', 'black', 'red'];
+                case 45: return ['yellow', 'yellow', 'black', 'red'];
+                case 46: return ['black', 'yellow', 'yellow', 'red'];
+                case 47: return ['yellow', 'black', 'yellow', 'red'];
+                case 48: return ['black', 'black', 'black', 'yellow'];
+                case 49: return ['yellow', 'black', 'black', 'red'];
+                case 50: return ['yellow', 'yellow', 'black', 'red', 'red'];
+                case 51: return ['black', 'yellow', 'yellow', 'red'];
+                case 52: return ['yellow', 'black', 'black'];
+                case 53: return ['red', 'yellow', 'black', 'red'];
+                case 54: return ['black', 'yellow', 'red', 'red'];
+                case 55: return ['yellow', 'yellow', 'black', 'black'];
+                case 56: return ['black', 'black', 'yellow', 'red'];
+                case 57: return ['yellow', 'black', 'yellow', 'red'];
+                case 58: return ['black', 'yellow', 'black', 'red'];
+                case 59: return ['yellow', 'yellow', 'black', 'red'];
+                case 60: return ['black', 'black', 'yellow', 'yellow'];
+                case 61: return ['yellow', 'black', 'red', 'red'];
+                case 62: return ['black', 'black', 'black', 'red'];
+                case 63: return ['yellow', 'black', 'yellow', 'black'];
+                case 64: return ['black', 'yellow', 'black', 'red'];
+                case 65: return ['yellow', 'black', 'yellow', 'black', 'red'];
+                case 66: return ['yellow', 'black', 'yellow', 'red'];
+                case 67: return ['black', 'yellow', 'black', 'yellow', 'red'];
                 default: return ['red', 'yellow', 'black'];
             }
         }
@@ -451,7 +438,7 @@
             blocks = [];
             isFired = false;
             score = 0;
-            levelFrameCount = 0; // Reiniciar frame para la salvaguarda de inicio
+            levelFrameCount = 0;
             updateScore(0);
             gameState = 'PLAYING';
             msgContainer.classList.add('hidden');
@@ -475,7 +462,6 @@
 
             Composite.add(world, mouseConstraint);
 
-            // Crear el suelo sólido del nivel
             ground = Bodies.rectangle(width / 2, height - 20, width * 2, 40, {
                 isStatic: true,
                 label: 'ground',
@@ -489,7 +475,7 @@
 
         function selectLevel(val) {
             currentLevel = parseInt(val);
-            pendingReward = null; // Reiniciar recompensa ganada al saltar de nivel manualmente
+            pendingReward = null;
             initGame();
         }
 
@@ -510,18 +496,21 @@
             isFired = false;
             isAbilityUsed = false;
 
-            let birdOpts = { restitution: 0.4, frictionAir: 0.01, label: 'bird', birdType: currentBirdType };
+            // Restitución elástica (restitution: 0.8) para garantizar un rebote nítido al chocar contra paredes
+            let birdOpts = { restitution: 0.8, frictionAir: 0.005, label: 'bird', birdType: currentBirdType };
             
             if (currentBirdType === 'yellow') birdOpts.density = 0.0025;
             else if (currentBirdType === 'black') birdOpts.density = 0.012;
             else birdOpts.density = 0.005;
 
             bird = Bodies.circle(slingPos.x, slingPos.y, 20, birdOpts);
+            Body.setPosition(bird, { x: slingPos.x, y: slingPos.y });
+            Body.setVelocity(bird, { x: 0, y: 0 });
+            Body.setAngularVelocity(bird, 0);
             
             if (currentBirdType === 'black') {
                 bird.explosionRadius = 140;
                 bird.timeSinceLaunch = 0;
-                // Generar fusible aleatorio entre 3 y 7 segundos (180 a 420 frames a 60 FPS)
                 bird.detonationWindow = Math.floor(Math.random() * (420 - 180 + 1)) + 180;
                 bird.fizzled = false;
             }
@@ -542,22 +531,25 @@
         function buildLevel() {
             const baseX = width * 0.73, baseY = height - 40;
             
-            const woodOpts = { restitution: 0.1, density: 0.002, friction: 0.5, label: 'wood' };
-            const stoneOpts = { restitution: 0.05, density: 0.007, friction: 0.65, label: 'stone' };
-            const iceOpts = { restitution: 0.15, density: 0.0012, friction: 0.15, label: 'ice' };
-            const tntOpts = { restitution: 0.1, density: 0.0015, friction: 0.4, label: 'tnt' };
+            const woodOpts = { restitution: 0.5, density: 0.004, friction: 0.2, label: 'wood', hp: 2, maxHp: 2 };
+            const stoneOpts = { restitution: 0.6, density: 0.012, friction: 0.2, label: 'stone', hp: 3, maxHp: 3 };
+            const iceOpts = { restitution: 0.4, density: 0.002, friction: 0.1, label: 'ice', hp: 1, maxHp: 1 };
+            const tntOpts = { restitution: 0.3, density: 0.0015, friction: 0.4, label: 'tnt' };
             const pigOpts = { restitution: 0.35, density: 0.001, friction: 0.4, label: 'pig' };
             const bonusOpts = { restitution: 0.6, density: 0.0005, friction: 0.2, label: 'bonus' };
 
-            // Métodos matemáticos para posicionamiento limpio sin solapamientos
             const spawnColumn = (x, y, w, h, materialOpts) => {
                 const col = Bodies.rectangle(x, y - h/2, w, h, materialOpts);
+                col.hp = materialOpts.hp !== undefined ? materialOpts.hp : 2;
+                col.maxHp = materialOpts.maxHp !== undefined ? materialOpts.maxHp : 2;
                 blocks.push(col);
                 return col;
             };
 
             const spawnBeam = (x, y, w, h, materialOpts) => {
                 const beam = Bodies.rectangle(x, y - h/2, w, h, materialOpts);
+                beam.hp = materialOpts.hp !== undefined ? materialOpts.hp : 2;
+                beam.maxHp = materialOpts.maxHp !== undefined ? materialOpts.maxHp : 2;
                 blocks.push(beam);
                 return beam;
             };
@@ -575,7 +567,7 @@
             };
 
             const spawnBoulder = (x, y, radius) => {
-                const boulder = Bodies.circle(x, y - radius, radius, { ...stoneOpts, label: 'boulder' });
+                const boulder = Bodies.circle(x, y - radius, radius, { ...stoneOpts, label: 'boulder', hp: 3, maxHp: 3 });
                 blocks.push(boulder);
                 return boulder;
             };
@@ -586,7 +578,6 @@
                 return bonus;
             };
 
-            // Estructuras de los Niveles 1 al 50
             if (currentLevel === 1) {
                 spawnColumn(baseX - 50, baseY, 20, 60, woodOpts);
                 spawnColumn(baseX + 50, baseY, 20, 60, woodOpts);
@@ -637,54 +628,40 @@
                         let material = row === 0 ? stoneOpts : (row === 1 ? woodOpts : iceOpts);
                         spawnColumn(px, y, 20, 50, material);
                         spawnBeam(px, y - 50, 65, 15, material);
-                        if (col < count - 1) {
-                            spawnPig(px + 35, y, 18, 'cowboy');
-                        }
+                        if (col < count - 1) spawnPig(px + 35, y, 18, 'cowboy');
                     }
                 }
 
             } else if (currentLevel === 6) {
-                // El Puente Colgante (Más Difícil)
                 spawnColumn(baseX - 160, baseY, 40, 150, stoneOpts); 
                 spawnColumn(baseX + 160, baseY, 40, 150, stoneOpts); 
-                
                 spawnBeam(baseX, baseY, 280, 20, woodOpts); 
-                
                 spawnPig(baseX - 80, baseY - 20, 20, 'helmet');
                 spawnPig(baseX + 80, baseY - 20, 20, 'helmet');
-                
                 spawnColumn(baseX - 60, baseY - 20, 20, 110, iceOpts);
                 spawnColumn(baseX + 60, baseY - 20, 20, 110, iceOpts);
                 spawnColumn(baseX, baseY - 20, 25, 110, stoneOpts);
-                
                 spawnBeam(baseX, baseY - 150, 320, 20, iceOpts); 
-                
                 spawnPig(baseX - 100, baseY - 170, 20, 'cowboy');
                 spawnPig(baseX + 100, baseY - 170, 20, 'cowboy');
                 spawnPig(baseX, baseY - 170, 26, 'king');
-                
                 spawnBoulder(baseX - 140, baseY - 170, 24);
                 spawnBoulder(baseX + 140, baseY - 170, 24);
 
             } else if (currentLevel === 7) {
-                // Caos Aéreo (Más Difícil, Con Globos y TNTs suspendidos)
                 spawnColumn(baseX - 130, baseY, 30, 120, woodOpts);
                 spawnBeam(baseX - 130, baseY - 120, 90, 20, woodOpts);
                 spawnPig(baseX - 130, baseY - 140, 22, 'helmet');
                 spawnBonus(baseX - 180, baseY - 100, 18, 'balloon');
-                
                 spawnColumn(baseX + 130, baseY, 30, 120, woodOpts);
                 spawnBeam(baseX + 130, baseY - 120, 90, 20, woodOpts);
                 spawnPig(baseX + 130, baseY - 140, 22, 'helmet');
                 spawnBonus(baseX + 180, baseY - 100, 18, 'balloon');
-
                 spawnBeam(baseX, baseY, 100, 15, stoneOpts);
                 spawnTNT(baseX, baseY - 15, 35);
-                
                 spawnColumn(baseX - 40, baseY - 50, 15, 80, iceOpts);
                 spawnColumn(baseX + 40, baseY - 50, 15, 80, iceOpts);
                 spawnBeam(baseX, baseY - 130, 160, 15, woodOpts);
-                
                 spawnTNT(baseX - 50, baseY - 145, 30);
                 spawnTNT(baseX + 50, baseY - 145, 30);
                 spawnPig(baseX, baseY - 145, 22, 'cowboy');
@@ -715,22 +692,17 @@
                 spawnBoulder(baseX, baseY - 230, 20);
 
             } else if (currentLevel === 10) {
-                // La Venganza del Rey (Sin TNT)
                 spawnColumn(baseX - 140, baseY, 40, 120, stoneOpts);
                 spawnColumn(baseX + 140, baseY, 40, 120, stoneOpts);
                 spawnColumn(baseX, baseY, 30, 80, stoneOpts);
-                
                 spawnBeam(baseX, baseY - 120, 340, 20, stoneOpts);
-                
                 spawnPig(baseX - 80, baseY - 140, 20, 'helmet');
                 spawnPig(baseX + 80, baseY - 140, 20, 'helmet');
                 spawnPig(baseX, baseY - 140, 28, 'king');
-                
                 spawnColumn(baseX - 110, baseY - 140, 20, 90, iceOpts);
                 spawnColumn(baseX + 110, baseY - 140, 20, 90, iceOpts);
                 spawnColumn(baseX - 40, baseY - 140, 20, 90, woodOpts);
                 spawnColumn(baseX + 40, baseY - 140, 20, 90, woodOpts);
-                
                 spawnBeam(baseX, baseY - 230, 280, 15, woodOpts);
                 spawnBoulder(baseX, baseY - 245, 30);
 
@@ -847,7 +819,6 @@
                 spawnBoulder(baseX, baseY - 265, 30);
 
             } else if (currentLevel === 20) {
-                // El Reto Máximo de la primera fase
                 spawnColumn(baseX - 160, baseY, 50, 160, stoneOpts);
                 spawnColumn(baseX + 160, baseY, 50, 160, stoneOpts);
                 spawnColumn(baseX, baseY, 40, 140, stoneOpts);
@@ -869,7 +840,6 @@
                 spawnBonus(baseX + 190, baseY - 100, 20, 'balloon');
 
             } else if (currentLevel === 21) {
-                // La Cámara de los Secretos (Desafiante) - REFORZADO CON PIEDRA
                 spawnColumn(baseX - 70, baseY, 25, 95, stoneOpts);
                 spawnColumn(baseX + 70, baseY, 25, 95, stoneOpts);
                 spawnBeam(baseX, baseY - 95, 160, 20, stoneOpts);
@@ -881,7 +851,6 @@
                 spawnPig(baseX, baseY - 200, 18, 'helmet');
 
             } else if (currentLevel === 22) {
-                // El Zigurat del Destino (Medio-Alto) - TODO PIEDRA PESADA
                 spawnColumn(baseX - 100, baseY, 35, 120, stoneOpts);
                 spawnColumn(baseX + 100, baseY, 35, 120, stoneOpts);
                 spawnBeam(baseX, baseY - 120, 230, 25, stoneOpts);
@@ -894,7 +863,6 @@
                 spawnBoulder(baseX, baseY - 260, 25);
 
             } else if (currentLevel === 23) {
-                // La Torre Inclinada (Complejo) - REFUERZO DE PIEDRA Y ROCOSIDAD
                 spawnColumn(baseX - 30, baseY, 30, 100, stoneOpts);
                 spawnColumn(baseX + 30, baseY, 30, 100, stoneOpts);
                 spawnBeam(baseX, baseY - 100, 95, 15, stoneOpts);
@@ -907,7 +875,6 @@
                 spawnBoulder(baseX, baseY - 230, 15);
 
             } else if (currentLevel === 24) {
-                // El Archipiélago Flotante (Gravedad Cero) - BARRERAS DE ALTA DENSIDAD
                 spawnBeam(baseX, baseY - 110, 160, 20, stoneOpts);
                 spawnBonus(baseX - 80, baseY - 110, 20, 'balloon');
                 spawnBonus(baseX + 80, baseY - 110, 20, 'balloon');
@@ -918,7 +885,6 @@
                 spawnPig(baseX, baseY - 220, 20, 'cowboy');
 
             } else if (currentLevel === 25) {
-                // El Gran Laberinto de Piedra (Extremo) - BÚNKER COMPACTO
                 for (let i = -1; i <= 1; i++) {
                     spawnColumn(baseX + i * 80, baseY, 30, 130, stoneOpts);
                     spawnPig(baseX + i * 80, baseY - 150, 22, 'helmet');
@@ -930,7 +896,6 @@
                 spawnBoulder(baseX + 40, baseY - 155, 20);
 
             } else if (currentLevel === 26) {
-                // La Guillotina de Piedra (Muy Alto) - SOPORTE EXPANDIDO
                 spawnColumn(baseX - 50, baseY, 25, 150, stoneOpts);
                 spawnColumn(baseX + 50, baseY, 25, 150, stoneOpts);
                 spawnBeam(baseX, baseY - 150, 130, 25, stoneOpts);
@@ -939,7 +904,6 @@
                 spawnPig(baseX, baseY - 40, 20, 'helmet');
 
             } else if (currentLevel === 27) {
-                // El Gran Cañón (Precisión Parabólica) - DOBLE MURO DE PIEDRA
                 spawnColumn(baseX - 120, baseY, 35, 170, stoneOpts);
                 spawnColumn(baseX + 120, baseY, 35, 170, stoneOpts);
                 spawnBeam(baseX, baseY, 210, 20, stoneOpts);
@@ -952,7 +916,6 @@
                 spawnPig(baseX, baseY - 270, 22, 'king');
 
             } else if (currentLevel === 28) {
-                // El Cubo Geométrico (Simetría Física) - PIEDRA REFORZADA
                 spawnColumn(baseX - 45, baseY, 25, 100, stoneOpts);
                 spawnColumn(baseX + 45, baseY, 25, 100, stoneOpts);
                 spawnBeam(baseX, baseY - 100, 115, 25, stoneOpts);
@@ -963,7 +926,6 @@
                 spawnPig(baseX, baseY - 125, 24, 'king');
 
             } else if (currentLevel === 29) {
-                // El Nido del Fénix (Aéreo) - SOPORTES PESADOS
                 spawnColumn(baseX, baseY, 35, 160, stoneOpts);
                 spawnBeam(baseX, baseY - 160, 130, 20, stoneOpts);
                 spawnBonus(baseX - 65, baseY - 160, 18, 'balloon');
@@ -973,7 +935,6 @@
                 spawnTNT(baseX, baseY - 180, 30);
 
             } else if (currentLevel === 30) {
-                // La Muralla de Troya (Sin TNT - Extremo) - PENTÁGONO DE SOPORTE
                 for (let i = 0; i < 5; i++) {
                     spawnColumn(baseX - 100 + i * 50, baseY, 25, 120, stoneOpts);
                 }
@@ -985,7 +946,6 @@
                 spawnBoulder(baseX + 30, baseY - 145, 20);
 
             } else if (currentLevel === 31) {
-                // La Fortaleza de Obsidiana (Piedra Pesada) - PILARES MASIVOS
                 spawnColumn(baseX - 120, baseY, 55, 160, stoneOpts);
                 spawnColumn(baseX + 120, baseY, 55, 160, stoneOpts);
                 spawnBeam(baseX, baseY - 160, 295, 35, stoneOpts);
@@ -995,7 +955,6 @@
                 spawnPig(baseX, baseY - 227, 28, 'king');
 
             } else if (currentLevel === 32) {
-                // El Desafío de la Gravedad (Física Teórica) - CELDAS ANTICHOQUE
                 spawnBeam(baseX, baseY - 150, 210, 20, stoneOpts);
                 spawnBonus(baseX - 105, baseY - 150, 22, 'balloon');
                 spawnBonus(baseX + 105, baseY - 150, 22, 'balloon');
@@ -1005,7 +964,6 @@
                 spawnColumn(baseX + 30, baseY, 15, 150, stoneOpts);
 
             } else if (currentLevel === 33) {
-                // El Castillo en las Nubes (Complejo) - PROTECCIÓN EXTRA
                 spawnColumn(baseX - 90, baseY, 30, 140, stoneOpts);
                 spawnColumn(baseX + 90, baseY, 30, 140, stoneOpts);
                 spawnBeam(baseX, baseY - 140, 210, 20, stoneOpts);
@@ -1015,7 +973,6 @@
                 spawnBoulder(baseX, baseY - 190, 25);
 
             } else if (currentLevel === 34) {
-                // El Reactor Inestable (TNT Sensible) - ENCOFRADO DE PIEDRA
                 spawnColumn(baseX - 60, baseY, 30, 110, stoneOpts);
                 spawnColumn(baseX + 60, baseY, 30, 110, stoneOpts);
                 spawnBeam(baseX, baseY - 110, 150, 20, stoneOpts);
@@ -1025,7 +982,6 @@
                 spawnPig(baseX + 30, baseY, 20, 'helmet');
 
             } else if (currentLevel === 35) {
-                // El Trono de Hielo (Fricción Cero) - PLATAFORMA ANTIDESLIZANTE
                 for (let i = 0; i < 3; i++) {
                     spawnColumn(baseX - 60 + i * 60, baseY, 20, 100, stoneOpts);
                 }
@@ -1035,7 +991,6 @@
                 spawnBoulder(baseX + 40, baseY - 120, 15);
 
             } else if (currentLevel === 36) {
-                // Columnas del Destino (Inestabilidad Crítica) - COLUMNAS ALTAS
                 spawnColumn(baseX - 80, baseY, 20, 150, stoneOpts);
                 spawnColumn(baseX, baseY, 20, 150, stoneOpts);
                 spawnColumn(baseX + 80, baseY, 20, 150, stoneOpts);
@@ -1045,7 +1000,6 @@
                 spawnPig(baseX, baseY - 170, 24, 'king');
 
             } else if (currentLevel === 37) {
-                // El Gran Búnker Blindado (Fuerza Bruta) - CONCRETO SÓLIDO
                 spawnColumn(baseX - 110, baseY, 45, 140, stoneOpts);
                 spawnColumn(baseX + 110, baseY, 45, 140, stoneOpts);
                 spawnBeam(baseX, baseY - 140, 265, 30, stoneOpts);
@@ -1054,7 +1008,6 @@
                 spawnPig(baseX, baseY - 260, 28, 'king');
 
             } else if (currentLevel === 38) {
-                // La Trampa del Embudo (Física de Rebote) - EMBALAJE DE PIEDRA
                 spawnColumn(baseX - 130, baseY, 30, 120, stoneOpts);
                 spawnColumn(baseX + 130, baseY, 30, 120, stoneOpts);
                 spawnBeam(baseX - 65, baseY - 120, 150, 20, stoneOpts);
@@ -1064,7 +1017,6 @@
                 spawnPig(baseX + 50, baseY, 20, 'helmet');
 
             } else if (currentLevel === 39) {
-                // El Templo Sagrado (Madera y Piedra) - NÚCLEO ARMADO
                 spawnColumn(baseX - 80, baseY, 35, 130, stoneOpts);
                 spawnColumn(baseX + 80, baseY, 35, 130, stoneOpts);
                 spawnBeam(baseX, baseY - 130, 195, 25, stoneOpts);
@@ -1074,7 +1026,6 @@
                 spawnPig(baseX, baseY - 155, 24, 'king');
 
             } else if (currentLevel === 40) {
-                // La Resistencia del Desierto (Muy Alto) - PILARES REFORZADOS
                 for (let i = -1; i <= 1; i++) {
                     spawnColumn(baseX + i * 90, baseY, 30, 90, stoneOpts);
                 }
@@ -1084,7 +1035,6 @@
                 spawnPig(baseX, baseY - 110, 26, 'king');
 
             } else if (currentLevel === 41) {
-                // El Gran Acueducto (Estructural) - CONTRAFUERTES SUPERIORES
                 spawnColumn(baseX - 120, baseY, 30, 110, stoneOpts);
                 spawnColumn(baseX, baseY, 30, 110, stoneOpts);
                 spawnColumn(baseX + 120, baseY, 30, 110, stoneOpts);
@@ -1096,7 +1046,6 @@
                 spawnBoulder(baseX + 60, baseY - 135, 20);
 
             } else if (currentLevel === 42) {
-                // La Jaula de Cristal (Suspendido) - SOPORTE CENTRAL PIEDRA
                 spawnColumn(baseX - 50, baseY - 100, 20, 90, stoneOpts);
                 spawnColumn(baseX + 50, baseY - 100, 20, 90, stoneOpts);
                 spawnBeam(baseX, baseY - 190, 120, 20, stoneOpts);
@@ -1104,7 +1053,6 @@
                 spawnPig(baseX, baseY - 130, 22, 'cowboy');
 
             } else if (currentLevel === 43) {
-                // La Guarida del Dragón (Explosivo) - TNT EMBALDADO
                 spawnColumn(baseX - 100, baseY, 35, 120, stoneOpts);
                 spawnColumn(baseX + 100, baseY, 35, 120, stoneOpts);
                 spawnBeam(baseX, baseY - 120, 235, 20, stoneOpts);
@@ -1114,7 +1062,6 @@
                 spawnPig(baseX, baseY - 145, 28, 'king');
 
             } else if (currentLevel === 44) {
-                // La Fortificación Angular (Rampas) - MUROS GRUESOS
                 spawnColumn(baseX - 80, baseY, 25, 110, stoneOpts);
                 spawnColumn(baseX + 80, baseY, 25, 110, stoneOpts);
                 spawnBeam(baseX, baseY - 110, 185, 20, stoneOpts);
@@ -1122,14 +1069,12 @@
                 spawnBoulder(baseX, baseY - 135, 24);
 
             } else if (currentLevel === 45) {
-                // La Torre de la Magia (Vertical) - AGUJA DE OBSIDIANA
                 spawnColumn(baseX, baseY, 40, 130, stoneOpts);
                 spawnBeam(baseX, baseY - 130, 100, 20, stoneOpts);
                 spawnColumn(baseX, baseY - 150, 30, 90, stoneOpts);
                 spawnPig(baseX, baseY - 250, 24, 'king');
 
             } else if (currentLevel === 46) {
-                // El Puente del Caos (Frágil) - PLATAFORMA DE BLOQUES PESADOS
                 spawnColumn(baseX - 130, baseY, 30, 80, stoneOpts);
                 spawnColumn(baseX + 130, baseY, 30, 80, stoneOpts);
                 spawnBeam(baseX, baseY - 80, 280, 20, stoneOpts);
@@ -1138,7 +1083,6 @@
                 spawnPig(baseX, baseY - 100, 22, 'helmet');
 
             } else if (currentLevel === 47) {
-                // La Telaraña de Cerdos (Complejo) - RECUADROS REFORZADOS
                 spawnColumn(baseX - 100, baseY, 25, 150, stoneOpts);
                 spawnColumn(baseX + 100, baseY, 25, 150, stoneOpts);
                 spawnBeam(baseX, baseY - 75, 220, 15, stoneOpts);
@@ -1148,7 +1092,6 @@
                 spawnPig(baseX, baseY - 170, 26, 'king');
 
             } else if (currentLevel === 48) {
-                // La Cueva del Rey Cerdo (Hielo Pesado) - CÚPULA DE CRISTAL Y PIEDRA
                 spawnColumn(baseX - 90, baseY, 45, 120, stoneOpts);
                 spawnColumn(baseX + 90, baseY, 45, 120, stoneOpts);
                 spawnBeam(baseX, baseY - 120, 225, 30, stoneOpts);
@@ -1157,7 +1100,6 @@
                 spawnBoulder(baseX + 40, baseY - 145, 20);
 
             } else if (currentLevel === 49) {
-                // La Ciudadela Militar (Piedra Dura) - BASTIÓN BLINDADO
                 spawnColumn(baseX - 120, baseY, 45, 160, stoneOpts);
                 spawnColumn(baseX + 120, baseY, 45, 160, stoneOpts);
                 spawnBeam(baseX, baseY - 160, 285, 25, stoneOpts);
@@ -1166,28 +1108,210 @@
                 spawnPig(baseX, baseY - 190, 26, 'king');
 
             } else if (currentLevel === 50) {
-                // El Último Bastión (Sin TNT - Leyenda) - LA CATEDRAL IMPENETRABLE
                 spawnColumn(baseX - 140, baseY, 55, 170, stoneOpts);
                 spawnColumn(baseX + 140, baseY, 55, 170, stoneOpts);
                 spawnColumn(baseX, baseY, 45, 150, stoneOpts);
                 spawnBeam(baseX, baseY - 170, 330, 35, stoneOpts);
-                
                 spawnPig(baseX - 70, baseY, 26, 'helmet');
                 spawnPig(baseX + 70, baseY, 26, 'helmet');
-                
                 spawnColumn(baseX - 80, baseY - 205, 30, 100, stoneOpts);
                 spawnColumn(baseX + 80, baseY - 205, 30, 100, stoneOpts);
                 spawnBeam(baseX, baseY - 305, 195, 25, stoneOpts);
-                
                 spawnPig(baseX, baseY - 205, 32, 'king');
                 spawnBoulder(baseX, baseY - 340, 38);
+
+            } else if (currentLevel === 51) {
+                spawnColumn(baseX - 110, baseY, 25, 140, iceOpts);
+                spawnColumn(baseX + 110, baseY, 25, 140, iceOpts);
+                spawnColumn(baseX - 50, baseY, 30, 100, stoneOpts);
+                spawnColumn(baseX + 50, baseY, 30, 100, stoneOpts);
+                spawnBeam(baseX, baseY - 140, 250, 20, stoneOpts);
+                spawnPig(baseX, baseY - 165, 28, 'king');
+                spawnPig(baseX - 80, baseY, 20, 'helmet');
+                spawnPig(baseX + 80, baseY, 20, 'helmet');
+
+            } else if (currentLevel === 52) {
+                spawnColumn(baseX - 90, baseY, 35, 180, stoneOpts);
+                spawnColumn(baseX + 90, baseY, 35, 180, stoneOpts);
+                spawnTNT(baseX, baseY - 90, 35);
+                spawnBeam(baseX, baseY - 180, 210, 20, stoneOpts);
+                spawnPig(baseX - 45, baseY - 200, 22, 'helmet');
+                spawnPig(baseX + 45, baseY - 200, 22, 'helmet');
+
+            } else if (currentLevel === 53) {
+                spawnColumn(baseX - 70, baseY, 30, 120, stoneOpts);
+                spawnColumn(baseX + 70, baseY, 30, 120, stoneOpts);
+                spawnBeam(baseX, baseY - 120, 170, 20, woodOpts);
+                spawnBoulder(baseX, baseY - 145, 30);
+                spawnPig(baseX, baseY, 24, 'helmet');
+
+            } else if (currentLevel === 54) {
+                for (let i = -1; i <= 1; i++) {
+                    spawnColumn(baseX + i * 70, baseY, 25, 110, stoneOpts);
+                    spawnPig(baseX + i * 70, baseY - 130, 20, 'helmet');
+                }
+                spawnBeam(baseX, baseY - 110, 180, 20, stoneOpts);
+                spawnPig(baseX, baseY, 26, 'king');
+
+            } else if (currentLevel === 55) {
+                spawnBeam(baseX, baseY - 140, 220, 20, stoneOpts);
+                spawnBonus(baseX - 100, baseY - 140, 20, 'balloon');
+                spawnBonus(baseX, baseY - 140, 20, 'balloon');
+                spawnBonus(baseX + 100, baseY - 140, 20, 'balloon');
+                spawnColumn(baseX - 60, baseY - 160, 20, 80, stoneOpts);
+                spawnColumn(baseX + 60, baseY - 160, 20, 80, stoneOpts);
+                spawnPig(baseX, baseY - 160, 22, 'helmet');
+                spawnPig(baseX - 60, baseY - 250, 20, 'cowboy');
+                spawnPig(baseX + 60, baseY - 250, 20, 'cowboy');
+
+            } else if (currentLevel === 56) {
+                spawnColumn(baseX - 130, baseY, 40, 160, stoneOpts);
+                spawnColumn(baseX - 50, baseY, 25, 100, stoneOpts);
+                spawnTNT(baseX - 90, baseY, 35);
+                spawnBeam(baseX - 90, baseY - 160, 120, 20, stoneOpts);
+                spawnColumn(baseX + 50, baseY, 40, 160, stoneOpts);
+                spawnPig(baseX + 50, baseY - 180, 24, 'helmet');
+                spawnPig(baseX - 90, baseY - 180, 26, 'king');
+
+            } else if (currentLevel === 57) {
+                let layers = 3;
+                for (let r = 0; r < layers; r++) {
+                    let y = baseY - (r * 60);
+                    let count = layers - r;
+                    for (let c = 0; c < count; c++) {
+                        let px = baseX - ((count - 1) * 40) + (c * 80);
+                        spawnColumn(px, y, 20, 45, r % 2 === 0 ? iceOpts : stoneOpts);
+                        spawnBeam(px, y - 45, 75, 15, stoneOpts);
+                    }
+                }
+                spawnPig(baseX, baseY - 180, 28, 'king');
+                spawnBoulder(baseX, baseY - 205, 25);
+
+            } else if (currentLevel === 58) {
+                spawnColumn(baseX - 100, baseY, 50, 150, stoneOpts);
+                spawnColumn(baseX + 100, baseY, 50, 150, stoneOpts);
+                spawnBeam(baseX, baseY - 150, 250, 30, stoneOpts);
+                spawnBoulder(baseX - 50, baseY - 180, 25);
+                spawnBoulder(baseX + 50, baseY - 180, 25);
+                spawnPig(baseX, baseY, 24, 'king');
+                spawnPig(baseX, baseY - 180, 22, 'helmet');
+
+            } else if (currentLevel === 59) {
+                spawnColumn(baseX - 80, baseY, 30, 120, stoneOpts);
+                spawnColumn(baseX + 80, baseY, 30, 120, stoneOpts);
+                spawnBeam(baseX, baseY - 120, 190, 20, stoneOpts);
+                spawnTNT(baseX - 50, baseY - 190, 30);
+                spawnTNT(baseX, baseY - 190, 30);
+                spawnTNT(baseX + 50, baseY - 190, 30);
+                spawnBonus(baseX - 50, baseY - 190, 18, 'balloon');
+                spawnBonus(baseX + 50, baseY - 190, 18, 'balloon');
+                spawnPig(baseX, baseY, 26, 'king');
+
+            } else if (currentLevel === 60) {
+                for (let i = -2; i <= 3; i++) {
+                    let px = baseX + (i - 0.5) * 45;
+                    spawnColumn(px, baseY, 18, 110, stoneOpts);
+                }
+                spawnBeam(baseX, baseY - 110, 250, 20, stoneOpts);
+                spawnPig(baseX, baseY - 135, 30, 'king');
+                spawnPig(baseX - 80, baseY, 20, 'helmet');
+                spawnPig(baseX + 80, baseY, 20, 'helmet');
+
+            } else if (currentLevel === 61) {
+                spawnColumn(baseX - 110, baseY, 30, 120, stoneOpts);
+                spawnColumn(baseX - 50, baseY, 30, 120, stoneOpts);
+                spawnBeam(baseX - 80, baseY - 120, 90, 20, stoneOpts);
+                spawnPig(baseX - 80, baseY - 145, 24, 'king');
+
+                spawnColumn(baseX + 50, baseY, 30, 120, stoneOpts);
+                spawnColumn(baseX + 110, baseY, 30, 120, stoneOpts);
+                spawnBeam(baseX + 80, baseY - 120, 90, 20, stoneOpts);
+                spawnPig(baseX + 80, baseY - 145, 24, 'king');
+
+            } else if (currentLevel === 62) {
+                for (let j = 0; j < 3; j++) {
+                    let y = baseY - (j * 40);
+                    spawnBeam(baseX - 40, y, 90, 35, stoneOpts);
+                }
+                spawnPig(baseX + 50, baseY, 20, 'helmet');
+                spawnPig(baseX + 50, baseY - 45, 20, 'helmet');
+                spawnPig(baseX + 50, baseY - 90, 20, 'helmet');
+
+            } else if (currentLevel === 63) {
+                spawnColumn(baseX - 120, baseY, 35, 140, stoneOpts);
+                spawnColumn(baseX + 120, baseY, 35, 140, stoneOpts);
+                spawnBeam(baseX, baseY - 140, 275, 20, stoneOpts);
+                for (let i = -1; i <= 1; i++) {
+                    spawnColumn(baseX + i * 50, baseY, 15, 80, iceOpts);
+                }
+                spawnBeam(baseX, baseY - 80, 130, 15, iceOpts);
+                spawnPig(baseX, baseY - 165, 26, 'king');
+
+            } else if (currentLevel === 64) {
+                spawnColumn(baseX - 140, baseY, 40, 160, stoneOpts);
+                spawnColumn(baseX + 140, baseY, 40, 160, stoneOpts);
+                spawnBeam(baseX, baseY - 160, 320, 25, stoneOpts);
+                spawnBoulder(baseX - 90, baseY - 185, 25);
+                spawnBoulder(baseX, baseY - 185, 25);
+                spawnBoulder(baseX + 90, baseY - 185, 25);
+                spawnPig(baseX - 60, baseY, 20, 'helmet');
+                spawnPig(baseX + 60, baseY, 20, 'helmet');
+
+            } else if (currentLevel === 65) {
+                spawnColumn(baseX - 150, baseY, 45, 180, stoneOpts);
+                spawnColumn(baseX + 150, baseY, 45, 180, stoneOpts);
+                spawnBeam(baseX, baseY - 180, 345, 25, stoneOpts);
+                spawnPig(baseX - 80, baseY, 24, 'helmet');
+                spawnPig(baseX + 80, baseY, 24, 'helmet');
+                spawnColumn(baseX - 70, baseY - 205, 25, 90, stoneOpts);
+                spawnColumn(baseX + 70, baseY - 205, 25, 90, stoneOpts);
+                spawnBeam(baseX, baseY - 295, 165, 20, stoneOpts);
+                spawnPig(baseX - 40, baseY - 205, 26, 'king');
+                spawnPig(baseX + 40, baseY - 205, 26, 'king');
+                spawnBoulder(baseX, baseY - 320, 30);
+
+            } else if (currentLevel === 66) {
+                for (let i = -3; i <= 3; i++) {
+                    let px = baseX + i * 45;
+                    spawnColumn(px, baseY, 18, 140, iceOpts);
+                }
+                spawnBeam(baseX, baseY - 140, 330, 20, iceOpts);
+                spawnPig(baseX - 100, baseY, 22, 'helmet');
+                spawnPig(baseX, baseY, 26, 'king');
+                spawnPig(baseX + 100, baseY, 22, 'helmet');
+                
+                spawnColumn(baseX - 100, baseY - 160, 25, 90, stoneOpts);
+                spawnColumn(baseX + 100, baseY - 160, 25, 90, stoneOpts);
+                spawnBeam(baseX, baseY - 250, 240, 20, woodOpts);
+                spawnPig(baseX, baseY - 160, 28, 'king');
+                spawnBoulder(baseX, baseY - 270, 30);
+
+            } else if (currentLevel === 67) {
+                spawnColumn(baseX - 180, baseY, 50, 200, stoneOpts);
+                spawnColumn(baseX + 180, baseY, 50, 200, stoneOpts);
+                spawnBeam(baseX, baseY - 200, 410, 30, stoneOpts);
+                
+                for (let c = -2; c <= 2; c++) {
+                    let cx = baseX + c * 60;
+                    spawnColumn(cx, baseY, 18, 100, iceOpts);
+                    spawnPig(cx, baseY - 100, 20, c === 0 ? 'king' : 'cowboy');
+                }
+                spawnBeam(baseX, baseY - 100, 320, 18, iceOpts);
+
+                spawnColumn(baseX - 90, baseY - 230, 30, 110, stoneOpts);
+                spawnColumn(baseX + 90, baseY - 230, 30, 110, stoneOpts);
+                spawnBeam(baseX, baseY - 340, 220, 25, stoneOpts);
+                spawnPig(baseX, baseY - 230, 32, 'king');
+
+                spawnBoulder(baseX - 60, baseY - 365, 25);
+                spawnBoulder(baseX + 60, baseY - 365, 25);
+                spawnTNT(baseX, baseY - 230, 35);
             }
 
             Composite.add(world, [...blocks, ...pigs]);
         }
 
         function setupEvents() {
-            // BLOQUEO ABSOLUTO: Anular cualquier intento de arrastre no autorizado
             Events.on(mouseConstraint, 'mousedown', function(event) {
                 if (!bird) return;
                 const bodies = Composite.allBodies(world);
@@ -1196,7 +1320,6 @@
                 
                 if (clickedBodies.length > 0) {
                     const clickedActiveBird = clickedBodies.find(b => b === bird);
-                    // Si se hace clic en cualquier cuerpo que NO sea el pájaro activo, o si ya fue lanzado, se desconecta inmediatamente
                     if (!clickedActiveBird || isFired) {
                         mouseConstraint.constraint.bodyB = null;
                         mouseConstraint.body = null;
@@ -1213,14 +1336,12 @@
 
             Events.on(mouseConstraint, 'enddrag', function(event) {
                 if (event.body === bird && !isFired) {
-                    // Solo se permite el disparo si se estira hacia atrás (coordenada X menor que el centro de la honda)
                     if (bird.position.x < slingPos.x + 20) {
                         isFired = true;
                         setTimeout(() => { 
                             if (sling) sling.bodyB = null; 
                         }, 20);
                     } else {
-                        // Restablecer el pájaro al centro si se suelta hacia el fuerte
                         Body.setPosition(bird, { x: slingPos.x, y: slingPos.y });
                         Body.setVelocity(bird, { x: 0, y: 0 });
                     }
@@ -1228,23 +1349,51 @@
             });
             
             Events.on(engine, 'collisionStart', function(event) {
-                // SALVAGUARDA DE INICIALIZACIÓN: No registrar daños en el asentamiento inicial (1 segundo)
                 if (levelFrameCount < 60) return;
-                
-                // SALVAGUARDA DE DISPARO: No se rompe nada hasta que se haya tirado por primera vez
                 if (!isFired) return;
 
                 event.pairs.forEach(pair => {
                     const { bodyA, bodyB } = pair;
+                    const relVel = Vector.magnitude(Vector.sub(bodyA.velocity, bodyB.velocity));
                     
-                    // Nota: Se ha eliminado la activación automática de fusible de bomba negra al chocar.
+                    // Lógica de durabilidad y agrietamiento progresivo por toques
+                    [bodyA, bodyB].forEach((b, idx) => {
+                        const other = idx === 0 ? bodyB : bodyA;
+                        if (b.hp !== undefined && !b.isStatic && !b.isDead) {
+                            const isBirdHit = other.label === 'bird';
+                            const isSignificantImpact = relVel > 1.2;
+
+                            if (isBirdHit || isSignificantImpact) {
+                                const now = levelFrameCount;
+                                if (!b.lastHitFrame || (now - b.lastHitFrame > 10)) {
+                                    b.lastHitFrame = now;
+
+                                    if (b.label === 'ice') {
+                                        // Cristal: Se rompe al 1.er toque
+                                        b.hp = 0;
+                                    } else if (b.label === 'wood') {
+                                        // Madera: 1.er toque se agrieta, 2.º toque se destruye
+                                        let dmg = (other.birdType === 'yellow') ? 2 : 1;
+                                        b.hp -= dmg;
+                                    } else if (b.label === 'stone' || b.label === 'stone_tri' || b.label === 'boulder') {
+                                        // Piedra: 1.er toque grieta leve, 2.º toque grieta profunda, 3.er toque se destruye
+                                        let dmg = (other.birdType === 'black') ? 2 : 1;
+                                        b.hp -= dmg;
+                                    }
+
+                                    if (b.hp <= 0) {
+                                        b.isDead = true;
+                                    }
+                                }
+                            }
+                        }
+                    });
 
                     // Colisiones con TNT
                     const isTNTA = bodyA.label === 'tnt', isTNTB = bodyB.label === 'tnt';
                     if (isTNTA || isTNTB) {
                         const tntBody = isTNTA ? bodyA : bodyB;
-                        const impactVelocity = Vector.magnitude(Vector.sub(bodyA.velocity, bodyB.velocity));
-                        if (impactVelocity > 2.0 || bodyA.label === 'bird' || bodyB.label === 'bird') {
+                        if (relVel > 2.0 || bodyA.label === 'bird' || bodyB.label === 'bird') {
                             tntBody.isDead = true;
                         }
                     }
@@ -1254,14 +1403,13 @@
                     if (isPigA || isPigB) {
                         const pig = isPigA ? bodyA : bodyB;
                         const other = isPigA ? bodyB : bodyA;
-                        const relativeVelocity = Vector.magnitude(Vector.sub(bodyA.velocity, bodyB.velocity));
                         
                         let threshold = 3.0;
                         if (pig.pigType === 'helmet') threshold = 6.2;
                         if (pig.pigType === 'king') threshold = 5.2;
                         if (pig.pigType === 'cowboy') threshold = 4.0;
 
-                        if (relativeVelocity > threshold || other.label === 'bird' || other.label === 'tnt') {
+                        if (relVel > threshold || other.label === 'bird' || other.label === 'tnt') {
                             pig.isDead = true;
                         }
                     }
@@ -1270,7 +1418,6 @@
                     const isBonusA = bodyA.label === 'bonus', isBonusB = bodyB.label === 'bonus';
                     if (isBonusA || isBonusB) {
                         const bonus = isBonusA ? bodyA : bodyB;
-                        const relVel = Vector.magnitude(Vector.sub(bodyA.velocity, bodyB.velocity));
                         if (relVel > 1.5 || bodyA.label === 'bird' || bodyB.label === 'bird') {
                             bonus.isDead = true;
                         }
@@ -1296,6 +1443,10 @@
                     const forceMagnitude = (radius - distance) * forceFactor * b.mass;
                     Body.applyForce(b, b.position, Vector.mult(forceDirection, forceMagnitude));
                     
+                    if (b.hp !== undefined && !b.isDead) {
+                        b.hp -= (distance < radius * 0.5) ? 3 : 1;
+                        if (b.hp <= 0) b.isDead = true;
+                    }
                     if (b.label === 'tnt' && !b.isDead) {
                         b.isDead = true;
                     }
@@ -1318,48 +1469,58 @@
             requestAnimationFrame(gameLoop);
             if (gameState !== 'PLAYING') return;
             
-            Engine.update(engine, 1000 / 60);
+            // Substepping doble (2 iteraciones de 1/120s por frame) para impedir que ningún cuerpo atraviese paredes
+            Engine.update(engine, 1000 / 120);
+            Engine.update(engine, 1000 / 120);
             levelFrameCount++;
 
-            // LIMITADOR FÍSICO DE LA RESORTERA (Máximo 120px)
-            if (bird && !isFired && mouseConstraint.body === bird) {
-                const maxDragDistance = 120;
-                const offset = Vector.sub(bird.position, slingPos);
-                const distance = Vector.magnitude(offset);
-                if (distance > maxDragDistance) {
-                    const normalized = Vector.normalise(offset);
-                    const cappedPosition = Vector.add(slingPos, Vector.mult(normalized, maxDragDistance));
-                    Body.setPosition(bird, cappedPosition);
+            // MANTENER EL PÁJARO FIRME EN LA HONDA O LIMITAR EL ARRASTRE
+            if (bird && !isFired) {
+                if (mouseConstraint.body !== bird) {
+                    // Fijar el pájaro en la honda sin que la gravedad o el resorte lo desplace
+                    Body.setPosition(bird, { x: slingPos.x, y: slingPos.y });
                     Body.setVelocity(bird, { x: 0, y: 0 });
+                    Body.setAngularVelocity(bird, 0);
+                } else {
+                    const maxDragDistance = 120;
+                    const offset = Vector.sub(bird.position, slingPos);
+                    const distance = Vector.magnitude(offset);
+                    if (distance > maxDragDistance) {
+                        const normalized = Vector.normalise(offset);
+                        const cappedPosition = Vector.add(slingPos, Vector.mult(normalized, maxDragDistance));
+                        Body.setPosition(bird, cappedPosition);
+                        Body.setVelocity(bird, { x: 0, y: 0 });
+                    }
                 }
             }
 
-            // Manejo de crecimiento de radio y fusible aleatorio para el Pájaro Bomba Negro
             if (bird && bird.birdType === 'black' && isFired) {
                 if (bird.timeSinceLaunch === undefined) bird.timeSinceLaunch = 0;
                 bird.timeSinceLaunch++;
 
-                // Cada 1 segundo (60 frames), el radio aumenta en 5
                 if (bird.timeSinceLaunch % 60 === 0) {
                     bird.explosionRadius = (bird.explosionRadius || 140) + 5;
                 }
 
-                // Si se alcanza el límite aleatorio del temporizador (3 a 7s) y el jugador no presionó, falla (fizzle)
                 if (bird.timeSinceLaunch >= (bird.detonationWindow || 300) && !isAbilityUsed && !bird.fizzled) {
                     bird.fizzled = true;
-                    isAbilityUsed = true; // Bloquea la detonación para el resto del vuelo
+                    isAbilityUsed = true;
                 }
             }
 
-            // Ascendencia de helio para globos
             blocks.forEach(b => {
                 if (b.label === 'bonus' && b.bonusType === 'balloon') {
                     Body.applyForce(b, b.position, { x: 0, y: -0.00018 * b.mass });
                 }
             });
 
-            // Limpieza de bloques y TNTs detonados
             for (let i = blocks.length - 1; i >= 0; i--) {
+                const b = blocks[i];
+                // Si el bloque sale de la pantalla, se destruye inmediatamente
+                if (b.position.x < -100 || b.position.x > width + 100 || b.position.y > height + 100 || b.position.y < -400) {
+                    b.isDead = true;
+                }
+
                 if (blocks[i].isDead) {
                     if (blocks[i].label === 'tnt') {
                         explode(blocks[i].position, 130 * bonusExplosionRadius, 0.0012 * bonusExplosionRadius);
@@ -1374,8 +1535,13 @@
                 }
             }
 
-            // Limpieza de cerdos eliminados
             for (let i = pigs.length - 1; i >= 0; i--) {
+                const p = pigs[i];
+                // Si el cerdo es lanzado fuera de la pantalla, muere inmediatamente
+                if (p.position.x < -80 || p.position.x > width + 80 || p.position.y > height + 80 || p.position.y < -400) {
+                    p.isDead = true;
+                }
+
                 if (pigs[i].isDead) {
                     World.remove(world, pigs[i]);
                     let bonusPoints = 500;
@@ -1387,17 +1553,14 @@
                 }
             }
 
-            // CONDICIÓN DE VICTORIA
             if (pigs.length === 0 && gameState === 'PLAYING' && levelFrameCount > 60) {
                 gameState = 'WON';
                 
-                // Conceder Premio aleatorio al ganar
                 const rewardKeys = Object.keys(REWARDS);
                 const randomKey = rewardKeys[Math.floor(Math.random() * rewardKeys.length)];
                 pendingReward = randomKey; 
                 
                 const rData = REWARDS[randomKey];
-
                 rewardName.innerText = rData.name;
                 rewardDesc.innerText = rData.desc;
                 rewardCard.classList.remove('hidden');
@@ -1408,24 +1571,35 @@
                 if (currentLevel < totalLevels) {
                     msgTitle.innerText = "¡Nivel Completado!";
                     msgTitle.style.color = "#2ed573";
-                    msgSubtitle.innerText = "Has limpiado la zona de invasores y desbloqueado un potenciador.";
+                    msgSubtitle.innerText = "Has destruido a todos los cerdos invasores y desbloqueado un premio.";
                     btnNextLevel.innerText = "Siguiente Nivel ➡️";
                 } else {
                     msgTitle.innerText = "🏆 ¡VICTORIA SUPREMA! 🏆";
                     msgTitle.style.color = "#ffbe76";
-                    msgSubtitle.innerText = "¡Has completado los 50 niveles del juego y salvado la galaxia de los cerdos!";
+                    msgSubtitle.innerText = "¡Has completado los 67 niveles del juego!";
                     btnNextLevel.innerText = "Volver a Jugar 🔄";
                 }
             }
 
-            // CONDICIÓN DE DERROTA
             if (isFired && pigs.length > 0 && bird) {
                 const speed = Vector.magnitude(bird.velocity);
-                const outOfBounds = bird.position.x > width + 100 || bird.position.x < -100 || bird.position.y > height + 100;
+                // Detectar si el pájaro sale de los límites visibles de la pantalla (izquierda, derecha, abajo o arriba)
+                const outOfBounds = bird.position.x > width + 40 || bird.position.x < -40 || bird.position.y > height + 40 || bird.position.y < -300;
                 
+                if (outOfBounds) {
+                    bird.isDead = true;
+                }
+
                 if (outOfBounds || (speed < 0.22 && bird.position.y > height - 60) || bird.isDead) {
                     if (!bird.deathTimer) bird.deathTimer = 1;
-                    bird.deathTimer++;
+                    
+                    // Si el pájaro sale de la pantalla, eliminarlo al instante sin esperar
+                    if (outOfBounds) {
+                        bird.deathTimer += 100;
+                    } else {
+                        bird.deathTimer++;
+                    }
+
                     if (bird.deathTimer > 75) {
                         World.remove(world, bird); 
                         bird = null;
@@ -1472,19 +1646,22 @@
             ctx.lineTo(slingPos.x - 2, slingPos.y + 45);
             ctx.stroke();
 
-            if (!isFired && sling && sling.bodyB) {
-                ctx.strokeStyle = '#cd6133';
-                ctx.lineWidth = 7;
-                
-                ctx.beginPath();
-                ctx.moveTo(slingPos.x - 20, slingPos.y + 5);
-                ctx.lineTo(bird.position.x - 10, bird.position.y);
-                ctx.stroke();
+            if (!isFired && sling && sling.bodyB && bird) {
+                const distToSling = Math.hypot(bird.position.x - slingPos.x, bird.position.y - slingPos.y);
+                if (distToSling <= 130) {
+                    ctx.strokeStyle = '#cd6133';
+                    ctx.lineWidth = 7;
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(slingPos.x - 20, slingPos.y + 5);
+                    ctx.lineTo(bird.position.x - 10, bird.position.y);
+                    ctx.stroke();
 
-                ctx.beginPath();
-                ctx.moveTo(slingPos.x + 20, slingPos.y + 5);
-                ctx.lineTo(bird.position.x + 10, bird.position.y);
-                ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(slingPos.x + 20, slingPos.y + 5);
+                    ctx.lineTo(bird.position.x + 10, bird.position.y);
+                    ctx.stroke();
+                }
             }
             ctx.restore();
         }
@@ -1675,7 +1852,7 @@
             ctx.restore();
         }
 
-        function drawProceduralBlock(label, width, height) {
+        function drawProceduralBlock(label, width, height, hp = 1, maxHp = 1) {
             ctx.save();
             if (label === 'wood' || label === 'wood_tri') {
                 ctx.fillStyle = '#d3a26a';
@@ -1758,6 +1935,34 @@
                 ctx.textBaseline = 'middle';
                 ctx.fillText('TNT', 0, 0);
             }
+
+            // Renderizado de grietas físicas de daño
+            const damageTaken = maxHp - hp;
+            if (damageTaken > 0 && label !== 'tnt') {
+                ctx.save();
+                ctx.strokeStyle = label === 'ice' ? 'rgba(255, 255, 255, 0.95)' : 'rgba(35, 20, 10, 0.8)';
+                ctx.lineWidth = label === 'ice' ? 2.0 : 1.8;
+                ctx.beginPath();
+
+                if (damageTaken === 1) {
+                    ctx.moveTo(-width * 0.25, -height * 0.2);
+                    ctx.lineTo(0, 0);
+                    ctx.lineTo(width * 0.2, height * 0.25);
+                } else if (damageTaken >= 2) {
+                    ctx.moveTo(-width * 0.35, -height * 0.3);
+                    ctx.lineTo(-width * 0.1, -height * 0.05);
+                    ctx.lineTo(width * 0.3, height * 0.35);
+
+                    ctx.moveTo(-width * 0.1, -height * 0.05);
+                    ctx.lineTo(width * 0.25, -height * 0.25);
+
+                    ctx.moveTo(-width * 0.1, -height * 0.05);
+                    ctx.lineTo(-width * 0.3, height * 0.2);
+                }
+                ctx.stroke();
+                ctx.restore();
+            }
+
             ctx.restore();
         }
 
@@ -1827,7 +2032,9 @@
                 if (block.label === 'bonus') {
                     drawProceduralBonus(block.bonusType, w / 2);
                 } else {
-                    drawProceduralBlock(block.label, w, h);
+                    const hp = block.hp !== undefined ? block.hp : 1;
+                    const maxHp = block.maxHp !== undefined ? block.maxHp : 1;
+                    drawProceduralBlock(block.label, w, h, hp, maxHp);
                 }
                 ctx.restore();
             });
@@ -1852,7 +2059,6 @@
                 drawProceduralBird(currentBirdType, r, isFlashing, isFizzled);
                 ctx.restore();
 
-                // Dibujar el anillo de alcance de explosión creciente para el pájaro negro
                 if (bird.birdType === 'black' && isFired && !bird.fizzled) {
                     ctx.save();
                     ctx.strokeStyle = 'rgba(231, 76, 60, 0.45)';
