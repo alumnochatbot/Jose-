@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monster Brawl - Juego Completo con Boss</title>
+    <title>Monster Brawl - Elección de Poder Inicial</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #0f172a; color: white; font-family: 'Inter', system-ui, -apple-system, sans-serif; }
@@ -93,21 +93,22 @@
         </div>
     </div>
 
-    <!-- UI: Subir de Nivel (Drafting) -->
+    <!-- UI: Subir de Nivel / Selección Inicial (Drafting) -->
     <div id="level-up-screen" class="ui-layer interactive items-center justify-center bg-black/85 hidden">
         <div class="text-center w-full max-w-5xl px-4 h-[90vh] overflow-y-auto py-8 custom-scrollbar">
-            <h2 class="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-yellow-500 mb-2">¡NIVEL ALCANZADO!</h2>
-            <p class="text-gray-300 mb-8 font-medium">Selecciona una mejora estratégica para tu arsenal</p>
+            <h2 id="draft-title" class="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-yellow-500 mb-2">¡ELIGE TU PODER INICIAL!</h2>
+            <p id="draft-subtitle" class="text-gray-300 mb-8 font-medium">Selecciona la habilidad con la que comenzarás la batalla</p>
             <div id="draft-options" class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
                 <!-- Inyectado por JS -->
             </div>
         </div>
     </div>
 
-    <!-- UI: Game Over -->
+    <!-- UI: Game Over / Victory -->
     <div id="game-over-screen" class="ui-layer interactive items-center justify-center bg-red-950/90 hidden">
         <div class="glass-panel p-10 rounded-3xl text-center max-w-md w-full mx-4 shadow-2xl border border-red-800/40">
-            <h2 class="text-5xl font-black text-red-500 mb-3 tracking-tight">HAS CAÍDO</h2>
+            <h2 id="go-title" class="text-5xl font-black text-red-500 mb-3 tracking-tight">HAS CAÍDO</h2>
+            <p id="go-subtitle" class="text-sm text-gray-300 mb-4 font-medium">Sobreviviste a la horda</p>
             <p class="text-lg text-gray-300 mb-1">Sobreviviste: <span id="go-time" class="font-bold text-white"></span></p>
             <p class="text-lg text-gray-300 mb-4">Nivel Alcanzado: <span id="go-level" class="font-bold text-white"></span></p>
             <div id="go-points" class="text-2xl text-amber-400 mb-8 font-black">Puntos Obtenidos: +0</div>
@@ -177,19 +178,6 @@ imgEnemy.src = getGDriveDirectUrl('https://drive.google.com/file/d/1VY9z_aixpddy
 imgEnemy.isLoaded = false;
 imgEnemy.onload = () => { imgEnemy.isLoaded = true; };
 
-const imgRocks = new Image();
-imgRocks.crossOrigin = "anonymous";
-imgRocks.src = getGDriveDirectUrl('https://drive.google.com/file/d/1icYFOU-noUCaI_4n9rUX5OH1GyFR6VVO/view?usp=sharing');
-imgRocks.isLoaded = false;
-imgRocks.onload = () => { imgRocks.isLoaded = true; };
-
-// NUEVA IMAGEN DE BOSS
-const imgBoss = new Image();
-imgBoss.crossOrigin = "anonymous";
-imgBoss.src = getGDriveDirectUrl('https://drive.google.com/file/d/1S6kYtbiOvbl8V_lOAawY-ZA8zGDk74Kz/view?usp=sharing');
-imgBoss.isLoaded = false;
-imgBoss.onload = () => { imgBoss.isLoaded = true; };
-
 let bgPattern = null;
 function generateSeamlessTexture() {
     if (!imgBgMap.isLoaded) return;
@@ -201,21 +189,9 @@ function generateSeamlessTexture() {
     const offCtx = offCanvas.getContext('2d');
 
     offCtx.drawImage(imgBgMap, 0, 0, w, h);
-
-    offCtx.save();
-    offCtx.scale(-1, 1);
-    offCtx.drawImage(imgBgMap, -w * 2, 0, w, h);
-    offCtx.restore();
-
-    offCtx.save();
-    offCtx.scale(1, -1);
-    offCtx.drawImage(imgBgMap, 0, -h * 2, w, h);
-    offCtx.restore();
-
-    offCtx.save();
-    offCtx.scale(-1, -1);
-    offCtx.drawImage(imgBgMap, -w * 2, -h * 2, w, h);
-    offCtx.restore();
+    offCtx.save(); offCtx.scale(-1, 1); offCtx.drawImage(imgBgMap, -w * 2, 0, w, h); offCtx.restore();
+    offCtx.save(); offCtx.scale(1, -1); offCtx.drawImage(imgBgMap, 0, -h * 2, w, h); offCtx.restore();
+    offCtx.save(); offCtx.scale(-1, -1); offCtx.drawImage(imgBgMap, -w * 2, -h * 2, w, h); offCtx.restore();
 
     bgPattern = ctx.createPattern(offCanvas, 'repeat');
 }
@@ -298,6 +274,25 @@ function initEnvironmentProps() {
 }
 initEnvironmentProps();
 
+function drawRoundedRect(c, x, y, w, h, r) {
+    if (c.roundRect) {
+        c.beginPath();
+        c.roundRect(x, y, w, h, r);
+        return;
+    }
+    c.beginPath();
+    c.moveTo(x + r, y);
+    c.lineTo(x + w - r, y);
+    c.quadraticCurveTo(x + w, y, x + w, y + r);
+    c.lineTo(x + w, y + h - r);
+    c.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    c.lineTo(x + r, y + h);
+    c.quadraticCurveTo(x, y + h, x, y + h - r);
+    c.lineTo(x, y + r);
+    c.quadraticCurveTo(x, y, x + r, y);
+    c.closePath();
+}
+
 function drawSnowyRock(ctxCanvas, size) {
     const s = size;
     ctxCanvas.save();
@@ -373,108 +368,6 @@ function getClosestEnemy(source, maxRange = 600) {
     return closest;
 }
 
-class RapidEggsWeapon {
-    constructor(player) { this.player = player; this.name = "Rapid Eggs"; this.level = 1; this.cooldown = 0.5; this.timer = 0; this.baseDamage = 5; this.projectilesCount = 1; this.pierce = 1; }
-    applyUpgrade(lvl) {
-        this.level = lvl;
-        if (lvl === 2) this.projectilesCount = 2;
-        else if (lvl === 3) this.projectilesCount = 3;
-        else if (lvl === 4) this.baseDamage += 3;
-        else if (lvl === 5) this.cooldown *= 0.5;
-        else if (lvl === 6) this.projectilesCount = 4;
-        else if (lvl === 7) this.baseDamage += 4;
-        else if (lvl === 8) this.pierce += 2;
-        else if (lvl === 9) this.baseDamage += 10;
-        else if (lvl === 10) { this.cooldown = 0.12; }
-    }
-    update(dt) { this.timer -= dt; if (this.timer <= 0) { this.fire(); this.timer = this.cooldown; } }
-    fire() {
-        let closest = getClosestEnemy(this.player, 600);
-        if (!closest) return;
-        let dx = closest.x - this.player.x, dy = closest.y - this.player.y;
-        let dist = Math.sqrt(dx*dx + dy*dy) || 1;
-        for (let i = 0; i < this.projectilesCount; i++) {
-            let offsetAngle = (i - (this.projectilesCount - 1) / 2) * 0.15;
-            let c = Math.cos(offsetAngle), s = Math.sin(offsetAngle);
-            let vx = (dx/dist)*c - (dy/dist)*s, vy = (dx/dist)*s + (dy/dist)*c;
-            let isCrit = Math.random() < this.player.critChance;
-            let damage = this.baseDamage * this.player.baseDamageMult * (isCrit ? this.player.critMult : 1);
-
-            const proj = projectilePool.get();
-            proj.spawn(this.player.x, this.player.y, vx, vy, 480, damage, 7, '#fef08a', isCrit, this.pierce);
-            proj.player = this.player;
-
-            if (this.player.synergies?.arrowSlime) {
-                proj.arrowTimer = 0;
-                proj.customUpdate = function(dtSec) {
-                    proj.x += proj.vx * proj.speed * dtSec;
-                    proj.y += proj.vy * proj.speed * dtSec;
-                    proj.arrowTimer += dtSec;
-                    if (proj.arrowTimer > 0.25) {
-                        proj.arrowTimer = 0;
-                        let target = getClosestEnemy(proj, 350);
-                        if (target) {
-                            let tdx = target.x - proj.x, tdy = target.y - proj.y, tdist = Math.sqrt(tdx*tdx + tdy*tdy) || 1;
-                            const arrow = projectilePool.get();
-                            arrow.spawn(proj.x, proj.y, tdx/tdist, tdy/tdist, 520, 12 * proj.player.baseDamageMult, 8, '#22c55e', true, 2);
-                            projectiles.push(arrow);
-                        }
-                    }
-                    proj.life -= dtSec; if (proj.life <= 0) proj.active = false;
-                };
-            }
-            projectiles.push(proj);
-        }
-    }
-}
-
-class RapidFireLasersWeapon {
-    constructor(player) { 
-        this.player = player; this.name = "Rapid-Fire Lasers"; this.level = 1; 
-        this.cooldown = 0.32; this.timer = 0; this.baseDamage = 3.5; this.speed = 480; this.pierce = 1; 
-    }
-    applyUpgrade(lvl) {
-        this.level = lvl;
-        if (lvl === 2) this.baseDamage += 2.0;
-        else if (lvl === 3) this.pierce += 2;
-        else if (lvl === 4) this.speed += 80;
-        else if (lvl === 5) this.doubleLaser = true;
-        else if (lvl === 6) this.baseDamage += 2.5;
-        else if (lvl === 7) this.cooldown *= 0.88;
-        else if (lvl === 8) this.baseDamage += 3;
-        else if (lvl === 9) this.pierce += 3;
-        else if (lvl === 10) this.laserCannon = true;
-    }
-    update(dt) { this.timer -= dt; if (this.timer <= 0) { this.fire(); this.timer = this.cooldown; } }
-    fire() {
-        let closest = getClosestEnemy(this.player, 550);
-        if (!closest) return;
-        let dx = closest.x - this.player.x, dy = closest.y - this.player.y, dist = Math.sqrt(dx*dx + dy*dy) || 1;
-        let shots = this.doubleLaser ? 2 : 1;
-        for (let i = 0; i < shots; i++) {
-            let offsetAngle = this.doubleLaser ? (i === 0 ? -0.1 : 0.1) : 0;
-            let c = Math.cos(offsetAngle), s = Math.sin(offsetAngle);
-            let vx = (dx/dist)*c - (dy/dist)*s, vy = (dx/dist)*s + (dy/dist)*c;
-
-            const proj = projectilePool.get();
-            proj.spawn(this.player.x, this.player.y, vx, vy, this.speed, this.baseDamage * this.player.baseDamageMult * (this.laserCannon ? 2.5 : 1), 4, '#ef4444', false, this.pierce);
-            proj.life = 0.9; proj.player = this.player;
-
-            if (this.player.synergies?.laserCard) {
-                proj.customDraw = function(ctxCanvas, camX, camY) {
-                    ctxCanvas.save();
-                    ctxCanvas.translate(proj.x - camX, proj.y - camY);
-                    ctxCanvas.strokeStyle = '#dc2626'; ctxCanvas.lineWidth = 14;
-                    ctxCanvas.beginPath(); ctxCanvas.moveTo(-proj.vx * 25, -proj.vy * 25); ctxCanvas.lineTo(0, 0); ctxCanvas.stroke();
-                    ctxCanvas.fillStyle = '#ffffff'; ctxCanvas.fillRect(-5, -8, 10, 16);
-                    ctxCanvas.restore();
-                };
-            }
-            projectiles.push(proj);
-        }
-    }
-}
-
 class Player {
     constructor() { this.reset(); }
     reset() {
@@ -484,8 +377,9 @@ class Player {
         this.level = 1; this.xp = 0; this.maxXp = getXpForLevel(2);
         this.baseDamageMult = 1.0; this.critChance = 0.05; this.critMult = 1.5;
         this.hitFlash = 0;
-        this.weapons = [new RapidEggsWeapon(this)];
-        this.synergies = { arrowSlime: false, eggFeather: false, darkBubble: false, syrupBee: false, laserCard: false };
+        this.facingAngle = 0;
+        this.lastDirX = 1; this.lastDirY = 0;
+        this.weapons = []; // Se inicia sin habilidades y se selecciona 1 de 3 al arrancar
     }
     update(dt) {
         let dx = 0, dy = 0;
@@ -500,8 +394,14 @@ class Player {
             if (keys.d || keys.arrowright) dx += 1;
             if (dx !== 0 && dy !== 0) { const len = Math.sqrt(dx*dx + dy*dy); dx /= len; dy /= len; }
         }
-        this.x += dx * this.speed * dt; this.y += dy * this.speed * dt;
 
+        if (dx !== 0 || dy !== 0) {
+            this.facingAngle = Math.atan2(dy, dx);
+            this.lastDirX = dx;
+            this.lastDirY = dy;
+        }
+
+        this.x += dx * this.speed * dt; this.y += dy * this.speed * dt;
         this.x = Math.max(-MAP_LIMIT + this.radius, Math.min(MAP_LIMIT - this.radius, this.x));
         this.y = Math.max(-MAP_LIMIT + this.radius, Math.min(MAP_LIMIT - this.radius, this.y));
 
@@ -561,19 +461,579 @@ class Player {
     }
 }
 
-let activeBoss = null;
+
+// 1. Rapid-Fire Lasers (Láseres)
+class RapidFireLasersWeapon {
+    constructor(p) { this.player = p; this.id = 'lasers'; this.name = "Rapid-Fire Lasers"; this.level = 1; this.cooldown = 0.25; this.timer = 0; this.baseDamage = 8; }
+    applyUpgrade(lvl) { this.level = lvl; this.cooldown = Math.max(0.08, 0.25 - lvl * 0.018); this.baseDamage = 8 + lvl * 3; }
+    update(dt) {
+        this.timer -= dt;
+        if (this.timer <= 0) {
+            this.timer = this.cooldown;
+            let ang = this.player.facingAngle;
+            let vx = Math.cos(ang), vy = Math.sin(ang);
+            let proj = projectilePool.get();
+            proj.spawn(this.player.x, this.player.y, vx, vy, 900, this.baseDamage * this.player.baseDamageMult, 3, '#ef4444', Math.random()<this.player.critChance, 2);
+            proj.customDraw = (c, cx, cy) => {
+                c.save(); c.translate(proj.x - cx, proj.y - cy);
+                c.strokeStyle = '#ff2255'; c.lineWidth = 4; c.shadowColor = '#ff0033'; c.shadowBlur = 10;
+                c.beginPath(); c.moveTo(-vx*35, -vy*35); c.lineTo(0,0); c.stroke();
+                c.restore();
+            };
+            projectiles.push(proj);
+        }
+    }
+}
+
+// 2. Slicing Cards (Cartas)
+class SlicingCardsWeapon {
+    constructor(p) { this.player = p; this.id = 'cards'; this.name = "Slicing Cards"; this.level = 1; this.cooldown = 0.9; this.timer = 0; this.count = 3; }
+    applyUpgrade(lvl) { this.level = lvl; this.count = 3 + Math.floor(lvl / 2); this.cooldown = Math.max(0.4, 0.9 - lvl * 0.04); }
+    update(dt) {
+        this.timer -= dt;
+        if (this.timer <= 0) {
+            this.timer = this.cooldown;
+            let baseAng = this.player.facingAngle;
+            let spread = 0.5;
+            for (let i = 0; i < this.count; i++) {
+                let ang = baseAng - spread/2 + (spread / Math.max(1, this.count - 1)) * i;
+                let proj = projectilePool.get();
+                proj.spawn(this.player.x, this.player.y, Math.cos(ang), Math.sin(ang), 500, (12 + this.level*2) * this.player.baseDamageMult, 10, '#ffffff', Math.random()<this.player.critChance, 2);
+                proj.rot = ang;
+                proj.customDraw = (c, cx, cy) => {
+                    c.save(); c.translate(proj.x - cx, proj.y - cy); c.rotate(proj.rot + animationTime * 10);
+                    c.fillStyle = '#ffffff'; c.fillRect(-8, -12, 16, 24);
+                    c.strokeStyle = '#dc2626'; c.lineWidth = 1.5; c.strokeRect(-8, -12, 16, 24);
+                    c.fillStyle = '#dc2626'; c.beginPath(); c.arc(0,0,3,0,Math.PI*2); c.fill();
+                    c.restore();
+                };
+                projectiles.push(proj);
+            }
+        }
+    }
+}
+
+// 3. Dark Energy (Energía oscura)
+class DarkEnergyWeapon {
+    constructor(p) { this.player = p; this.id = 'darkenergy'; this.name = "Dark Energy"; this.level = 1; this.count = 2; }
+    applyUpgrade(lvl) { this.level = lvl; this.count = 2 + Math.floor(lvl / 2); }
+    update(dt) {
+        let orbitRadius = 65;
+        let speed = 3.5;
+        for (let i = 0; i < this.count; i++) {
+            let ang = animationTime * speed + (i / this.count) * Math.PI * 2;
+            let ox = this.player.x + Math.cos(ang) * orbitRadius;
+            let oy = this.player.y + Math.sin(ang) * orbitRadius;
+            
+            let nearby = enemyGrid.getNearby(ox, oy, 25);
+            for (let e of nearby) {
+                if (e.active && distSq(ox, oy, e.x, e.y) < (20 + e.radius)**2) {
+                    e.takeDamage((10 + this.level * 3) * this.player.baseDamageMult * dt * 4, false, Math.cos(ang), Math.sin(ang));
+                }
+            }
+        }
+    }
+    drawOrbital(c, cx, cy) {
+        let orbitRadius = 65;
+        let speed = 3.5;
+        for (let i = 0; i < this.count; i++) {
+            let ang = animationTime * speed + (i / this.count) * Math.PI * 2;
+            let ox = this.player.x + Math.cos(ang) * orbitRadius - cx;
+            let oy = this.player.y + Math.sin(ang) * orbitRadius - cy;
+
+            c.save(); c.translate(ox, oy);
+            let grad = c.createRadialGradient(0,0,2, 0,0,16);
+            grad.addColorStop(0, '#c084fc'); grad.addColorStop(0.5, '#581c87'); grad.addColorStop(1, 'rgba(0,0,0,0)');
+            c.fillStyle = grad; c.beginPath(); c.arc(0,0,16,0,Math.PI*2); c.fill();
+            c.fillStyle = '#3b0764'; c.beginPath(); c.arc(0,0,6,0,Math.PI*2); c.fill();
+            c.restore();
+        }
+    }
+}
+
+// 4. Booming Bubbles (Burbujas)
+class BoomingBubblesWeapon {
+    constructor(p) { this.player = p; this.id = 'bubbles'; this.name = "Booming Bubbles"; this.level = 1; this.cooldown = 1.2; this.timer = 0; }
+    applyUpgrade(lvl) { this.level = lvl; this.cooldown = Math.max(0.6, 1.2 - lvl * 0.05); }
+    update(dt) {
+        this.timer -= dt;
+        if (this.timer <= 0) {
+            this.timer = this.cooldown;
+            let target = getClosestEnemy(this.player, 500);
+            let vx = target ? (target.x - this.player.x) : Math.cos(this.player.facingAngle);
+            let vy = target ? (target.y - this.player.y) : Math.sin(this.player.facingAngle);
+            let dist = Math.sqrt(vx*vx + vy*vy) || 1; vx /= dist; vy /= dist;
+
+            let proj = projectilePool.get();
+            proj.spawn(this.player.x, this.player.y, vx, vy, 180, (25 + this.level*5) * this.player.baseDamageMult, 14, '#38bdf8', false, 1);
+            proj.life = 2.2;
+            proj.customDraw = (c, cx, cy) => {
+                c.save(); c.translate(proj.x - cx, proj.y - cy);
+                c.fillStyle = 'rgba(186, 230, 253, 0.5)'; c.beginPath(); c.arc(0,0,proj.radius,0,Math.PI*2); c.fill();
+                c.strokeStyle = '#7dd3fc'; c.lineWidth = 2; c.stroke();
+                c.fillStyle = '#ffffff'; c.beginPath(); c.arc(-proj.radius*0.3, -proj.radius*0.3, 3, 0, Math.PI*2); c.fill();
+                c.restore();
+            };
+            proj.onExpire = () => {
+                aoeExplosions.push({ x: proj.x, y: proj.y, radius: 0, maxRadius: 60 + this.level*5, damage: proj.damage, color: 'rgba(56, 189, 248, 0.6)' });
+            };
+            projectiles.push(proj);
+        }
+    }
+}
+
+// 5. Rapid Eggs (Huevos rápidos)
+class RapidEggsWeapon {
+    constructor(p) { this.player = p; this.id = 'rapideggs'; this.name = "Rapid Eggs"; this.level = 1; this.cooldown = 0.5; this.timer = 0; this.baseDamage = 6; }
+    applyUpgrade(lvl) { this.level = lvl; this.cooldown = Math.max(0.12, 0.5 - lvl * 0.038); this.baseDamage = 6 + lvl * 2.5; }
+    update(dt) {
+        this.timer -= dt;
+        if (this.timer <= 0) {
+            this.timer = this.cooldown;
+            let closest = getClosestEnemy(this.player, 550);
+            let vx = closest ? (closest.x - this.player.x) : Math.cos(this.player.facingAngle);
+            let vy = closest ? (closest.y - this.player.y) : Math.sin(this.player.facingAngle);
+            let d = Math.sqrt(vx*vx + vy*vy) || 1; vx /= d; vy /= d;
+
+            let proj = projectilePool.get();
+            proj.spawn(this.player.x, this.player.y, vx, vy, 520, this.baseDamage * this.player.baseDamageMult, 7, '#fef08a', Math.random()<this.player.critChance, 1);
+            proj.customDraw = (c, cx, cy) => {
+                c.save(); c.translate(proj.x - cx, proj.y - cy);
+                c.rotate(Math.atan2(vy, vx));
+                c.fillStyle = '#fef08a'; c.beginPath(); c.ellipse(0,0, 8, 5, 0, 0, Math.PI*2); c.fill();
+                c.restore();
+            };
+            projectiles.push(proj);
+        }
+    }
+}
+
+// 6. Flying Feathers (Plumas)
+class FlyingFeathersWeapon {
+    constructor(p) { this.player = p; this.id = 'feathers'; this.name = "Flying Feathers"; this.level = 1; this.cooldown = 0.8; this.timer = 0; }
+    applyUpgrade(lvl) { this.level = lvl; this.cooldown = Math.max(0.3, 0.8 - lvl * 0.05); }
+    update(dt) {
+        this.timer -= dt;
+        if (this.timer <= 0) {
+            this.timer = this.cooldown;
+            let count = 4 + Math.floor(this.level / 2);
+            let baseAng = this.player.facingAngle;
+            for (let i = 0; i < count; i++) {
+                let ang = baseAng - 0.6 + (1.2 / count) * i;
+                let proj = projectilePool.get();
+                proj.spawn(this.player.x, this.player.y, Math.cos(ang), Math.sin(ang), 420, (10 + this.level*2) * this.player.baseDamageMult, 6, '#ffffff', false, 1);
+                proj.customDraw = (c, cx, cy) => {
+                    c.save(); c.translate(proj.x - cx, proj.y - cy); c.rotate(ang);
+                    c.fillStyle = '#f8fafc'; c.beginPath(); c.moveTo(0,-10); c.quadraticCurveTo(5,0,0,10); c.quadraticCurveTo(-5,0,0,-10); c.fill();
+                    c.restore();
+                };
+                projectiles.push(proj);
+            }
+        }
+    }
+}
+
+// 7. Sticky Syrup (Jarabe pegajoso)
+class StickySyrupWeapon {
+    constructor(p) { this.player = p; this.id = 'syrup'; this.name = "Sticky Syrup"; this.level = 1; this.cooldown = 2.0; this.timer = 0; }
+    applyUpgrade(lvl) { this.level = lvl; this.cooldown = Math.max(0.8, 2.0 - lvl * 0.1); }
+    update(dt) {
+        this.timer -= dt;
+        if (this.timer <= 0) {
+            this.timer = this.cooldown;
+            let px = this.player.x + randRange(-100, 100);
+            let py = this.player.y + randRange(-100, 100);
+            groundPuddles.push({
+                x: px, y: py, radius: 45 + this.level * 4, duration: 5.0, maxDuration: 5.0,
+                dps: (15 + this.level * 4) * this.player.baseDamageMult, color: 'rgba(217, 119, 6, 0.55)'
+            });
+        }
+    }
+}
+
+// 8. Buzzing Bees (Abejas)
+class BuzzingBeesWeapon {
+    constructor(p) { this.player = p; this.id = 'bees'; this.name = "Buzzing Bees"; this.level = 1; this.cooldown = 1.0; this.timer = 0; }
+    applyUpgrade(lvl) { this.level = lvl; this.cooldown = Math.max(0.3, 1.0 - lvl * 0.07); }
+    update(dt) {
+        this.timer -= dt;
+        if (this.timer <= 0) {
+            this.timer = this.cooldown;
+            let proj = projectilePool.get();
+            proj.spawn(this.player.x, this.player.y, 0, 0, 380, (14 + this.level*3) * this.player.baseDamageMult, 6, '#facc15', false, 1);
+            proj.target = getClosestEnemy(this.player, 650);
+            proj.customUpdate = (dtSec) => {
+                if (!proj.target || !proj.target.active) proj.target = getClosestEnemy(proj, 600);
+                let tx = proj.target ? proj.target.x : proj.x + Math.cos(animationTime*5)*50;
+                let ty = proj.target ? proj.target.y : proj.y + Math.sin(animationTime*5)*50;
+                let dx = tx - proj.x, dy = ty - proj.y, dist = Math.sqrt(dx*dx + dy*dy) || 1;
+                proj.vx = dx/dist + Math.sin(animationTime*15)*0.3;
+                proj.vy = dy/dist + Math.cos(animationTime*15)*0.3;
+                proj.x += proj.vx * proj.speed * dtSec; proj.y += proj.vy * proj.speed * dtSec;
+                proj.life -= dtSec; if (proj.life <= 0) proj.active = false;
+            };
+            proj.customDraw = (c, cx, cy) => {
+                c.save(); c.translate(proj.x - cx, proj.y - cy);
+                c.fillStyle = '#facc15'; c.beginPath(); c.ellipse(0,0, 6, 4, 0, 0, Math.PI*2); c.fill();
+                c.fillStyle = '#000000'; c.fillRect(-2, -4, 2, 8);
+                c.fillStyle = 'rgba(255,255,255,0.7)'; c.beginPath(); c.arc(-2, -5, 3, 0, Math.PI*2); c.fill();
+                c.restore();
+            };
+            projectiles.push(proj);
+        }
+    }
+}
+
+// 9. Slimy Balls (Bolas de slime)
+class SlimyBallsWeapon {
+    constructor(p) { this.player = p; this.id = 'slimyballs'; this.name = "Slimy Balls"; this.level = 1; this.cooldown = 1.1; this.timer = 0; }
+    applyUpgrade(lvl) { this.level = lvl; this.cooldown = Math.max(0.4, 1.1 - lvl * 0.07); }
+    update(dt) {
+        this.timer -= dt;
+        if (this.timer <= 0) {
+            this.timer = this.cooldown;
+            let ang = Math.random() * Math.PI * 2;
+            let proj = projectilePool.get();
+            proj.spawn(this.player.x, this.player.y, Math.cos(ang), Math.sin(ang), 450, (18 + this.level*3) * this.player.baseDamageMult, 12, '#22c55e', false, 5);
+            proj.life = 4.0;
+            proj.customUpdate = (dtSec) => {
+                proj.x += proj.vx * proj.speed * dtSec; proj.y += proj.vy * proj.speed * dtSec;
+                if (Math.abs(proj.x) >= MAP_LIMIT - 20) proj.vx *= -1;
+                if (Math.abs(proj.y) >= MAP_LIMIT - 20) proj.vy *= -1;
+                proj.life -= dtSec; if (proj.life <= 0) proj.active = false;
+            };
+            proj.customDraw = (c, cx, cy) => {
+                c.save(); c.translate(proj.x - cx, proj.y - cy);
+                c.fillStyle = '#22c55e'; c.beginPath(); c.arc(0,0, proj.radius, 0, Math.PI*2); c.fill();
+                c.fillStyle = '#86efac'; c.beginPath(); c.arc(-3,-3, 3, 0, Math.PI*2); c.fill();
+                c.restore();
+            };
+            projectiles.push(proj);
+        }
+    }
+}
+
+// 10. Speeding Arrows (Flechas veloces)
+class SpeedingArrowsWeapon {
+    constructor(p) { this.player = p; this.id = 'arrows'; this.name = "Speeding Arrows"; this.level = 1; this.cooldown = 0.7; this.timer = 0; }
+    applyUpgrade(lvl) { this.level = lvl; this.cooldown = Math.max(0.2, 0.7 - lvl * 0.05); }
+    update(dt) {
+        this.timer -= dt;
+        if (this.timer <= 0) {
+            this.timer = this.cooldown;
+            let ang = this.player.facingAngle;
+            let proj = projectilePool.get();
+            proj.spawn(this.player.x, this.player.y, Math.cos(ang), Math.sin(ang), 750, (22 + this.level*4) * this.player.baseDamageMult, 5, '#a16207', false, 4 + this.level);
+            proj.customDraw = (c, cx, cy) => {
+                c.save(); c.translate(proj.x - cx, proj.y - cy); c.rotate(ang);
+                c.strokeStyle = '#78350f'; c.lineWidth = 2; c.beginPath(); c.moveTo(-12,0); c.lineTo(8,0); c.stroke();
+                c.fillStyle = '#94a3b8'; c.beginPath(); c.moveTo(8,-4); c.lineTo(14,0); c.lineTo(8,4); c.fill();
+                c.restore();
+            };
+            projectiles.push(proj);
+        }
+    }
+}
+
+// 11. Rebounding Shell (Caparazón de rebote)
+class ReboundingShellWeapon {
+    constructor(p) { this.player = p; this.id = 'shell'; this.name = "Rebounding Shell"; this.level = 1; this.cooldown = 1.4; this.timer = 0; }
+    applyUpgrade(lvl) { this.level = lvl; this.cooldown = Math.max(0.6, 1.4 - lvl * 0.08); }
+    update(dt) {
+        this.timer -= dt;
+        if (this.timer <= 0) {
+            this.timer = this.cooldown;
+            let target = getClosestEnemy(this.player, 500);
+            let vx = target ? (target.x - this.player.x) : 1, vy = target ? (target.y - this.player.y) : 0;
+            let d = Math.sqrt(vx*vx + vy*vy) || 1; vx /= d; vy /= d;
+
+            let proj = projectilePool.get();
+            proj.spawn(this.player.x, this.player.y, vx, vy, 400, (20 + this.level*4) * this.player.baseDamageMult, 12, '#16a34a', false, 6 + Math.floor(this.level/2));
+            proj.customDraw = (c, cx, cy) => {
+                c.save(); c.translate(proj.x - cx, proj.y - cy); c.rotate(animationTime * 8);
+                c.fillStyle = '#16a34a'; c.beginPath(); c.arc(0,0, proj.radius, 0, Math.PI*2); c.fill();
+                c.strokeStyle = '#14532d'; c.lineWidth = 3; c.stroke();
+                c.restore();
+            };
+            projectiles.push(proj);
+        }
+    }
+}
+
+// 12. Crazy Acorns (Bellotas locas)
+class CrazyAcornsWeapon {
+    constructor(p) { this.player = p; this.id = 'acorns'; this.name = "Crazy Acorns"; this.level = 1; this.cooldown = 1.2; this.timer = 0; }
+    applyUpgrade(lvl) { this.level = lvl; this.cooldown = Math.max(0.4, 1.2 - lvl * 0.07); }
+    update(dt) {
+        this.timer -= dt;
+        if (this.timer <= 0) {
+            this.timer = this.cooldown;
+            let dropX = this.player.x + randRange(-120, 120);
+            let dropY = this.player.y + randRange(-120, 120);
+            
+            let proj = projectilePool.get();
+            proj.spawn(dropX, dropY, 0, 0, 0, (30 + this.level*6) * this.player.baseDamageMult, 8, '#a16207', false, 1);
+            proj.fuse = 0.8;
+            proj.customUpdate = (dtSec) => {
+                proj.fuse -= dtSec;
+                if (proj.fuse <= 0) {
+                    proj.active = false;
+                    aoeExplosions.push({ x: proj.x, y: proj.y, radius: 0, maxRadius: 55 + this.level*4, damage: proj.damage, color: 'rgba(217, 119, 6, 0.7)' });
+                }
+            };
+            proj.customDraw = (c, cx, cy) => {
+                c.save(); c.translate(proj.x - cx, proj.y - cy);
+                c.fillStyle = '#a16207'; c.beginPath(); c.arc(0,2,6,0,Math.PI*2); c.fill();
+                c.fillStyle = '#451a03'; c.fillRect(-5,-4,10,4);
+                c.restore();
+            };
+            projectiles.push(proj);
+        }
+    }
+}
+
+// 13. Revolving Horseshoe (Herradura giratoria)
+class RevolvingHorseshoeWeapon {
+    constructor(p) { this.player = p; this.id = 'horseshoe'; this.name = "Revolving Horseshoe"; this.level = 1; this.count = 2; }
+    applyUpgrade(lvl) { this.level = lvl; this.count = 2 + Math.floor(lvl / 2); }
+    update(dt) {
+        let radius = 45;
+        for (let i = 0; i < this.count; i++) {
+            let ang = animationTime * 6 + (i / this.count) * Math.PI * 2;
+            let hx = this.player.x + Math.cos(ang) * radius;
+            let hy = this.player.y + Math.sin(ang) * radius;
+
+            let nearby = enemyGrid.getNearby(hx, hy, 20);
+            for (let e of nearby) {
+                if (e.active && distSq(hx, hy, e.x, e.y) < (15 + e.radius)**2) {
+                    e.takeDamage((12 + this.level * 3) * this.player.baseDamageMult * dt * 5, false, Math.cos(ang), Math.sin(ang));
+                }
+            }
+        }
+    }
+    drawOrbital(c, cx, cy) {
+        let radius = 45;
+        for (let i = 0; i < this.count; i++) {
+            let ang = animationTime * 6 + (i / this.count) * Math.PI * 2;
+            let hx = this.player.x + Math.cos(ang) * radius - cx;
+            let hy = this.player.y + Math.sin(ang) * radius - cy;
+
+            c.save(); c.translate(hx, hy); c.rotate(ang + Math.PI/2);
+            c.strokeStyle = '#94a3b8'; c.lineWidth = 4;
+            c.beginPath(); c.arc(0,0,8, Math.PI*0.2, Math.PI*1.8); c.stroke();
+            c.restore();
+        }
+    }
+}
+
+// 14. Boomerang Pizza (Pizza bumerán)
+class BoomerangPizzaWeapon {
+    constructor(p) { this.player = p; this.id = 'pizza'; this.name = "Boomerang Pizza"; this.level = 1; this.cooldown = 1.3; this.timer = 0; }
+    applyUpgrade(lvl) { this.level = lvl; this.cooldown = Math.max(0.5, 1.3 - lvl * 0.08); }
+    update(dt) {
+        this.timer -= dt;
+        if (this.timer <= 0) {
+            this.timer = this.cooldown;
+            let ang = this.player.facingAngle;
+            let proj = projectilePool.get();
+            proj.spawn(this.player.x, this.player.y, Math.cos(ang), Math.sin(ang), 420, (18 + this.level*4) * this.player.baseDamageMult, 12, '#eab308', false, 8);
+            proj.state = 'out'; proj.distTraveled = 0;
+            proj.customUpdate = (dtSec) => {
+                if (proj.state === 'out') {
+                    proj.x += proj.vx * proj.speed * dtSec; proj.y += proj.vy * proj.speed * dtSec;
+                    proj.distTraveled += proj.speed * dtSec;
+                    if (proj.distTraveled > 320) proj.state = 'back';
+                } else {
+                    let dx = this.player.x - proj.x, dy = this.player.y - proj.y, d = Math.sqrt(dx*dx + dy*dy) || 1;
+                    proj.x += (dx/d) * proj.speed * dtSec; proj.y += (dy/d) * proj.speed * dtSec;
+                    if (d < 20) proj.active = false;
+                }
+            };
+            proj.customDraw = (c, cx, cy) => {
+                c.save(); c.translate(proj.x - cx, proj.y - cy); c.rotate(animationTime * 12);
+                c.fillStyle = '#facc15'; c.beginPath(); c.moveTo(0,-12); c.lineTo(10,10); c.lineTo(-10,10); c.closePath(); c.fill();
+                c.fillStyle = '#dc2626'; c.beginPath(); c.arc(0,2,3,0,Math.PI*2); c.fill();
+                c.restore();
+            };
+            projectiles.push(proj);
+        }
+    }
+}
+
+// 15. Curving Banana (Banana curva)
+class CurvingBananaWeapon {
+    constructor(p) { this.player = p; this.id = 'banana'; this.name = "Curving Banana"; this.level = 1; this.cooldown = 0.8; this.timer = 0; }
+    applyUpgrade(lvl) { this.level = lvl; this.cooldown = Math.max(0.3, 0.8 - lvl * 0.05); }
+    update(dt) {
+        this.timer -= dt;
+        if (this.timer <= 0) {
+            this.timer = this.cooldown;
+            let ang = this.player.facingAngle;
+            let proj = projectilePool.get();
+            proj.spawn(this.player.x, this.player.y, Math.cos(ang), Math.sin(ang), 380, (16 + this.level*3) * this.player.baseDamageMult, 9, '#facc15', false, 2);
+            proj.curveAng = ang;
+            proj.customUpdate = (dtSec) => {
+                proj.curveAng += dtSec * 3.5;
+                proj.vx = Math.cos(proj.curveAng); proj.vy = Math.sin(proj.curveAng);
+                proj.x += proj.vx * proj.speed * dtSec; proj.y += proj.vy * proj.speed * dtSec;
+                proj.life -= dtSec; if (proj.life <= 0) proj.active = false;
+            };
+            proj.customDraw = (c, cx, cy) => {
+                c.save(); c.translate(proj.x - cx, proj.y - cy); c.rotate(proj.curveAng);
+                c.fillStyle = '#facc15'; c.beginPath(); c.arc(0,0,8,0.2,Math.PI*0.9); c.fill();
+                c.restore();
+            };
+            projectiles.push(proj);
+        }
+    }
+}
+
+// 16. Juggling Spheres (Esferas malabares)
+class JugglingSpheresWeapon {
+    constructor(p) { this.player = p; this.id = 'jugglingspheres'; this.name = "Juggling Spheres"; this.level = 1; this.count = 3; }
+    applyUpgrade(lvl) { this.level = lvl; this.count = 3 + Math.floor(lvl / 2); }
+    update(dt) {
+        for (let i = 0; i < this.count; i++) {
+            let t = animationTime * 4 + i * 1.2;
+            let ox = this.player.x + Math.cos(this.player.facingAngle) * 50 + Math.sin(t) * 25;
+            let oy = this.player.y + Math.sin(this.player.facingAngle) * 50 + Math.cos(t * 1.5) * 20;
+
+            let nearby = enemyGrid.getNearby(ox, oy, 15);
+            for (let e of nearby) {
+                if (e.active && distSq(ox, oy, e.x, e.y) < (12 + e.radius)**2) {
+                    e.takeDamage((10 + this.level * 2.5) * this.player.baseDamageMult * dt * 4, false, Math.cos(this.player.facingAngle), Math.sin(this.player.facingAngle));
+                }
+            }
+        }
+    }
+    drawOrbital(c, cx, cy) {
+        let colors = ['#f43f5e', '#3b82f6', '#eab308', '#22c55e', '#a855f7'];
+        for (let i = 0; i < this.count; i++) {
+            let t = animationTime * 4 + i * 1.2;
+            let ox = this.player.x + Math.cos(this.player.facingAngle) * 50 + Math.sin(t) * 25 - cx;
+            let oy = this.player.y + Math.sin(this.player.facingAngle) * 50 + Math.cos(t * 1.5) * 20 - cy;
+
+            c.save(); c.translate(ox, oy);
+            c.fillStyle = colors[i % colors.length];
+            c.beginPath(); c.arc(0,0, 7, 0, Math.PI*2); c.fill();
+            c.restore();
+        }
+    }
+}
+
+// 17. Whirling Bones (Huesos giratorios)
+class WhirlingBonesWeapon {
+    constructor(p) { this.player = p; this.id = 'bones'; this.name = "Whirling Bones"; this.level = 1; this.cooldown = 1.0; this.timer = 0; }
+    applyUpgrade(lvl) { this.level = lvl; this.cooldown = Math.max(0.4, 1.0 - lvl * 0.06); }
+    update(dt) {
+        this.timer -= dt;
+        if (this.timer <= 0) {
+            this.timer = this.cooldown;
+            let count = 6 + Math.floor(this.level / 2);
+            for (let i = 0; i < count; i++) {
+                let ang = (i / count) * Math.PI * 2;
+                let proj = projectilePool.get();
+                proj.spawn(this.player.x, this.player.y, Math.cos(ang), Math.sin(ang), 320, (14 + this.level*3) * this.player.baseDamageMult, 6, '#f8fafc', false, 2);
+                proj.growScale = 1;
+                proj.customUpdate = (dtSec) => {
+                    proj.growScale += dtSec * 1.2;
+                    proj.x += proj.vx * proj.speed * dtSec; proj.y += proj.vy * proj.speed * dtSec;
+                    proj.life -= dtSec; if (proj.life <= 0) proj.active = false;
+                };
+                proj.customDraw = (c, cx, cy) => {
+                    c.save(); c.translate(proj.x - cx, proj.y - cy);
+                    c.scale(proj.growScale, proj.growScale); c.rotate(animationTime * 8);
+                    c.fillStyle = '#f8fafc'; c.fillRect(-6,-2,12,4);
+                    c.beginPath(); c.arc(-6,-2,3,0,Math.PI*2); c.arc(-6,2,3,0,Math.PI*2); c.arc(6,-2,3,0,Math.PI*2); c.arc(6,2,3,0,Math.PI*2); c.fill();
+                    c.restore();
+                };
+                projectiles.push(proj);
+            }
+        }
+    }
+}
+
+// 18. Peacock Feathers (Plumas de pavo real)
+class PeacockFeathersWeapon {
+    constructor(p) { this.player = p; this.id = 'peacock'; this.name = "Peacock Feathers"; this.level = 1; this.cooldown = 1.5; this.timer = 0; }
+    applyUpgrade(lvl) { this.level = lvl; this.cooldown = Math.max(0.6, 1.5 - lvl * 0.09); }
+    update(dt) {
+        this.timer -= dt;
+        if (this.timer <= 0) {
+            this.timer = this.cooldown;
+            let baseAng = this.player.facingAngle;
+            let count = 5 + Math.floor(this.level / 2);
+            for (let i = 0; i < count; i++) {
+                let ang = baseAng - 0.7 + (1.4 / count) * i;
+                let proj = projectilePool.get();
+                proj.spawn(this.player.x, this.player.y, Math.cos(ang), Math.sin(ang), 400, (25 + this.level*5) * this.player.baseDamageMult, 10, '#0284c7', false, 3);
+                proj.customDraw = (c, cx, cy) => {
+                    c.save(); c.translate(proj.x - cx, proj.y - cy); c.rotate(ang);
+                    c.fillStyle = '#0284c7'; c.beginPath(); c.ellipse(0,0, 12, 5, 0, 0, Math.PI*2); c.fill();
+                    c.fillStyle = '#facc15'; c.beginPath(); c.arc(4, 0, 3, 0, Math.PI*2); c.fill();
+                    c.fillStyle = '#38bdf8'; c.beginPath(); c.arc(4, 0, 1.5, 0, Math.PI*2); c.fill();
+                    c.restore();
+                };
+                projectiles.push(proj);
+            }
+        }
+    }
+}
+
+const WEAPONS_CATALOG = [
+    RapidEggsWeapon, RapidFireLasersWeapon, SlicingCardsWeapon, DarkEnergyWeapon, BoomingBubblesWeapon,
+    FlyingFeathersWeapon, StickySyrupWeapon, BuzzingBeesWeapon, SlimyBallsWeapon, SpeedingArrowsWeapon,
+    ReboundingShellWeapon, CrazyAcornsWeapon, RevolvingHorseshoeWeapon, BoomerangPizzaWeapon,
+    CurvingBananaWeapon, JugglingSpheresWeapon, WhirlingBonesWeapon, PeacockFeathersWeapon
+];
+
+function getWeaponDescription(id) {
+    const descriptions = {
+        'lasers': 'Dispara proyectiles lineales neón rojos a máxima velocidad.',
+        'cards': 'Arroja naipes afilados en abanico que cubren gran alcance.',
+        'darkenergy': 'Orbes oscuros giran pegados a ti como un escudo orbital.',
+        'bubbles': 'Crea burbujas translúcidas que detonan en potentes explosiones.',
+        'rapideggs': 'Dispara ráfagas continuas de huevos rápidos ovalados.',
+        'feathers': 'Invocación frontal de plumas ligeras que atraviesan enemigos.',
+        'syrup': 'Deja charcos de miel pegajosa que ralentizan y queman.',
+        'bees': 'Abejas teledirigidas que persiguen solas al monstruo más cercano.',
+        'slimyballs': 'Esferas verdes saltarinas que rebotan por todo el mapa.',
+        'arrows': 'Flechas perforantes de largo alcance que atraviesan hordas.',
+        'shell': 'Un caparazón pesado que persigue y rebota entre monstruos.',
+        'acorns': 'Suelta bellotas explosivas por el escenario.',
+        'horseshoe': 'Herraduras metálicas giratorias cortantes de rango corto.',
+        'pizza': 'Porciones de pizza que van cortando y regresan como bumerán.',
+        'banana': 'Lanza bananas amarillas en trayectorias impredecibles.',
+        'jugglingspheres': 'Esferas malabares de colores con barrera protectora.',
+        'bones': 'Dispara huesos en espiral que van creciendo de tamaño.',
+        'peacock': 'Abanico exótico de plumas protectoras de alto impacto.'
+    };
+    return descriptions[id] || 'Una poderosa habilidad para tu combate.';
+}
 
 const ENEMY_CATALOG = [
-    { key: 'bat', name: 'Ice Bat', hp: 20, baseSpeed: 80, radius: 13, color: '#38bdf8', minTime: 0, drawType: 'bat' },
-    { key: 'fossil', name: 'Frozen Fossil', hp: 40, baseSpeed: 90, radius: 15, color: '#94a3b8', minTime: 0, drawType: 'fossil' },
-    { key: 'bush', name: 'Snowy Bush Monster', hp: 50, baseSpeed: 100, radius: 17, color: '#16a34a', minTime: 10, drawType: 'bush' },
-    { key: 'bug', name: 'Ice Bug', hp: 100, baseSpeed: 115, radius: 18, color: '#0284c7', minTime: 25, drawType: 'bug' },
-    { key: 'crab', name: 'Ice Crab', hp: 120, baseSpeed: 115, radius: 20, color: '#0369a1', minTime: 40, drawType: 'crab', diagonalMove: true },
-    { key: 'ding', name: 'Ding', hp: 175, baseSpeed: 150, radius: 14, color: '#c084fc', minTime: 55, drawType: 'ding' },
-    { key: 'donk', name: 'Donk', hp: 200, baseSpeed: 175, radius: 16, color: '#9333ea', minTime: 70, drawType: 'donk' },
-    { key: 'elemental', name: 'Ice Elemental', hp: 250, baseSpeed: 190, radius: 22, color: '#38bdf8', minTime: 85, drawType: 'elemental', isShooter: true },
-    { key: 'rock', name: 'Rock Monster', hp: 500, baseSpeed: 135, radius: 28, color: '#475569', minTime: 100, drawType: 'rock' }
+    { key: 'slime', name: 'Ice Slime', hp: 5, baseSpeed: 15, radius: 12, color: '#93c5fd', minLevel: 1, drawType: 'slime' },
+    { key: 'bat', name: 'Ice Bat', hp: 20, baseSpeed: 15, radius: 13, color: '#38bdf8', minLevel: 3, drawType: 'bat' },
+    { key: 'fossil', name: 'Frozen Fossil', hp: 40, baseSpeed: 35, radius: 15, color: '#94a3b8', minLevel: 7, drawType: 'fossil' },
+    { key: 'bush', name: 'Snowy Bush Monster', hp: 50, baseSpeed: 55, radius: 17, color: '#16a34a', minLevel: 12, drawType: 'bush' },
+    { key: 'bug', name: 'Ice Bug', hp: 100, baseSpeed: 100, radius: 18, color: '#0284c7', minLevel: 16, drawType: 'bug' },
+    { key: 'crab', name: 'Ice Crab', hp: 120, baseSpeed: 100, radius: 20, color: '#0369a1', minLevel: 22, drawType: 'crab', diagonalMove: true },
+    { key: 'ding', name: 'Ding', hp: 175, baseSpeed: 200, radius: 14, color: '#c084fc', minLevel: 28, drawType: 'ding' },
+    { key: 'donk', name: 'Donk', hp: 200, baseSpeed: 250, radius: 16, color: '#9333ea', minLevel: 32, drawType: 'donk' },
+    { key: 'elemental', name: 'Ice Elemental', hp: 250, baseSpeed: 300, radius: 22, color: '#38bdf8', minLevel: 38, drawType: 'elemental', isShooter: true },
+    { key: 'rock', name: 'Rock Monster', hp: 500, baseSpeed: 250, radius: 28, color: '#475569', minLevel: 48, drawType: 'rock' }
 ];
+
+const BOSS_CATALOG = {
+    10: { name: 'Red Slime Monster', hp: 400, speed: 45, radius: 42, color: '#ef4444', drawType: 'red_slime_boss', damage: 18 },
+    20: { name: 'Giant Ice Crab', hp: 750, speed: 65, radius: 50, color: '#0284c7', drawType: 'crab', damage: 22, diagonalMove: true },
+    30: { name: 'Giant Donk', hp: 1000, speed: 110, radius: 55, color: '#9333ea', drawType: 'donk', damage: 28 },
+    45: { name: 'Giant Rock Monster', hp: 1580, speed: 85, radius: 65, color: '#475569', drawType: 'rock', damage: 35 },
+    60: { name: 'Yeti (Jefe Final)', hp: 4000, speed: 95, radius: 75, color: '#f0f9ff', drawType: 'yeti', damage: 50, isFinalBoss: true }
+};
+
+let activeBoss = null;
+let spawnedBosses = new Set();
 
 class Enemy {
     constructor() { this.active = false; }
@@ -587,7 +1047,7 @@ class Enemy {
         this.diagonalMove = diagonalMove; this.name = name;
         this.shootTimer = randRange(1.5, 3.0);
         this.dashTimer = randRange(2.0, 4.0);
-        this.bossSkillTimer = 3.0;
+        this.bossSkillTimer = 2.5;
         this.isDashing = false; this.dashWarn = false; this.dashChargeTime = 0;
         this.animPhase = Math.random() * Math.PI * 2;
     }
@@ -611,14 +1071,15 @@ class Enemy {
         if (this.isBoss) {
             this.bossSkillTimer -= dt;
             if (this.bossSkillTimer <= 0) {
-                this.bossSkillTimer = 3.5;
-                for (let i = 0; i < 12; i++) {
-                    let ang = (i / 12) * Math.PI * 2;
+                this.bossSkillTimer = 3.0;
+                let count = this.drawType === 'yeti' ? 16 : 10;
+                for (let i = 0; i < count; i++) {
+                    let ang = (i / count) * Math.PI * 2;
                     const bProj = enemyProjPool.get();
-                    bProj.spawn(this.x, this.y, Math.cos(ang), Math.sin(ang), 240, 15, 8, '#f43f5e');
+                    bProj.spawn(this.x, this.y, Math.cos(ang), Math.sin(ang), 260, 15, 8, this.drawType === 'yeti' ? '#38bdf8' : '#f43f5e');
                     enemyProjectiles.push(bProj);
                 }
-                spawnFloatingText(this.x, this.y, "💥 ¡RÁFAGA DE BOSS!", true);
+                spawnFloatingText(this.x, this.y, `💥 ¡ATAQUE DE ${this.name.toUpperCase()}!`, true);
             }
         } else if (this.isShooter) {
             this.shootTimer -= dt;
@@ -671,147 +1132,592 @@ class Enemy {
         const r = this.radius;
 
         switch (this.drawType) {
-            case 'bat': {
-                let wingFlap = Math.sin(animationTime * 18 + this.animPhase) * 12;
-                ctxCanvas.fillStyle = '#0284c7';
+            case 'slime': {
+                // Ice Slime Blook (Cubic Cyan Slime with Dark Brows & Jagged Teeth)
+                let bounce = 1 + Math.sin(animationTime * 10 + this.animPhase) * 0.06;
+                ctxCanvas.scale(1 / bounce, bounce);
+                
+                // Base Rounded Cube
+                drawRoundedRect(ctxCanvas, -r, -r, r * 2, r * 2, r * 0.35);
+                let grad = ctxCanvas.createLinearGradient(0, -r, 0, r);
+                grad.addColorStop(0, '#38bdf8'); grad.addColorStop(1, '#0284c7');
+                ctxCanvas.fillStyle = grad; ctxCanvas.fill();
+
+                // Inner lighter face box
+                drawRoundedRect(ctxCanvas, -r * 0.8, -r * 0.7, r * 1.6, r * 1.1, r * 0.2);
+                ctxCanvas.fillStyle = '#0ea5e9'; ctxCanvas.fill();
+
+                // Top ice bubbles / shine
+                ctxCanvas.fillStyle = 'rgba(255, 255, 255, 0.7)';
+                ctxCanvas.beginPath(); ctxCanvas.arc(-r * 0.55, -r * 0.7, r * 0.18, 0, Math.PI * 2); ctxCanvas.fill();
+                ctxCanvas.beginPath(); ctxCanvas.arc(-r * 0.25, -r * 0.85, r * 0.1, 0, Math.PI * 2); ctxCanvas.fill();
+
+                // Dark angled eyebrows
+                ctxCanvas.fillStyle = '#0369a1';
                 ctxCanvas.beginPath();
-                ctxCanvas.moveTo(0, 0);
-                ctxCanvas.quadraticCurveTo(-r * 1.5, -r + wingFlap, -r * 2.2, 0);
-                ctxCanvas.quadraticCurveTo(-r * 1.2, r, 0, 0);
-                ctxCanvas.moveTo(0, 0);
-                ctxCanvas.quadraticCurveTo(r * 1.5, -r + wingFlap, r * 2.2, 0);
-                ctxCanvas.quadraticCurveTo(r * 1.2, r, 0, 0);
+                ctxCanvas.ellipse(-r * 0.45, -r * 0.18, r * 0.32, r * 0.15, -0.4, 0, Math.PI * 2);
+                ctxCanvas.ellipse(r * 0.45, -r * 0.18, r * 0.32, r * 0.15, 0.4, 0, Math.PI * 2);
                 ctxCanvas.fill();
-                ctxCanvas.fillStyle = '#38bdf8';
-                ctxCanvas.beginPath(); ctxCanvas.arc(0, 0, r * 0.7, 0, Math.PI * 2); ctxCanvas.fill();
-                ctxCanvas.fillStyle = '#e0f2fe';
-                ctxCanvas.beginPath(); ctxCanvas.arc(-3, -2, 2, 0, Math.PI * 2); ctxCanvas.arc(3, -2, 2, 0, Math.PI * 2); ctxCanvas.fill();
+
+                // Black Eyes with white sparkle
+                ctxCanvas.fillStyle = '#0f172a';
+                ctxCanvas.beginPath();
+                ctxCanvas.ellipse(-r * 0.45, -r * 0.12, r * 0.26, r * 0.22, -0.2, 0, Math.PI * 2);
+                ctxCanvas.ellipse(r * 0.45, -r * 0.12, r * 0.26, r * 0.22, 0.2, 0, Math.PI * 2);
+                ctxCanvas.fill();
+
+                ctxCanvas.fillStyle = '#ffffff';
+                ctxCanvas.beginPath(); ctxCanvas.arc(-r * 0.35, -r * 0.16, r * 0.08, 0, Math.PI * 2); ctxCanvas.fill();
+                ctxCanvas.beginPath(); ctxCanvas.arc(r * 0.55, -r * 0.16, r * 0.08, 0, Math.PI * 2); ctxCanvas.fill();
+
+                // Bottom rounded ledge
+                drawRoundedRect(ctxCanvas, -r * 0.95, r * 0.2, r * 1.9, r * 0.7, r * 0.3);
+                ctxCanvas.fillStyle = '#0284c7'; ctxCanvas.fill();
+
+                // Mouth with sharp triangular teeth
+                ctxCanvas.fillStyle = '#0f172a';
+                ctxCanvas.beginPath();
+                ctxCanvas.arc(0, r * 0.55, r * 0.3, Math.PI, 0);
+                ctxCanvas.closePath();
+                ctxCanvas.fill();
+
+                // White teeth
+                ctxCanvas.fillStyle = '#ffffff';
+                ctxCanvas.beginPath();
+                ctxCanvas.moveTo(-r * 0.24, r * 0.55); ctxCanvas.lineTo(-r * 0.16, r * 0.38); ctxCanvas.lineTo(-r * 0.08, r * 0.55);
+                ctxCanvas.lineTo(0, r * 0.38); ctxCanvas.lineTo(r * 0.08, r * 0.55); ctxCanvas.lineTo(r * 0.16, r * 0.38); ctxCanvas.lineTo(r * 0.24, r * 0.55);
+                ctxCanvas.closePath(); ctxCanvas.fill();
+                break;
+            }
+            case 'red_slime_boss': {
+                // Red Slime Monster Boss (Fiery Red Boss Version)
+                let glow = ctxCanvas.createRadialGradient(0, 0, r * 0.3, 0, 0, r * 1.5);
+                glow.addColorStop(0, 'rgba(239, 68, 68, 0.8)'); glow.addColorStop(1, 'rgba(239, 68, 68, 0)');
+                ctxCanvas.fillStyle = glow; ctxCanvas.beginPath(); ctxCanvas.arc(0, 0, r * 1.5, 0, Math.PI * 2); ctxCanvas.fill();
+
+                drawRoundedRect(ctxCanvas, -r, -r, r * 2, r * 2, r * 0.35);
+                let grad = ctxCanvas.createLinearGradient(0, -r, 0, r);
+                grad.addColorStop(0, '#f87171'); grad.addColorStop(1, '#b91c1c');
+                ctxCanvas.fillStyle = grad; ctxCanvas.fill();
+
+                drawRoundedRect(ctxCanvas, -r * 0.8, -r * 0.7, r * 1.6, r * 1.1, r * 0.2);
+                ctxCanvas.fillStyle = '#dc2626'; ctxCanvas.fill();
+
+                ctxCanvas.fillStyle = '#7f1d1d';
+                ctxCanvas.beginPath();
+                ctxCanvas.ellipse(-r * 0.45, -r * 0.18, r * 0.32, r * 0.15, -0.4, 0, Math.PI * 2);
+                ctxCanvas.ellipse(r * 0.45, -r * 0.18, r * 0.32, r * 0.15, 0.4, 0, Math.PI * 2);
+                ctxCanvas.fill();
+
+                ctxCanvas.fillStyle = '#18181b';
+                ctxCanvas.beginPath();
+                ctxCanvas.ellipse(-r * 0.45, -r * 0.12, r * 0.26, r * 0.22, -0.2, 0, Math.PI * 2);
+                ctxCanvas.ellipse(r * 0.45, -r * 0.12, r * 0.26, r * 0.22, 0.2, 0, Math.PI * 2);
+                ctxCanvas.fill();
+
+                ctxCanvas.fillStyle = '#fef08a';
+                ctxCanvas.beginPath(); ctxCanvas.arc(-r * 0.35, -r * 0.16, r * 0.08, 0, Math.PI * 2); ctxCanvas.fill();
+                ctxCanvas.beginPath(); ctxCanvas.arc(r * 0.55, -r * 0.16, r * 0.08, 0, Math.PI * 2); ctxCanvas.fill();
+
+                drawRoundedRect(ctxCanvas, -r * 0.95, r * 0.2, r * 1.9, r * 0.7, r * 0.3);
+                ctxCanvas.fillStyle = '#991b1b'; ctxCanvas.fill();
+
+                ctxCanvas.fillStyle = '#18181b';
+                ctxCanvas.beginPath(); ctxCanvas.arc(0, r * 0.55, r * 0.32, Math.PI, 0); ctxCanvas.fill();
+                ctxCanvas.fillStyle = '#ffffff';
+                ctxCanvas.beginPath();
+                ctxCanvas.moveTo(-r * 0.24, r * 0.55); ctxCanvas.lineTo(-r * 0.16, r * 0.35); ctxCanvas.lineTo(-r * 0.08, r * 0.55);
+                ctxCanvas.lineTo(0, r * 0.35); ctxCanvas.lineTo(r * 0.08, r * 0.55); ctxCanvas.lineTo(r * 0.16, r * 0.35); ctxCanvas.lineTo(r * 0.24, r * 0.55);
+                ctxCanvas.closePath(); ctxCanvas.fill();
+                break;
+            }
+            case 'bat': {
+                // Ice Bat Blook (Wings on sides, blue bat head with pig nose and fangs)
+                let flap = Math.sin(animationTime * 16 + this.animPhase) * (r * 0.1);
+                
+                // Wing outer flaps
+                ctxCanvas.fillStyle = '#1e40af';
+                ctxCanvas.beginPath();
+                ctxCanvas.moveTo(-r, -r + flap); ctxCanvas.lineTo(-r * 0.5, 0); ctxCanvas.lineTo(-r, r);
+                ctxCanvas.moveTo(r, -r + flap); ctxCanvas.lineTo(r * 0.5, 0); ctxCanvas.lineTo(r, r);
+                ctxCanvas.fill();
+
+                // Main Wing Body
+                drawRoundedRect(ctxCanvas, -r * 0.9, -r * 0.9, r * 1.8, r * 1.8, r * 0.3);
+                ctxCanvas.fillStyle = '#2563eb'; ctxCanvas.fill();
+
+                // Inner wing ribs
+                ctxCanvas.fillStyle = '#3b82f6';
+                ctxCanvas.beginPath();
+                ctxCanvas.moveTo(-r * 0.9, -r * 0.5); ctxCanvas.quadraticCurveTo(-r * 0.6, 0, -r * 0.4, r * 0.8);
+                ctxCanvas.moveTo(r * 0.9, -r * 0.5); ctxCanvas.quadraticCurveTo(r * 0.6, 0, r * 0.4, r * 0.8);
+                ctxCanvas.strokeStyle = '#1d4ed8'; ctxCanvas.lineWidth = r * 0.1; ctxCanvas.stroke();
+
+                // Pointed Bat Ears
+                ctxCanvas.fillStyle = '#1d4ed8';
+                ctxCanvas.beginPath();
+                ctxCanvas.moveTo(-r * 0.6, -r * 0.8); ctxCanvas.lineTo(-r * 0.4, -r * 1.25); ctxCanvas.lineTo(-r * 0.2, -r * 0.7);
+                ctxCanvas.moveTo(r * 0.6, -r * 0.8); ctxCanvas.lineTo(r * 0.4, -r * 1.25); ctxCanvas.lineTo(r * 0.2, -r * 0.7);
+                ctxCanvas.fill();
+
+                ctxCanvas.fillStyle = '#60a5fa';
+                ctxCanvas.beginPath();
+                ctxCanvas.moveTo(-r * 0.55, -r * 0.8); ctxCanvas.lineTo(-r * 0.4, -r * 1.15); ctxCanvas.lineTo(-r * 0.25, -r * 0.75);
+                ctxCanvas.moveTo(r * 0.55, -r * 0.8); ctxCanvas.lineTo(r * 0.4, -r * 1.15); ctxCanvas.lineTo(r * 0.25, -r * 0.75);
+                ctxCanvas.fill();
+
+                // Central Bat Face
+                ctxCanvas.fillStyle = '#3b82f6';
+                ctxCanvas.beginPath(); ctxCanvas.arc(0, 0, r * 0.55, 0, Math.PI * 2); ctxCanvas.fill();
+
+                // Eyes
+                ctxCanvas.fillStyle = '#0f172a';
+                ctxCanvas.beginPath();
+                ctxCanvas.ellipse(-r * 0.25, -r * 0.18, r * 0.13, r * 0.18, -0.3, 0, Math.PI * 2);
+                ctxCanvas.ellipse(r * 0.25, -r * 0.18, r * 0.13, r * 0.18, 0.3, 0, Math.PI * 2);
+                ctxCanvas.fill();
+
+                // Pig-style bat snout
+                drawRoundedRect(ctxCanvas, -r * 0.3, -r * 0.05, r * 0.6, r * 0.45, r * 0.18);
+                ctxCanvas.fillStyle = '#93c5fd'; ctxCanvas.fill();
+                ctxCanvas.fillStyle = '#1e3a8a';
+                ctxCanvas.beginPath();
+                ctxCanvas.ellipse(-r * 0.12, r * 0.15, r * 0.06, r * 0.1, 0, 0, Math.PI * 2);
+                ctxCanvas.ellipse(r * 0.12, r * 0.15, r * 0.06, r * 0.1, 0, 0, Math.PI * 2);
+                ctxCanvas.fill();
+
+                // Fangs
+                ctxCanvas.fillStyle = '#ffffff';
+                ctxCanvas.beginPath();
+                ctxCanvas.moveTo(-r * 0.18, r * 0.38); ctxCanvas.lineTo(-r * 0.12, r * 0.52); ctxCanvas.lineTo(-r * 0.06, r * 0.38);
+                ctxCanvas.moveTo(r * 0.18, r * 0.38); ctxCanvas.lineTo(r * 0.12, r * 0.52); ctxCanvas.lineTo(r * 0.06, r * 0.38);
+                ctxCanvas.fill();
                 break;
             }
             case 'fossil': {
-                ctxCanvas.fillStyle = 'rgba(186, 230, 253, 0.6)';
-                ctxCanvas.fillRect(-r, -r, r * 2, r * 2);
-                ctxCanvas.strokeStyle = '#7dd3fc'; ctxCanvas.lineWidth = 2;
-                ctxCanvas.strokeRect(-r, -r, r * 2, r * 2);
-                ctxCanvas.fillStyle = '#94a3b8';
-                ctxCanvas.beginPath(); ctxCanvas.arc(0, -2, r * 0.55, 0, Math.PI * 2); ctxCanvas.fill();
-                ctxCanvas.fillRect(-r * 0.3, 2, r * 0.6, r * 0.4);
-                ctxCanvas.fillStyle = '#0f172a';
-                ctxCanvas.beginPath(); ctxCanvas.arc(-3, -3, 2.5, 0, Math.PI * 2); ctxCanvas.arc(3, -3, 2.5, 0, Math.PI * 2); ctxCanvas.fill();
-                break;
-            }
-            case 'bush': {
-                ctxCanvas.fillStyle = '#15803d';
-                ctxCanvas.beginPath(); ctxCanvas.arc(0, 2, r, 0, Math.PI * 2); ctxCanvas.fill();
-                ctxCanvas.beginPath(); ctxCanvas.arc(-r*0.5, 0, r*0.7, 0, Math.PI * 2); ctxCanvas.fill();
-                ctxCanvas.beginPath(); ctxCanvas.arc(r*0.5, 0, r*0.7, 0, Math.PI * 2); ctxCanvas.fill();
+                // Frozen Fossil (Dino skull frozen in cyan ice with crack lines and snow on top)
+                drawRoundedRect(ctxCanvas, -r, -r, r * 2, r * 2, r * 0.28);
+                ctxCanvas.fillStyle = '#7dd3fc'; ctxCanvas.fill();
+
+                // Top snow puff layer
                 ctxCanvas.fillStyle = '#f8fafc';
-                ctxCanvas.beginPath(); ctxCanvas.arc(0, -r*0.4, r*0.8, Math.PI, Math.PI*2); ctxCanvas.fill();
-                ctxCanvas.fillStyle = '#facc15';
-                ctxCanvas.beginPath(); ctxCanvas.arc(-4, 2, 2.5, 0, Math.PI * 2); ctxCanvas.arc(4, 2, 2.5, 0, Math.PI * 2); ctxCanvas.fill();
+                ctxCanvas.beginPath();
+                ctxCanvas.arc(-r * 0.7, -r * 0.9, r * 0.25, 0, Math.PI * 2);
+                ctxCanvas.arc(-r * 0.2, -r * 0.95, r * 0.3, 0, Math.PI * 2);
+                ctxCanvas.arc(r * 0.3, -r * 0.95, r * 0.28, 0, Math.PI * 2);
+                ctxCanvas.arc(r * 0.75, -r * 0.9, r * 0.25, 0, Math.PI * 2);
+                ctxCanvas.fill();
+
+                // Dinosaur skull base
+                ctxCanvas.fillStyle = '#64748b';
+                ctxCanvas.beginPath();
+                ctxCanvas.ellipse(-r * 0.1, 0, r * 0.65, r * 0.45, 0.4, 0, Math.PI * 2);
+                ctxCanvas.moveTo(0, -r * 0.1); ctxCanvas.lineTo(r * 0.7, r * 0.3); ctxCanvas.lineTo(r * 0.5, r * 0.5); ctxCanvas.lineTo(-r * 0.2, r * 0.35);
+                ctxCanvas.fill();
+
+                // Eye socket in skull
+                ctxCanvas.fillStyle = '#334155';
+                ctxCanvas.beginPath(); ctxCanvas.arc(-r * 0.15, -r * 0.05, r * 0.22, 0, Math.PI * 2); ctxCanvas.fill();
+                ctxCanvas.fillStyle = '#7dd3fc';
+                ctxCanvas.beginPath(); ctxCanvas.arc(-r * 0.15, -r * 0.05, r * 0.16, 0, Math.PI * 2); ctxCanvas.fill();
+
+                // Sharp teeth
+                ctxCanvas.fillStyle = '#f1f5f9';
+                for (let i = 0; i < 4; i++) {
+                    let tx = r * 0.2 + i * (r * 0.12), ty = r * 0.28 + i * (r * 0.05);
+                    ctxCanvas.beginPath();
+                    ctxCanvas.moveTo(tx, ty); ctxCanvas.lineTo(tx + r * 0.06, ty + r * 0.12); ctxCanvas.lineTo(tx + r * 0.1, ty);
+                    ctxCanvas.fill();
+                }
+
+                // Ice Cracks crossing the fossil
+                ctxCanvas.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+                ctxCanvas.lineWidth = r * 0.08;
+                ctxCanvas.beginPath();
+                ctxCanvas.moveTo(-r * 0.8, -r * 0.5); ctxCanvas.lineTo(r * 0.3, r * 0.8);
+                ctxCanvas.moveTo(-r * 0.2, -r * 0.7); ctxCanvas.lineTo(r * 0.6, r * 0.2);
+                ctxCanvas.stroke();
                 break;
             }
             case 'bug': {
-                ctxCanvas.fillStyle = '#0284c7';
-                ctxCanvas.beginPath(); ctxCanvas.ellipse(0, 0, r, r * 0.8, 0, 0, Math.PI * 2); ctxCanvas.fill();
-                ctxCanvas.strokeStyle = '#38bdf8'; ctxCanvas.lineWidth = 2;
-                ctxCanvas.beginPath(); ctxCanvas.moveTo(0, -r * 0.8); ctxCanvas.lineTo(0, r * 0.8); ctxCanvas.stroke();
-                ctxCanvas.fillStyle = '#e0f2fe';
-                ctxCanvas.beginPath(); ctxCanvas.arc(-3, -r * 0.5, 2, 0, Math.PI * 2); ctxCanvas.arc(3, -r * 0.5, 2, 0, Math.PI * 2); ctxCanvas.fill();
+                // Ice Bug (Grey rounded body with blue head crest and big eyes)
+                // Wings on back
+                ctxCanvas.fillStyle = 'rgba(147, 197, 253, 0.6)';
+                ctxCanvas.beginPath();
+                ctxCanvas.ellipse(-r * 0.7, -r * 0.5, r * 0.35, r * 0.2, -0.6, 0, Math.PI * 2);
+                ctxCanvas.ellipse(r * 0.7, -r * 0.5, r * 0.35, r * 0.2, 0.6, 0, Math.PI * 2);
+                ctxCanvas.fill();
+
+                // Rounded Grey body
+                drawRoundedRect(ctxCanvas, -r * 0.85, -r * 0.8, r * 1.7, r * 1.6, r * 0.45);
+                ctxCanvas.fillStyle = '#475569'; ctxCanvas.fill();
+
+                // V-shaped blue helmet crest
+                ctxCanvas.fillStyle = '#2563eb';
+                ctxCanvas.beginPath();
+                ctxCanvas.moveTo(-r * 0.75, -r * 0.8); ctxCanvas.lineTo(0, 0); ctxCanvas.lineTo(r * 0.75, -r * 0.8);
+                ctxCanvas.lineTo(0, -r * 0.3); ctxCanvas.closePath();
+                ctxCanvas.fill();
+
+                // Eyes with double white shine
+                ctxCanvas.fillStyle = '#0f172a';
+                ctxCanvas.beginPath();
+                ctxCanvas.ellipse(-r * 0.42, 0.05 * r, r * 0.28, r * 0.24, -0.2, 0, Math.PI * 2);
+                ctxCanvas.ellipse(r * 0.42, 0.05 * r, r * 0.28, r * 0.24, 0.2, 0, Math.PI * 2);
+                ctxCanvas.fill();
+
+                ctxCanvas.fillStyle = '#ffffff';
+                ctxCanvas.beginPath();
+                ctxCanvas.arc(-r * 0.35, -r * 0.02, r * 0.08, 0, Math.PI * 2);
+                ctxCanvas.arc(-r * 0.5, r * 0.12, r * 0.04, 0, Math.PI * 2);
+                ctxCanvas.arc(r * 0.52, -r * 0.02, r * 0.08, 0, Math.PI * 2);
+                ctxCanvas.arc(r * 0.38, r * 0.12, r * 0.04, 0, Math.PI * 2);
+                ctxCanvas.fill();
+
+                // Mandibles/Cheek pincers
+                ctxCanvas.fillStyle = '#3b82f6';
+                ctxCanvas.beginPath();
+                ctxCanvas.ellipse(-r * 0.6, r * 0.45, r * 0.25, r * 0.12, 0.6, 0, Math.PI * 2);
+                ctxCanvas.ellipse(r * 0.6, r * 0.45, r * 0.25, r * 0.12, -0.6, 0, Math.PI * 2);
+                ctxCanvas.fill();
+
+                // Grey mouth/snout center
+                ctxCanvas.fillStyle = '#94a3b8';
+                ctxCanvas.beginPath();
+                ctxCanvas.arc(-r * 0.12, r * 0.3, r * 0.16, 0, Math.PI * 2);
+                ctxCanvas.arc(r * 0.12, r * 0.3, r * 0.16, 0, Math.PI * 2);
+                ctxCanvas.fill();
+                break;
+            }
+            case 'bush': {
+                // Snowy Bush Monster (Green leafy monster with green bushy mustache and twig)
+                // Brown stem & top leaf
+                ctxCanvas.fillStyle = '#78350f';
+                ctxCanvas.fillRect(r * 0.08, -r * 1.25, r * 0.16, r * 0.4);
+                ctxCanvas.fillStyle = '#22c55e';
+                ctxCanvas.beginPath(); ctxCanvas.ellipse(r * 0.3, -r * 1.2, r * 0.2, r * 0.1, 0.5, 0, Math.PI * 2); ctxCanvas.fill();
+
+                // Fluffy Green Bush body
+                ctxCanvas.fillStyle = '#16a34a';
+                drawRoundedRect(ctxCanvas, -r * 0.9, -r * 0.8, r * 1.8, r * 1.7, r * 0.45);
+                ctxCanvas.fill();
+
+                // Extra top bush puffs
+                ctxCanvas.beginPath();
+                ctxCanvas.arc(-r * 0.45, -r * 0.65, r * 0.4, 0, Math.PI * 2);
+                ctxCanvas.arc(r * 0.35, -r * 0.6, r * 0.42, 0, Math.PI * 2);
+                ctxCanvas.fill();
+
+                // Bushy eyebrows
+                ctxCanvas.fillStyle = '#4ade80';
+                ctxCanvas.beginPath();
+                ctxCanvas.ellipse(-r * 0.4, -r * 0.18, r * 0.32, r * 0.18, -0.3, 0, Math.PI * 2);
+                ctxCanvas.ellipse(r * 0.4, -r * 0.18, r * 0.32, r * 0.18, 0.3, 0, Math.PI * 2);
+                ctxCanvas.fill();
+
+                // Dark eyes
+                ctxCanvas.fillStyle = '#14532d';
+                ctxCanvas.beginPath();
+                ctxCanvas.arc(-r * 0.4, -r * 0.1, r * 0.2, 0, Math.PI * 2);
+                ctxCanvas.arc(r * 0.4, -r * 0.1, r * 0.2, 0, Math.PI * 2);
+                ctxCanvas.fill();
+
+                // Big leafy green mustache
+                ctxCanvas.fillStyle = '#4ade80';
+                ctxCanvas.beginPath();
+                ctxCanvas.arc(-r * 0.3, r * 0.35, r * 0.28, 0, Math.PI * 2);
+                ctxCanvas.arc(0, r * 0.3, r * 0.25, 0, Math.PI * 2);
+                ctxCanvas.arc(r * 0.3, r * 0.35, r * 0.28, 0, Math.PI * 2);
+                ctxCanvas.fill();
                 break;
             }
             case 'crab': {
-                let clawMove = Math.sin(animationTime * 8 + this.animPhase) * 4;
-                ctxCanvas.strokeStyle = '#0284c7'; ctxCanvas.lineWidth = 3;
-                for (let side of [-1, 1]) {
-                    ctxCanvas.beginPath();
-                    ctxCanvas.moveTo(side * r * 0.6, 0); ctxCanvas.lineTo(side * (r + 6), 6);
-                    ctxCanvas.moveTo(side * r * 0.6, -4); ctxCanvas.lineTo(side * (r + 8), -6);
-                    ctxCanvas.stroke();
-                }
-                ctxCanvas.fillStyle = '#0369a1';
-                ctxCanvas.beginPath(); ctxCanvas.ellipse(0, 0, r, r * 0.7, 0, 0, Math.PI * 2); ctxCanvas.fill();
-                ctxCanvas.fillStyle = '#38bdf8';
-                ctxCanvas.beginPath(); ctxCanvas.arc(-r - 2, -r * 0.4 + clawMove, 5, 0, Math.PI * 2); ctxCanvas.fill();
-                ctxCanvas.beginPath(); ctxCanvas.arc(r + 2, -r * 0.4 - clawMove, 5, 0, Math.PI * 2); ctxCanvas.fill();
-                break;
-            }
-            case 'ding': {
-                ctxCanvas.fillStyle = '#c084fc';
-                ctxCanvas.beginPath(); ctxCanvas.arc(0, 0, r, 0, Math.PI * 2); ctxCanvas.fill();
-                ctxCanvas.fillStyle = '#a855f7';
-                ctxCanvas.beginPath(); ctxCanvas.moveTo(-5, -r); ctxCanvas.lineTo(-9, -r - 7); ctxCanvas.lineTo(-1, -r + 2); ctxCanvas.fill();
-                ctxCanvas.beginPath(); ctxCanvas.moveTo(5, -r); ctxCanvas.lineTo(9, -r - 7); ctxCanvas.lineTo(1, -r + 2); ctxCanvas.fill();
-                ctxCanvas.fillStyle = '#fef08a';
-                ctxCanvas.beginPath(); ctxCanvas.arc(-3, -2, 3, 0, Math.PI * 2); ctxCanvas.arc(3, -2, 3, 0, Math.PI * 2); ctxCanvas.fill();
-                break;
-            }
-            case 'donk': {
-                let aura = ctxCanvas.createRadialGradient(0, 0, r*0.5, 0, 0, r*1.4);
-                aura.addColorStop(0, 'rgba(147, 51, 234, 0.6)'); aura.addColorStop(1, 'rgba(147, 51, 234, 0)');
-                ctxCanvas.fillStyle = aura;
-                ctxCanvas.beginPath(); ctxCanvas.arc(0, 0, r*1.4, 0, Math.PI*2); ctxCanvas.fill();
+                // Ice Crab & Giant Ice Crab Boss
+                let clawWiggle = Math.sin(animationTime * 6 + this.animPhase) * (r * 0.08);
 
-                ctxCanvas.fillStyle = '#7e22ce';
-                ctxCanvas.beginPath(); ctxCanvas.arc(0, 0, r, 0, Math.PI * 2); ctxCanvas.fill();
-                ctxCanvas.fillStyle = '#581c87';
-                ctxCanvas.beginPath(); ctxCanvas.moveTo(-6, -r); ctxCanvas.lineTo(-12, -r - 10); ctxCanvas.lineTo(-1, -r + 2); ctxCanvas.fill();
-                ctxCanvas.beginPath(); ctxCanvas.moveTo(6, -r); ctxCanvas.lineTo(12, -r - 10); ctxCanvas.lineTo(1, -r + 2); ctxCanvas.fill();
-                ctxCanvas.fillStyle = '#ef4444';
-                ctxCanvas.beginPath(); ctxCanvas.arc(-4, -2, 3.5, 0, Math.PI * 2); ctxCanvas.arc(4, -2, 3.5, 0, Math.PI * 2); ctxCanvas.fill();
+                // Crab legs on bottom sides
+                ctxCanvas.strokeStyle = '#0284c7';
+                ctxCanvas.lineWidth = r * 0.12;
+                for (let i = 0; i < 3; i++) {
+                    let ly = r * 0.4 + i * (r * 0.15);
+                    ctxCanvas.beginPath(); ctxCanvas.moveTo(-r * 0.6, ly); ctxCanvas.lineTo(-r * 0.95, ly + r * 0.2); ctxCanvas.stroke();
+                    ctxCanvas.beginPath(); ctxCanvas.moveTo(r * 0.6, ly); ctxCanvas.lineTo(r * 0.95, ly + r * 0.2); ctxCanvas.stroke();
+                }
+
+                // Raised claws on top
+                ctxCanvas.fillStyle = '#0284c7';
+                ctxCanvas.beginPath();
+                ctxCanvas.arc(-r * 0.6, -r * 0.6 + clawWiggle, r * 0.35, 0, Math.PI * 2);
+                ctxCanvas.arc(r * 0.6, -r * 0.6 - clawWiggle, r * 0.35, 0, Math.PI * 2);
+                ctxCanvas.fill();
+
+                // Snow atop the claws
+                ctxCanvas.fillStyle = '#f8fafc';
+                ctxCanvas.beginPath();
+                ctxCanvas.arc(-r * 0.6, -r * 0.8 + clawWiggle, r * 0.25, 0, Math.PI * 2);
+                ctxCanvas.arc(r * 0.6, -r * 0.8 - clawWiggle, r * 0.25, 0, Math.PI * 2);
+                ctxCanvas.fill();
+
+                // Ice Crystal Crown
+                ctxCanvas.fillStyle = '#bae6fd';
+                ctxCanvas.beginPath();
+                ctxCanvas.moveTo(-r * 0.2, -r * 0.7); ctxCanvas.lineTo(0, -r * 0.95); ctxCanvas.lineTo(r * 0.2, -r * 0.7);
+                ctxCanvas.lineTo(0, -r * 0.55); ctxCanvas.closePath();
+                ctxCanvas.fill();
+
+                // Main Rounded Body
+                drawRoundedRect(ctxCanvas, -r * 0.9, -r * 0.4, r * 1.8, r * 1.3, r * 0.4);
+                ctxCanvas.fillStyle = '#38bdf8'; ctxCanvas.fill();
+
+                // Light belly patch
+                ctxCanvas.fillStyle = '#e0f2fe';
+                ctxCanvas.beginPath(); ctxCanvas.ellipse(0, r * 0.3, r * 0.7, r * 0.35, 0, 0, Math.PI * 2); ctxCanvas.fill();
+
+                // Eyes & Mouth
+                ctxCanvas.fillStyle = '#0c4a6e';
+                ctxCanvas.beginPath();
+                ctxCanvas.arc(-r * 0.3, -r * 0.15, r * 0.08, 0, Math.PI * 2);
+                ctxCanvas.arc(r * 0.3, -r * 0.15, r * 0.08, 0, Math.PI * 2);
+                ctxCanvas.fill();
+
+                ctxCanvas.strokeStyle = '#0c4a6e';
+                ctxCanvas.lineWidth = r * 0.06;
+                ctxCanvas.beginPath();
+                ctxCanvas.moveTo(-r * 0.08, 0); ctxCanvas.lineTo(0, -r * 0.06); ctxCanvas.lineTo(r * 0.08, 0);
+                ctxCanvas.stroke();
+                break;
+            }
+            case 'ding':
+            case 'donk': {
+                // Ding & Donk (Purple Goblin Monster with horns, curly white hair, tusks & beard)
+                let isDonk = this.drawType === 'donk';
+                let baseColor = isDonk ? '#7e22ce' : '#a855f7';
+                let darkTone = isDonk ? '#581c87' : '#7e22ce';
+
+                // Two Pointed Horns
+                ctxCanvas.fillStyle = darkTone;
+                ctxCanvas.beginPath();
+                ctxCanvas.moveTo(-r * 0.85, -r * 0.4); ctxCanvas.lineTo(-r * 0.9, -r * 1.15); ctxCanvas.lineTo(-r * 0.5, -r * 0.75);
+                ctxCanvas.moveTo(r * 0.85, -r * 0.4); ctxCanvas.lineTo(r * 0.9, -r * 1.15); ctxCanvas.lineTo(r * 0.5, -r * 0.75);
+                ctxCanvas.fill();
+
+                // Purple Rounded Square Head
+                drawRoundedRect(ctxCanvas, -r * 0.85, -r * 0.8, r * 1.7, r * 1.6, r * 0.4);
+                ctxCanvas.fillStyle = baseColor; ctxCanvas.fill();
+
+                // White/Grey Fluffy Hair Tuft
+                ctxCanvas.fillStyle = '#f3e8ff';
+                ctxCanvas.beginPath();
+                ctxCanvas.arc(-r * 0.25, -r * 0.8, r * 0.22, 0, Math.PI * 2);
+                ctxCanvas.arc(0, -r * 0.9, r * 0.28, 0, Math.PI * 2);
+                ctxCanvas.arc(r * 0.25, -r * 0.8, r * 0.22, 0, Math.PI * 2);
+                ctxCanvas.fill();
+
+                // Drooping heavy eyelids & eyes
+                ctxCanvas.fillStyle = '#3b0764';
+                drawRoundedRect(ctxCanvas, -r * 0.65, -r * 0.25, r * 1.3, r * 0.12, r * 0.05);
+                ctxCanvas.fill();
+
+                ctxCanvas.fillStyle = '#ffffff';
+                ctxCanvas.beginPath();
+                ctxCanvas.arc(-r * 0.35, -r * 0.05, r * 0.18, 0, Math.PI * 2);
+                ctxCanvas.arc(r * 0.35, -r * 0.05, r * 0.18, 0, Math.PI * 2);
+                ctxCanvas.fill();
+
+                ctxCanvas.fillStyle = '#1e1b4b';
+                ctxCanvas.beginPath();
+                ctxCanvas.arc(-r * 0.35, -r * 0.05, r * 0.12, 0, Math.PI * 2);
+                ctxCanvas.arc(r * 0.35, -r * 0.05, r * 0.12, 0, Math.PI * 2);
+                ctxCanvas.fill();
+
+                // Snout with tusks
+                drawRoundedRect(ctxCanvas, -r * 0.4, r * 0.1, r * 0.8, r * 0.4, r * 0.15);
+                ctxCanvas.fillStyle = '#c084fc'; ctxCanvas.fill();
+
+                // Two white tusks
+                ctxCanvas.fillStyle = '#fef08a';
+                ctxCanvas.beginPath();
+                ctxCanvas.moveTo(-r * 0.5, r * 0.35); ctxCanvas.lineTo(-r * 0.38, r * 0.08); ctxCanvas.lineTo(-r * 0.26, r * 0.35);
+                ctxCanvas.moveTo(r * 0.5, r * 0.35); ctxCanvas.lineTo(r * 0.38, r * 0.08); ctxCanvas.lineTo(r * 0.26, r * 0.35);
+                ctxCanvas.fill();
+
+                // White beard patch
+                ctxCanvas.fillStyle = '#f3e8ff';
+                ctxCanvas.beginPath();
+                ctxCanvas.moveTo(-r * 0.25, r * 0.55); ctxCanvas.lineTo(0, r * 0.85); ctxCanvas.lineTo(r * 0.25, r * 0.55);
+                ctxCanvas.fill();
                 break;
             }
             case 'elemental': {
-                let spin = animationTime * 3 + this.animPhase;
-                ctxCanvas.rotate(spin);
+                // Ice Elemental (Crystalline ice shards, floating diamonds & crystal claws)
+                // Floating Ice Crystals above head
+                ctxCanvas.fillStyle = '#7dd3fc';
+                for (let dx of [-r * 0.45, 0, r * 0.45]) {
+                    ctxCanvas.beginPath();
+                    ctxCanvas.moveTo(dx, -r * 1.3); ctxCanvas.lineTo(dx + r * 0.1, -r * 1.1); ctxCanvas.lineTo(dx, -r * 0.9); ctxCanvas.lineTo(dx - r * 0.1, -r * 1.1);
+                    ctxCanvas.fill();
+                }
+
+                // Spiky Ice Mountain Head
+                ctxCanvas.fillStyle = '#0284c7';
+                ctxCanvas.beginPath();
+                ctxCanvas.moveTo(-r * 0.8, r * 0.8);
+                ctxCanvas.lineTo(-r * 0.8, -r * 0.4);
+                ctxCanvas.lineTo(-r * 0.45, -r * 1.1);
+                ctxCanvas.lineTo(0, -r * 0.6);
+                ctxCanvas.lineTo(r * 0.45, -r * 1.1);
+                ctxCanvas.lineTo(r * 0.8, -r * 0.4);
+                ctxCanvas.lineTo(r * 0.8, r * 0.8);
+                ctxCanvas.closePath();
+                ctxCanvas.fill();
+
+                // Lighter crystal facet
                 ctxCanvas.fillStyle = '#38bdf8';
                 ctxCanvas.beginPath();
-                ctxCanvas.moveTo(0, -r); ctxCanvas.lineTo(r * 0.8, 0); ctxCanvas.lineTo(0, r); ctxCanvas.lineTo(-r * 0.8, 0);
-                ctxCanvas.closePath(); ctxCanvas.fill();
-                ctxCanvas.fillStyle = '#e0f2fe';
-                for (let i = 0; i < 4; i++) {
-                    let a = (i / 4) * Math.PI * 2;
-                    let ox = Math.cos(a) * (r + 8), oy = Math.sin(a) * (r + 8);
-                    ctxCanvas.fillRect(ox - 3, oy - 3, 6, 6);
-                }
+                ctxCanvas.moveTo(-r * 0.6, r * 0.6);
+                ctxCanvas.lineTo(-r * 0.4, -r * 0.8);
+                ctxCanvas.lineTo(0, -r * 0.3);
+                ctxCanvas.lineTo(r * 0.4, -r * 0.8);
+                ctxCanvas.lineTo(r * 0.6, r * 0.6);
+                ctxCanvas.closePath();
+                ctxCanvas.fill();
+
+                // Dark Eyes & Brows
+                ctxCanvas.fillStyle = '#0369a1';
+                ctxCanvas.beginPath();
+                ctxCanvas.ellipse(-r * 0.35, -r * 0.15, r * 0.2, r * 0.1, -0.4, 0, Math.PI * 2);
+                ctxCanvas.ellipse(r * 0.35, -r * 0.15, r * 0.2, r * 0.1, 0.4, 0, Math.PI * 2);
+                ctxCanvas.fill();
+
+                ctxCanvas.fillStyle = '#082f49';
+                ctxCanvas.beginPath();
+                ctxCanvas.arc(-r * 0.35, -r * 0.05, r * 0.18, 0, Math.PI * 2);
+                ctxCanvas.arc(r * 0.35, -r * 0.05, r * 0.18, 0, Math.PI * 2);
+                ctxCanvas.fill();
+
+                // Crystal claws
+                ctxCanvas.fillStyle = '#67e8f9';
+                drawRoundedRect(ctxCanvas, -r * 0.8, r * 0.4, r * 0.35, r * 0.35, r * 0.1); ctxCanvas.fill();
+                drawRoundedRect(ctxCanvas, r * 0.45, r * 0.4, r * 0.35, r * 0.35, r * 0.1); ctxCanvas.fill();
                 break;
             }
             case 'rock': {
-                ctxCanvas.fillStyle = '#475569';
-                ctxCanvas.beginPath();
-                for (let i = 0; i < 8; i++) {
-                    let ang = (i / 8) * Math.PI * 2;
-                    let rad = r * (0.8 + Math.sin(i * 3) * 0.2);
-                    let rx = Math.cos(ang) * rad, ry = Math.sin(ang) * rad;
-                    if (i === 0) ctxCanvas.moveTo(rx, ry); else ctxCanvas.lineTo(rx, ry);
-                }
-                ctxCanvas.closePath(); ctxCanvas.fill();
+                // Rock Monster (Charcoal rocky face with cyan ice crystal spikes on top)
+                // Cyan Ice crystals on top crown
                 ctxCanvas.fillStyle = '#38bdf8';
-                ctxCanvas.beginPath(); ctxCanvas.moveTo(-10, -r*0.5); ctxCanvas.lineTo(-4, -r*1.1); ctxCanvas.lineTo(2, -r*0.4); ctxCanvas.fill();
-                ctxCanvas.beginPath(); ctxCanvas.moveTo(4, -r*0.2); ctxCanvas.lineTo(12, -r*0.9); ctxCanvas.lineTo(14, 0); ctxCanvas.fill();
-                ctxCanvas.fillStyle = '#f97316';
-                ctxCanvas.beginPath(); ctxCanvas.arc(-6, -4, 4, 0, Math.PI * 2); ctxCanvas.arc(6, -4, 4, 0, Math.PI * 2); ctxCanvas.fill();
+                ctxCanvas.beginPath();
+                ctxCanvas.moveTo(-r * 0.5, -r * 0.7); ctxCanvas.lineTo(-r * 0.3, -r * 1.25); ctxCanvas.lineTo(-r * 0.1, -r * 0.7);
+                ctxCanvas.moveTo(-r * 0.15, -r * 0.7); ctxCanvas.lineTo(r * 0.1, -r * 1.35); ctxCanvas.lineTo(r * 0.35, -r * 0.7);
+                ctxCanvas.moveTo(r * 0.25, -r * 0.7); ctxCanvas.lineTo(r * 0.5, -r * 1.15); ctxCanvas.lineTo(r * 0.65, -r * 0.7);
+                ctxCanvas.fill();
+
+                // Rocky Dark Head Box
+                drawRoundedRect(ctxCanvas, -r * 0.85, -r * 0.8, r * 1.7, r * 1.6, r * 0.35);
+                ctxCanvas.fillStyle = '#334155'; ctxCanvas.fill();
+
+                // Heavy Brow Overhang
+                ctxCanvas.fillStyle = '#1e293b';
+                drawRoundedRect(ctxCanvas, -r * 0.8, -r * 0.3, r * 1.6, r * 0.35, r * 0.1);
+                ctxCanvas.fill();
+
+                // Deep Hollow Eye Sockets
+                ctxCanvas.fillStyle = '#020617';
+                ctxCanvas.beginPath();
+                ctxCanvas.ellipse(-r * 0.38, -r * 0.15, r * 0.22, r * 0.25, 0, 0, Math.PI * 2);
+                ctxCanvas.ellipse(r * 0.38, -r * 0.15, r * 0.22, r * 0.25, 0, 0, Math.PI * 2);
+                ctxCanvas.fill();
+
+                // Broad dino/hippo-like snout
+                drawRoundedRect(ctxCanvas, -r * 0.9, r * 0.05, r * 1.8, r * 0.8, r * 0.35);
+                ctxCanvas.fillStyle = '#475569'; ctxCanvas.fill();
+
+                // Mottled spots on rock snout
+                ctxCanvas.fillStyle = '#334155';
+                ctxCanvas.beginPath();
+                ctxCanvas.arc(-r * 0.45, r * 0.3, r * 0.12, 0, Math.PI * 2);
+                ctxCanvas.arc(-r * 0.2, r * 0.45, r * 0.14, 0, Math.PI * 2);
+                ctxCanvas.arc(r * 0.35, r * 0.35, r * 0.15, 0, Math.PI * 2);
+                ctxCanvas.arc(0, r * 0.6, r * 0.1, 0, Math.PI * 2);
+                ctxCanvas.fill();
+                break;
+            }
+            case 'yeti': {
+                // Yeti (Jefe Final - Blue Fur, Striped Brown Horns, White Hair, Teeth)
+                let aura = ctxCanvas.createRadialGradient(0, 0, r * 0.4, 0, 0, r * 1.6);
+                aura.addColorStop(0, 'rgba(56, 189, 248, 0.8)'); aura.addColorStop(1, 'rgba(56, 189, 248, 0)');
+                ctxCanvas.fillStyle = aura; ctxCanvas.beginPath(); ctxCanvas.arc(0, 0, r * 1.6, 0, Math.PI * 2); ctxCanvas.fill();
+
+                // Striped Brown Ram Horns
+                ctxCanvas.fillStyle = '#78350f';
+                ctxCanvas.beginPath();
+                ctxCanvas.moveTo(-r * 0.6, -r * 0.6); ctxCanvas.quadraticCurveTo(-r * 1.2, -r * 1.2, -r * 0.8, -r * 1.4); ctxCanvas.lineTo(-r * 0.4, -r * 0.8);
+                ctxCanvas.moveTo(r * 0.6, -r * 0.6); ctxCanvas.quadraticCurveTo(r * 1.2, -r * 1.2, r * 0.8, -r * 1.4); ctxCanvas.lineTo(r * 0.4, -r * 0.8);
+                ctxCanvas.fill();
+
+                // Horn stripes
+                ctxCanvas.strokeStyle = '#451a03'; ctxCanvas.lineWidth = r * 0.08;
+                ctxCanvas.beginPath();
+                ctxCanvas.moveTo(-r * 0.85, -r * 0.9); ctxCanvas.lineTo(-r * 0.6, -r * 0.7);
+                ctxCanvas.moveTo(-r * 0.95, -r * 1.15); ctxCanvas.lineTo(-r * 0.7, -r * 1.0);
+                ctxCanvas.moveTo(r * 0.85, -r * 0.9); ctxCanvas.lineTo(r * 0.6, -r * 0.7);
+                ctxCanvas.moveTo(r * 0.95, -r * 1.15); ctxCanvas.lineTo(r * 0.7, -r * 1.0);
+                ctxCanvas.stroke();
+
+                // Rounded Blue Fur Body
+                drawRoundedRect(ctxCanvas, -r * 0.85, -r * 0.75, r * 1.7, r * 1.6, r * 0.4);
+                ctxCanvas.fillStyle = '#93c5fd'; ctxCanvas.fill();
+
+                // White Fluffy Snow Hair & Sideburns
+                ctxCanvas.fillStyle = '#f8fafc';
+                ctxCanvas.beginPath();
+                ctxCanvas.arc(0, -r * 0.75, r * 0.35, 0, Math.PI * 2);
+                ctxCanvas.arc(-r * 0.65, -r * 0.35, r * 0.25, 0, Math.PI * 2);
+                ctxCanvas.arc(r * 0.65, -r * 0.35, r * 0.25, 0, Math.PI * 2);
+                ctxCanvas.fill();
+
+                // Eye sockets & expressive pupils
+                ctxCanvas.fillStyle = '#ffffff';
+                ctxCanvas.beginPath();
+                ctxCanvas.arc(-r * 0.38, -r * 0.15, r * 0.22, 0, Math.PI * 2);
+                ctxCanvas.arc(r * 0.38, -r * 0.15, r * 0.22, 0, Math.PI * 2);
+                ctxCanvas.fill();
+
+                ctxCanvas.fillStyle = '#1e3a8a';
+                ctxCanvas.beginPath();
+                ctxCanvas.arc(-r * 0.35, -r * 0.15, r * 0.14, 0, Math.PI * 2);
+                ctxCanvas.arc(r * 0.35, -r * 0.15, r * 0.14, 0, Math.PI * 2);
+                ctxCanvas.fill();
+
+                ctxCanvas.fillStyle = '#ffffff';
+                ctxCanvas.beginPath();
+                ctxCanvas.arc(-r * 0.38, -r * 0.18, r * 0.05, 0, Math.PI * 2);
+                ctxCanvas.arc(r * 0.32, -r * 0.18, r * 0.05, 0, Math.PI * 2);
+                ctxCanvas.fill();
+
+                // Blue nose
+                ctxCanvas.fillStyle = '#3b82f6';
+                ctxCanvas.beginPath(); ctxCanvas.ellipse(0, r * 0.1, r * 0.2, r * 0.14, 0, 0, Math.PI * 2); ctxCanvas.fill();
+
+                // Mouth with sharp fangs
+                ctxCanvas.fillStyle = '#1e293b';
+                ctxCanvas.beginPath();
+                ctxCanvas.arc(0, r * 0.35, r * 0.38, 0, Math.PI);
+                ctxCanvas.fill();
+
+                ctxCanvas.fillStyle = '#ffffff';
+                ctxCanvas.beginPath();
+                // Upper fangs
+                ctxCanvas.moveTo(-r * 0.28, r * 0.35); ctxCanvas.lineTo(-r * 0.2, r * 0.52); ctxCanvas.lineTo(-r * 0.12, r * 0.35);
+                ctxCanvas.moveTo(r * 0.28, r * 0.35); ctxCanvas.lineTo(r * 0.2, r * 0.52); ctxCanvas.lineTo(r * 0.12, r * 0.35);
+                // Lower fangs
+                ctxCanvas.moveTo(-r * 0.18, r * 0.65); ctxCanvas.lineTo(-r * 0.1, r * 0.48); ctxCanvas.lineTo(-r * 0.02, r * 0.65);
+                ctxCanvas.moveTo(r * 0.18, r * 0.65); ctxCanvas.lineTo(r * 0.1, r * 0.48); ctxCanvas.lineTo(r * 0.02, r * 0.65);
+                ctxCanvas.fill();
                 break;
             }
             default: {
-                if (this.isBoss) {
-                    let bossGlow = ctxCanvas.createRadialGradient(0, 0, this.radius * 0.5, 0, 0, this.radius * 1.5);
-                    bossGlow.addColorStop(0, 'rgba(239, 68, 68, 0.8)');
-                    bossGlow.addColorStop(1, 'rgba(239, 68, 68, 0)');
-                    ctxCanvas.fillStyle = bossGlow;
-                    ctxCanvas.beginPath(); ctxCanvas.arc(0, 0, this.radius * 1.5, 0, Math.PI * 2); ctxCanvas.fill();
-
-                    if (imgBoss.isLoaded) {
-                        ctxCanvas.drawImage(imgBoss, -this.radius, -this.radius, this.radius * 2, this.radius * 2);
-                    } else {
-                        ctxCanvas.fillStyle = '#dc2626'; ctxCanvas.beginPath(); ctxCanvas.arc(0, 0, this.radius, 0, Math.PI*2); ctxCanvas.fill();
-                    }
-                } else if (imgEnemy.isLoaded) {
-                    try { ctxCanvas.drawImage(imgEnemy, -this.radius, -this.radius, this.radius * 2, this.radius * 2); }
-                    catch(e) { ctxCanvas.fillStyle = this.color; ctxCanvas.beginPath(); ctxCanvas.arc(0, 0, this.radius, 0, Math.PI*2); ctxCanvas.fill(); }
-                } else {
-                    ctxCanvas.fillStyle = this.color; ctxCanvas.beginPath(); ctxCanvas.arc(0, 0, this.radius, 0, Math.PI*2); ctxCanvas.fill();
-                }
+                drawRoundedRect(ctxCanvas, -this.radius, -this.radius, this.radius * 2, this.radius * 2, this.radius * 0.3);
+                ctxCanvas.fillStyle = this.color; ctxCanvas.fill();
                 break;
             }
         }
@@ -829,11 +1735,15 @@ class Enemy {
         if (this.hp <= 0) {
             this.active = false;
             if (this.isBoss) {
+                let wasFinalBoss = this.drawType === 'yeti';
                 activeBoss = null;
                 document.getElementById('boss-hud').classList.add('hidden');
-                spawnFloatingText(this.x, this.y, "🏆 ¡JEFE ELIMINADO!", true);
-                for (let i = 0; i < 25; i++) {
-                    spawnXpOrb(this.x + randRange(-50, 50), this.y + randRange(-50, 50), 5);
+                spawnFloatingText(this.x, this.y, `🏆 ¡${this.name.toUpperCase()} ELIMINADO!`, true);
+                for (let i = 0; i < 30; i++) {
+                    spawnXpOrb(this.x + randRange(-60, 60), this.y + randRange(-60, 60), 5);
+                }
+                if (wasFinalBoss) {
+                    gameWin();
                 }
             } else {
                 spawnXpOrb(this.x, this.y, 1);
@@ -851,12 +1761,16 @@ class Projectile {
         this.speed = speed; this.damage = damage; this.radius = size;
         this.color = color; this.isCrit = isCrit; this.pierce = pierce;
         this.active = true; this.life = 2.0; this.hitTargets = new Set();
-        this.customUpdate = null; this.customDraw = null;
+        this.customUpdate = null; this.customDraw = null; this.onExpire = null;
     }
     update(dt) {
         if (this.customUpdate) { this.customUpdate(dt); } else {
             this.x += this.vx * this.speed * dt; this.y += this.vy * this.speed * dt;
-            this.life -= dt; if (this.life <= 0) this.active = false;
+            this.life -= dt; 
+            if (this.life <= 0) {
+                this.active = false;
+                if (this.onExpire) this.onExpire();
+            }
         }
     }
     draw(ctxCanvas, camX, camY) {
@@ -910,55 +1824,76 @@ const enemyProjPool = new ObjectPool(() => new EnemyProjectile());
 const xpPool = new ObjectPool(() => new XpOrb());
 const textPool = new ObjectPool(() => new FloatingText());
 
-const enemies = [], projectiles = [], enemyProjectiles = [], xpOrbs = [], floatingTexts = [], visualEffects = [];
+const enemies = [], projectiles = [], enemyProjectiles = [], xpOrbs = [], floatingTexts = [];
+const groundPuddles = [], aoeExplosions = [];
 const enemyGrid = new SpatialGrid(100);
-let player, spawnTimer = 0, nextBossTimer = 90;
+let player, spawnTimer = 0;
 
 function updateWaveSpawner(dt) {
+    for (let lvlStr in BOSS_CATALOG) {
+        let bossLvl = parseInt(lvlStr);
+        if (player.level >= bossLvl && !spawnedBosses.has(bossLvl)) {
+            spawnedBosses.add(bossLvl);
+            let bInfo = BOSS_CATALOG[bossLvl];
+
+            if (bossLvl === 60) {
+                enemies.forEach(e => e.active = false);
+            }
+
+            let angle = Math.random() * Math.PI * 2, dist = 550;
+            let bx = player.x + Math.cos(angle) * dist, by = player.y + Math.sin(angle) * dist;
+
+            const boss = enemyPool.get();
+            boss.spawn(
+                bx, by, bInfo.hp, bInfo.speed, bInfo.damage, bInfo.radius, bInfo.color,
+                false, false, true, bInfo.drawType, bInfo.diagonalMove || false, bInfo.name
+            );
+            enemies.push(boss);
+            activeBoss = boss;
+
+            document.getElementById('boss-hud').classList.remove('hidden');
+            updateBossHUD();
+            spawnFloatingText(player.x, player.y, `⚠️ ¡APARECIÓ ${bInfo.name.toUpperCase()}!`, true);
+        }
+    }
+
+    if (player.level >= 60 && activeBoss && activeBoss.drawType === 'yeti') {
+        return;
+    }
+
     spawnTimer -= dt;
-    let spawnRate = Math.max(0.12, 0.9 - (gameTimer / 140));
+    
+    let isSuperHorde = player.level >= 56 && player.level <= 59;
+    let spawnRate = isSuperHorde ? 0.025 : Math.max(0.04, 0.35 - (player.level * 0.008));
+
     if (spawnTimer <= 0) {
         spawnTimer = spawnRate;
         
-        let availableTypes = ENEMY_CATALOG.filter(e => gameTimer >= e.minTime);
+        let availableTypes = ENEMY_CATALOG.filter(e => player.level >= e.minLevel);
         if (availableTypes.length === 0) availableTypes = [ENEMY_CATALOG[0]];
         
-        let selectedDef = availableTypes[Math.floor(Math.random() * availableTypes.length)];
-        
-        let diffHpMult = currentDifficulty === 'experto' ? 1.4 : (currentDifficulty === 'dificil' ? 1.2 : 1.0);
-        let timeHpScaling = 1 + (gameTimer / 120) * 0.5;
-        let finalHp = Math.floor(selectedDef.hp * diffHpMult * timeHpScaling);
-        let finalSpeed = selectedDef.baseSpeed * (currentDifficulty === 'experto' ? 1.15 : 1.0);
+        let countToSpawn = isSuperHorde ? 7 + Math.floor(Math.random() * 6) : 2 + Math.floor(player.level / 4);
 
-        let isShooter = selectedDef.isShooter || ((currentDifficulty === 'dificil' || currentDifficulty === 'experto') && Math.random() < 0.2);
-        let canDash = (currentDifficulty === 'experto') && Math.random() < 0.25;
+        for (let i = 0; i < countToSpawn; i++) {
+            let selectedDef = availableTypes[Math.floor(Math.random() * availableTypes.length)];
+            
+            let diffHpMult = currentDifficulty === 'experto' ? 1.4 : (currentDifficulty === 'dificil' ? 1.2 : 1.0);
+            let finalHp = Math.floor(selectedDef.hp * diffHpMult);
+            let finalSpeed = selectedDef.baseSpeed * (currentDifficulty === 'experto' ? 1.15 : 1.0);
 
-        let angle = Math.random() * Math.PI * 2, dist = Math.max(width, height) / 2 + 100;
-        let sx = player.x + Math.cos(angle) * dist, sy = player.y + Math.sin(angle) * dist;
+            let isShooter = selectedDef.isShooter || ((currentDifficulty === 'dificil' || currentDifficulty === 'experto') && Math.random() < 0.2);
+            let canDash = (currentDifficulty === 'experto') && Math.random() < 0.25;
 
-        const enemy = enemyPool.get();
-        enemy.spawn(
-            sx, sy, finalHp, finalSpeed, 12, selectedDef.radius, selectedDef.color, 
-            isShooter, canDash, false, selectedDef.drawType, selectedDef.diagonalMove, selectedDef.name
-        );
-        enemies.push(enemy);
-    }
+            let angle = Math.random() * Math.PI * 2, dist = Math.max(width, height) / 2 + 80 + Math.random() * 160;
+            let sx = player.x + Math.cos(angle) * dist, sy = player.y + Math.sin(angle) * dist;
 
-    // GENERACIÓN DE BOSS CADA 90 SEGUNDOS
-    if (gameTimer >= nextBossTimer && !activeBoss) {
-        nextBossTimer = gameTimer + 100;
-        let angle = Math.random() * Math.PI * 2, dist = 500;
-        let bx = player.x + Math.cos(angle) * dist, by = player.y + Math.sin(angle) * dist;
-        
-        let bossHp = 4500 + Math.floor(gameTimer) * 85;
-        const boss = enemyPool.get();
-        boss.spawn(bx, by, bossHp, 70, 25, 60, '#ef4444', false, false, true, 'boss');
-        enemies.push(boss);
-        activeBoss = boss;
-
-        document.getElementById('boss-hud').classList.remove('hidden');
-        updateBossHUD();
-        spawnFloatingText(player.x, player.y, "⚠️ ¡APARECIÓ EL JEFE!", true);
+            const enemy = enemyPool.get();
+            enemy.spawn(
+                sx, sy, finalHp, finalSpeed, 12, selectedDef.radius, selectedDef.color, 
+                isShooter, canDash, false, selectedDef.drawType, selectedDef.diagonalMove, selectedDef.name
+            );
+            enemies.push(enemy);
+        }
     }
 }
 
@@ -966,38 +1901,97 @@ function updateBossHUD() {
     if (!activeBoss) return;
     const hpPct = Math.max(0, (activeBoss.hp / activeBoss.maxHp) * 100);
     document.getElementById('boss-hp-bar').style.width = `${hpPct}%`;
-    document.getElementById('boss-hp-text').innerText = `${Math.max(0, Math.floor(activeBoss.hp))} / ${activeBoss.maxHp}`;
+    document.getElementById('boss-hp-text').innerText = `${activeBoss.name}: ${Math.max(0, Math.floor(activeBoss.hp))} / ${activeBoss.maxHp}`;
 }
 
 function spawnXpOrb(x, y, val) { const orb = xpPool.get(); orb.spawn(x, y, val); xpOrbs.push(orb); }
 function spawnFloatingText(x, y, text, isCrit) { const ft = textPool.get(); ft.spawn(x, y, text, isCrit); floatingTexts.push(ft); }
 
+function triggerInitialDraft() {
+    currentState = GAME_STATE.LEVEL_UP;
+    document.getElementById('draft-title').innerText = "¡ELIGE TU PODER INICIAL!";
+    document.getElementById('draft-subtitle').innerText = "Selecciona 1 de las 3 habilidades aleatorias para comenzar";
+    document.getElementById('level-up-screen').classList.remove('hidden');
+
+    // Mezclar aleatoriamente el catálogo completo de 18 habilidades y tomar las primeras 3
+    let shuffled = [...WEAPONS_CATALOG].sort(() => 0.5 - Math.random());
+    let choices = shuffled.slice(0, 3);
+
+    const container = document.getElementById('draft-options');
+    container.innerHTML = '';
+
+    choices.forEach(WClass => {
+        let tempWeapon = new WClass(player);
+        const btn = document.createElement('button');
+        btn.className = `glass-panel p-6 rounded-2xl hover:bg-gray-800/90 transition-all text-left border-2 border-transparent hover:border-amber-400 cursor-pointer shadow-xl flex flex-col justify-between transform hover:-translate-y-1 duration-200`;
+        btn.innerHTML = `
+            <div>
+                <div class="text-xs font-black text-amber-400 uppercase tracking-widest mb-1 flex items-center gap-1">
+                    <span>⚡</span> HABILIDAD INICIAL
+                </div>
+                <h3 class="text-2xl font-extrabold text-white mb-2">${tempWeapon.name}</h3>
+                <p class="text-gray-300 text-sm leading-relaxed mb-4">${getWeaponDescription(tempWeapon.id)}</p>
+            </div>
+            <span class="px-4 py-2.5 bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-black rounded-xl text-center text-sm uppercase tracking-wide shadow-md">Elegir Habilidad</span>
+        `;
+        btn.onclick = () => {
+            player.weapons.push(tempWeapon);
+            updateHUD();
+            document.getElementById('level-up-screen').classList.add('hidden');
+            currentState = GAME_STATE.PLAYING;
+            lastTime = performance.now();
+        };
+        container.appendChild(btn);
+    });
+}
+
 function triggerDraft() {
     currentState = GAME_STATE.LEVEL_UP;
+    document.getElementById('draft-title').innerText = "¡NIVEL ALCANZADO!";
+    document.getElementById('draft-subtitle').innerText = "Selecciona una mejora estratégica para tu arsenal";
     document.getElementById('level-up-screen').classList.remove('hidden');
+    
     let draftPool = [];
 
     player.weapons.forEach(w => {
         if (w.level < 10) {
             let nextLvl = w.level + 1;
-            draftPool.push({ title: `✨ ${w.name} (Nvl ${nextLvl})`, desc: `Aumenta el poder de ${w.name}.`, apply: () => w.applyUpgrade(nextLvl) });
+            draftPool.push({
+                title: `✨ ${w.name} (Nvl ${nextLvl})`,
+                desc: `Incrementa potencia y efectividad de ${w.name}.`,
+                apply: () => w.applyUpgrade(nextLvl)
+            });
         }
     });
 
-    if (!player.weapons.some(w => w.name === "Rapid-Fire Lasers")) {
-        draftPool.push({ title: `🆕 Obtener Rapid-Fire Lasers`, desc: `Dispara proyectiles láser.`, apply: () => player.weapons.push(new RapidFireLasersWeapon(player)) });
-    }
+    WEAPONS_CATALOG.forEach(WClass => {
+        let temp = new WClass(player);
+        if (!player.weapons.some(w => w.id === temp.id)) {
+            draftPool.push({
+                title: `🆕 Desbloquear ${temp.name}`,
+                desc: getWeaponDescription(temp.id),
+                apply: () => player.weapons.push(temp)
+            });
+        }
+    });
 
-    draftPool.push({ title: '💪 Daño Base +20%', desc: 'Aumenta todo tu daño.', apply: () => player.baseDamageMult += 0.2 });
-    draftPool.push({ title: '🎯 Crit Chance +10%', desc: 'Probabilidad de crítico +10%.', apply: () => player.critChance += 0.1 });
+    draftPool.push({ title: '💪 Daño General +20%', desc: 'Incrementa el daño total de todas tus armas.', apply: () => player.baseDamageMult += 0.2 });
+    draftPool.push({ title: '🎯 Prob. Crítico +10%', desc: 'Aumenta la probabilidad de asestar golpes críticos.', apply: () => player.critChance += 0.1 });
+    draftPool.push({ title: '⚡ Velocidad +15%', desc: 'Aumenta la velocidad de movimiento de tu personaje.', apply: () => player.speed *= 1.15 });
 
     let choices = draftPool.sort(() => 0.5 - Math.random()).slice(0, 3);
     const container = document.getElementById('draft-options');
     container.innerHTML = '';
     choices.forEach(choice => {
         const btn = document.createElement('button');
-        btn.className = `glass-panel p-6 rounded-2xl hover:bg-gray-800/90 transition-all text-left border-2 border-transparent hover:border-amber-400 cursor-pointer shadow-xl`;
-        btn.innerHTML = `<h3 class="text-xl font-extrabold text-white mb-2">${choice.title}</h3><p class="text-gray-300 text-sm">${choice.desc}</p>`;
+        btn.className = `glass-panel p-6 rounded-2xl hover:bg-gray-800/90 transition-all text-left border-2 border-transparent hover:border-amber-400 cursor-pointer shadow-xl flex flex-col justify-between`;
+        btn.innerHTML = `
+            <div>
+                <h3 class="text-xl font-extrabold text-white mb-2">${choice.title}</h3>
+                <p class="text-gray-300 text-sm mb-4">${choice.desc}</p>
+            </div>
+            <span class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-xl text-center text-xs uppercase tracking-wide">Elegir</span>
+        `;
         btn.onclick = () => {
             choice.apply(); updateHUD();
             document.getElementById('level-up-screen').classList.add('hidden');
@@ -1010,14 +2004,19 @@ function triggerDraft() {
 function initGame(difficulty) {
     currentDifficulty = difficulty || 'normal';
     player = new Player();
-    gameTimer = 0; spawnTimer = 0; animationTime = 0; touchActive = false; nextBossTimer = 60; activeBoss = null;
-    enemies.length = 0; projectiles.length = 0; enemyProjectiles.length = 0; xpOrbs.length = 0; floatingTexts.length = 0; visualEffects.length = 0;
+    gameTimer = 0; spawnTimer = 0; animationTime = 0; touchActive = false; activeBoss = null;
+    spawnedBosses.clear();
+    enemies.length = 0; projectiles.length = 0; enemyProjectiles.length = 0; xpOrbs.length = 0; floatingTexts.length = 0; groundPuddles.length = 0; aoeExplosions.length = 0;
     
     document.getElementById('boss-hud').classList.add('hidden');
     document.getElementById('main-menu').classList.add('hidden');
     document.getElementById('game-over-screen').classList.add('hidden');
     document.getElementById('hud').classList.remove('hidden');
-    updateHUD(); currentState = GAME_STATE.PLAYING; lastTime = performance.now();
+    updateHUD(); 
+
+    // Al iniciar la partida, se le da al jugador a elegir 1 entre 3 poderes aleatorios
+    triggerInitialDraft();
+    
     requestAnimationFrame(gameLoop);
 }
 
@@ -1035,14 +2034,34 @@ function updateHUD() {
     document.getElementById('ui-diff-badge').innerText = currentDifficulty;
 }
 
+function gameWin() {
+    currentState = GAME_STATE.GAME_OVER;
+    const pts = player.level * 250 + 2000; totalPoints += pts;
+    document.getElementById('hud').classList.add('hidden');
+    
+    const goScreen = document.getElementById('game-over-screen');
+    document.getElementById('go-title').innerText = "¡VICTORIA!";
+    document.getElementById('go-title').className = "text-5xl font-black text-amber-400 mb-3 tracking-tight animate-bounce";
+    document.getElementById('go-subtitle').innerText = "¡Has derrotado al Yeti y conquistado la horda!";
+    document.getElementById('go-time').innerText = formatTime(gameTimer);
+    document.getElementById('go-level').innerText = player.level;
+    document.getElementById('go-points').innerText = `Puntos Obtenidos: +${pts} (Total: ${totalPoints})`;
+    goScreen.classList.remove('hidden');
+}
+
 function gameOver() {
     currentState = GAME_STATE.GAME_OVER;
     const pts = player.level * 120; totalPoints += pts;
     document.getElementById('hud').classList.add('hidden');
-    document.getElementById('game-over-screen').classList.remove('hidden');
+    
+    const goScreen = document.getElementById('game-over-screen');
+    document.getElementById('go-title').innerText = "HAS CAÍDO";
+    document.getElementById('go-title').className = "text-5xl font-black text-red-500 mb-3 tracking-tight";
+    document.getElementById('go-subtitle').innerText = "Sobreviviste a la horda";
     document.getElementById('go-time').innerText = formatTime(gameTimer);
     document.getElementById('go-level').innerText = player.level;
     document.getElementById('go-points').innerText = `Puntos Obtenidos: +${pts} (Total: ${totalPoints})`;
+    goScreen.classList.remove('hidden');
 }
 
 function gameLoop(timestamp) {
@@ -1071,6 +2090,30 @@ function gameLoop(timestamp) {
         }
     }
 
+    for (let i = groundPuddles.length - 1; i >= 0; i--) {
+        let puddle = groundPuddles[i];
+        puddle.duration -= dt;
+        let nearby = enemyGrid.getNearby(puddle.x, puddle.y, puddle.radius);
+        for (let e of nearby) {
+            if (e.active && distSq(puddle.x, puddle.y, e.x, e.y) < (puddle.radius + e.radius)**2) {
+                e.takeDamage(puddle.dps * dt, false, 0, 0);
+            }
+        }
+        if (puddle.duration <= 0) groundPuddles.splice(i, 1);
+    }
+
+    for (let i = aoeExplosions.length - 1; i >= 0; i--) {
+        let exp = aoeExplosions[i];
+        exp.radius += (exp.maxRadius - exp.radius) * dt * 12;
+        let nearby = enemyGrid.getNearby(exp.x, exp.y, exp.maxRadius);
+        for (let e of nearby) {
+            if (e.active && distSq(exp.x, exp.y, e.x, e.y) < (exp.radius + e.radius)**2) {
+                e.takeDamage(exp.damage, true, (e.x - exp.x)/exp.radius, (e.y - exp.y)/exp.radius);
+            }
+        }
+        if (exp.radius >= exp.maxRadius * 0.95) aoeExplosions.splice(i, 1);
+    }
+
     for (let p of projectiles) {
         if (!p.active) continue;
         p.update(dt);
@@ -1079,7 +2122,7 @@ function gameLoop(timestamp) {
             if (e.active && !p.hitTargets.has(e) && distSq(p.x, p.y, e.x, e.y) < (p.radius + e.radius)**2) {
                 p.hitTargets.add(e);
                 e.takeDamage(p.damage, p.isCrit, p.vx, p.vy);
-                p.pierce--; if (p.pierce <= 0) { p.active = false; break; }
+                p.pierce--; if (p.pierce <= 0) { p.active = false; if (p.onExpire) p.onExpire(); break; }
             }
         }
     }
@@ -1114,10 +2157,8 @@ function gameLoop(timestamp) {
     }
 
     ctx.save();
-    ctx.strokeStyle = '#ef4444';
-    ctx.lineWidth = 8;
-    ctx.shadowColor = '#f43f5e';
-    ctx.shadowBlur = 15;
+    ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 8;
+    ctx.shadowColor = '#f43f5e'; ctx.shadowBlur = 15;
     ctx.strokeRect(-MAP_LIMIT - camX, -MAP_LIMIT - camY, MAP_LIMIT * 2, MAP_LIMIT * 2);
     ctx.restore();
 
@@ -1131,9 +2172,26 @@ function gameLoop(timestamp) {
         }
     });
 
+    groundPuddles.forEach(puddle => {
+        ctx.save(); ctx.translate(puddle.x - camX, puddle.y - camY);
+        ctx.fillStyle = puddle.color; ctx.beginPath(); ctx.arc(0, 0, puddle.radius, 0, Math.PI*2); ctx.fill();
+        ctx.restore();
+    });
+
+    aoeExplosions.forEach(exp => {
+        ctx.save(); ctx.translate(exp.x - camX, exp.y - camY);
+        ctx.fillStyle = exp.color; ctx.beginPath(); ctx.arc(0, 0, exp.radius, 0, Math.PI*2); ctx.fill();
+        ctx.restore();
+    });
+
     xpOrbs.forEach(o => { if(o.active) o.draw(ctx, camX, camY); });
     enemies.forEach(e => { if(e.active) e.draw(ctx, camX, camY); });
     player.draw(ctx, camX, camY);
+
+    player.weapons.forEach(w => {
+        if (w.drawOrbital) w.drawOrbital(ctx, camX, camY);
+    });
+
     projectiles.forEach(p => { if(p.active) p.draw(ctx, camX, camY); });
     enemyProjectiles.forEach(ep => { if(ep.active) ep.draw(ctx, camX, camY); });
     floatingTexts.forEach(ft => { if(ft.active) ft.draw(ctx, camX, camY); });
