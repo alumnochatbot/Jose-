@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Master Chess 3D: Campaña Mundial y Multijugador Online</title>
+    <title>Master Chess 3D: Entornos Vivos, Escenarios 3D, Bots y Multijugador</title>
     <!-- Tailwind CSS para diseño moderno -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Iconos de Lucide -->
@@ -20,22 +20,23 @@
             user-select: none;
             -webkit-user-select: none;
             overflow: hidden;
+            touch-action: manipulation;
         }
-        /* Estilizaciones de barra de scroll para el panel de historial */
+        /* Estilizaciones de barra de scroll para el panel de historial y modales */
         ::-webkit-scrollbar {
             width: 6px;
+            height: 6px;
         }
         ::-webkit-scrollbar-track {
-            background: rgba(15, 23, 42, 0.3);
+            background: rgba(15, 23, 42, 0.4);
         }
         ::-webkit-scrollbar-thumb {
-            background: rgba(99, 102, 241, 0.4);
+            background: rgba(99, 102, 241, 0.5);
             border-radius: 3px;
         }
         ::-webkit-scrollbar-thumb:hover {
-            background: rgba(99, 102, 241, 0.7);
+            background: rgba(99, 102, 241, 0.8);
         }
-        /* Animaciones personalizadas */
         @keyframes pulse-ring {
             0% { transform: scale(0.95); opacity: 0.8; }
             50% { transform: scale(1.05); opacity: 0.4; }
@@ -46,50 +47,51 @@
         }
     </style>
 </head>
-<body class="h-full w-full relative flex flex-col font-sans select-none antialiased text-slate-200">
+<body class="h-full w-full relative flex flex-col font-sans select-none antialiased text-slate-200 bg-slate-950">
 
     <!-- Contenedor del Canvas 3D -->
-    <div id="canvas-container" class="absolute inset-0 w-full h-full z-0"></div>
+    <div id="canvas-container" class="absolute inset-0 w-full h-full z-0 cursor-grab active:cursor-grabbing"></div>
 
-    <!-- Capa de Interfaz de Usuario de Fondo/Gradiente -->
-    <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-slate-950/40 pointer-events-none z-10"></div>
+    <!-- Capa de Iluminación Ambiental y Gradientes de Escena -->
+    <div id="vignette-overlay" class="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-slate-950/30 pointer-events-none z-10 transition-colors duration-700"></div>
 
-    <!-- HUD Superior: Selector de Modo, Info de Nivel/Online y Botones de Acción -->
+    <!-- HUD Superior: Selector de Modo, Info de Nivel/Bot/Online y Botones de Acción -->
     <header class="absolute top-0 inset-x-0 p-3 sm:p-4 flex flex-wrap gap-2.5 items-center justify-between z-20 pointer-events-auto">
-        <div class="flex flex-wrap items-center gap-2.5">
+        <div class="flex flex-wrap items-center gap-2 sm:gap-2.5">
             <!-- Selector Principal de Modo: PvE vs Online -->
-            <div class="flex items-center bg-slate-900/90 backdrop-blur-md p-1 rounded-2xl border border-slate-800 shadow-xl">
+            <div class="flex items-center bg-slate-900/90 backdrop-blur-md p-1 rounded-2xl border border-slate-700/60 shadow-2xl">
                 <button id="mode-pve-btn" class="px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 bg-indigo-600 text-white shadow-md">
                     <i data-lucide="bot" class="w-3.5 h-3.5"></i>
-                    <span>Campaña Bot</span>
+                    <span>Modo Bot</span>
                 </button>
                 <button id="mode-online-btn" class="px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 text-slate-400 hover:text-white">
                     <i data-lucide="globe" class="w-3.5 h-3.5 text-emerald-400"></i>
-                    <span>Multijugador Online</span>
+                    <span>Online PvP</span>
                 </button>
             </div>
 
-            <!-- Info de Nivel PvE -->
-            <div id="pve-info-badge" class="flex items-center gap-2.5 bg-slate-900/80 backdrop-blur-md px-3.5 py-1.5 rounded-2xl border border-slate-800 shadow-xl">
-                <div class="p-1.5 bg-indigo-600/30 rounded-xl text-indigo-400">
-                    <i data-lucide="compass" class="w-4 h-4 animate-pulse"></i>
-                </div>
-                <div>
-                    <h1 class="text-[10px] font-bold tracking-wide uppercase text-indigo-300">Campaña PvE</h1>
-                    <p id="level-display" class="text-xs text-slate-300 font-semibold flex items-center">
-                        <span class="mr-1">🇧🇴</span> Nivel 1: Bolivia
+            <!-- Bot Seleccionado / Info PvE -->
+            <button id="btn-open-bot-modal" class="flex items-center gap-2 bg-slate-900/90 hover:bg-slate-800/90 backdrop-blur-md px-3.5 py-1.5 rounded-2xl border border-indigo-500/40 shadow-xl transition group">
+                <span id="bot-avatar-display" class="text-base sm:text-lg">🛡️</span>
+                <div class="text-left">
+                    <div class="flex items-center gap-1">
+                        <span class="text-[9px] font-bold tracking-wider uppercase text-indigo-300">Rival IA</span>
+                        <span id="bot-elo-badge" class="text-[9px] font-extrabold px-1.5 py-0.2 bg-indigo-950 text-indigo-300 rounded border border-indigo-500/30">1400</span>
+                    </div>
+                    <p id="bot-name-display" class="text-xs text-slate-100 font-bold flex items-center gap-1">
+                        Capitán Murillo <i data-lucide="chevron-down" class="w-3 h-3 text-slate-400 group-hover:text-white transition"></i>
                     </p>
                 </div>
-            </div>
+            </button>
 
             <!-- Info de Sala Online -->
-            <div id="online-info-badge" class="hidden flex items-center gap-2.5 bg-slate-900/90 backdrop-blur-md px-3.5 py-1.5 rounded-2xl border border-emerald-500/30 shadow-xl">
+            <div id="online-info-badge" class="hidden flex items-center gap-2.5 bg-slate-900/90 backdrop-blur-md px-3.5 py-1.5 rounded-2xl border border-emerald-500/40 shadow-xl">
                 <div class="p-1.5 bg-emerald-500/20 rounded-xl text-emerald-400">
                     <i data-lucide="wifi" class="w-4 h-4 animate-pulse"></i>
                 </div>
                 <div class="flex items-center gap-2">
                     <div>
-                        <h1 class="text-[10px] font-bold tracking-wide uppercase text-emerald-400">Sala Online</h1>
+                        <h1 class="text-[9px] font-bold tracking-wide uppercase text-emerald-400">Sala Online</h1>
                         <p id="online-room-code-display" class="text-xs font-mono font-bold text-slate-100">CÓDIGO: ------</p>
                     </div>
                     <button id="btn-copy-code" class="p-1.5 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-emerald-300 transition" title="Copiar Código">
@@ -99,17 +101,29 @@
             </div>
 
             <!-- Identificador Dinámico de Apertura / Trampa en Juego -->
-            <div id="opening-badge" class="hidden flex items-center gap-2 bg-indigo-950/85 backdrop-blur-md px-3 py-1.5 rounded-2xl border border-indigo-500/40 shadow-xl text-xs font-semibold text-indigo-300 transition-all duration-300">
+            <div id="opening-badge" class="hidden flex items-center gap-2 bg-indigo-950/90 backdrop-blur-md px-3 py-1.5 rounded-2xl border border-indigo-500/40 shadow-xl text-xs font-semibold text-indigo-300 transition-all duration-300">
                 <i data-lucide="book-open" class="w-3.5 h-3.5 text-indigo-400"></i>
-                <span id="opening-text">Teoría: Defensa Siciliana</span>
+                <span id="opening-text">Teoría: Apertura</span>
             </div>
         </div>
 
         <!-- Controles Rápidos -->
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-1.5 sm:gap-2">
+            <!-- Botón de Fondos / Entornos 3D con Escenarios -->
+            <button id="btn-environments" class="flex items-center gap-1.5 bg-slate-900/90 hover:bg-rose-950/40 border border-rose-500/40 hover:border-rose-400/80 px-3 py-2 rounded-xl transition shadow-xl text-xs font-bold text-rose-300">
+                <i data-lucide="trees" class="w-4 h-4 text-rose-400"></i>
+                <span class="hidden sm:inline">Escenarios 3D</span>
+            </button>
+
+            <!-- Botón de Temas / Minerales -->
+            <button id="btn-themes" class="flex items-center gap-1.5 bg-slate-900/90 hover:bg-amber-950/40 border border-amber-500/40 hover:border-amber-400/80 px-3 py-2 rounded-xl transition shadow-xl text-xs font-bold text-amber-300">
+                <i data-lucide="sparkles" class="w-4 h-4 text-amber-400"></i>
+                <span class="hidden sm:inline">Minerales</span>
+            </button>
+
             <button id="btn-online-lobby" class="hidden flex items-center gap-1.5 bg-emerald-600/90 hover:bg-emerald-500 border border-emerald-400/40 px-3.5 py-2 rounded-xl transition shadow-lg text-xs font-bold text-white">
                 <i data-lucide="users" class="w-4 h-4"></i>
-                <span>Gestor de Sala</span>
+                <span>Sala Online</span>
             </button>
 
             <button id="btn-toggle-history" class="flex items-center gap-1.5 bg-slate-900/85 hover:bg-indigo-900/40 border border-slate-700/60 hover:border-indigo-500/80 px-3 py-2 rounded-xl transition shadow-lg text-xs font-medium">
@@ -117,12 +131,7 @@
                 <span class="hidden md:inline">Historial</span>
             </button>
 
-            <button id="btn-campaign" class="flex items-center gap-1.5 bg-slate-900/80 hover:bg-slate-800 border border-slate-700/50 px-3 py-2 rounded-xl transition shadow-lg text-xs font-medium">
-                <i data-lucide="map" class="w-4 h-4 text-emerald-400"></i>
-                <span class="hidden sm:inline">Mapa</span>
-            </button>
-
-            <button id="btn-camera" class="p-2 bg-slate-900/80 hover:bg-slate-800 border border-slate-700/50 rounded-xl transition shadow-lg" title="Restablecer Cámara">
+            <button id="btn-camera" class="p-2 bg-slate-900/80 hover:bg-slate-800 border border-slate-700/50 rounded-xl transition shadow-lg" title="Restablecer Vista de Cámara">
                 <i data-lucide="video" class="w-4 h-4 text-sky-400"></i>
             </button>
 
@@ -134,12 +143,12 @@
 
     <!-- Indicador de Turno Flotante -->
     <div class="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
-        <div id="turn-indicator" class="bg-slate-900/90 backdrop-blur-lg px-5 py-2.5 rounded-full border border-slate-800 shadow-2xl flex items-center gap-3 transition-all duration-300">
+        <div id="turn-indicator" class="bg-slate-900/90 backdrop-blur-xl px-5 py-2.5 rounded-full border border-slate-700/80 shadow-2xl flex items-center gap-3 transition-all duration-300">
             <span class="relative flex h-3.5 w-3.5">
                 <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
                 <span id="turn-dot" class="relative inline-flex rounded-full h-3.5 w-3.5 bg-indigo-500"></span>
             </span>
-            <span id="turn-text" class="text-xs sm:text-sm font-semibold tracking-wider uppercase text-slate-100">Tu turno (Blancas)</span>
+            <span id="turn-text" class="text-xs sm:text-sm font-bold tracking-wider uppercase text-slate-100">Tu turno (Blancas)</span>
         </div>
     </div>
 
@@ -148,7 +157,7 @@
         <div class="flex items-center justify-between border-b border-slate-800 pb-4 mb-4">
             <div class="flex items-center gap-2.5">
                 <i data-lucide="scroll-text" class="w-5 h-5 text-indigo-400"></i>
-                <h2 class="text-lg font-bold tracking-tight text-indigo-200">Panel de Control</h2>
+                <h2 class="text-lg font-bold tracking-tight text-indigo-200">Panel de Batalla</h2>
             </div>
             <button id="btn-close-history" class="p-1.5 hover:bg-slate-800/80 rounded-lg text-slate-400 hover:text-rose-400 transition">
                 <i data-lucide="x" class="w-5 h-5"></i>
@@ -156,18 +165,18 @@
         </div>
 
         <div class="mb-4 flex flex-col gap-3">
-            <h3 class="text-xs font-bold uppercase tracking-widest text-slate-500">Piezas Capturadas</h3>
-            <div class="bg-slate-900/40 border border-slate-800/80 rounded-xl p-3 flex flex-col gap-1.5">
-                <span class="text-[10px] uppercase font-bold tracking-wider text-indigo-400/80 flex items-center gap-1.5">
+            <h3 class="text-xs font-bold uppercase tracking-widest text-slate-400">Piezas Capturadas</h3>
+            <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-3 flex flex-col gap-1.5">
+                <span class="text-[10px] uppercase font-bold tracking-wider text-indigo-400 flex items-center gap-1.5">
                     <span class="w-1.5 h-1.5 bg-indigo-400 rounded-full"></span>Capturas de Blancas
                 </span>
-                <div id="white-captures" class="flex flex-wrap gap-1 min-h-[32px] items-center text-slate-400 text-xl">
+                <div id="white-captures" class="flex flex-wrap gap-1 min-h-[32px] items-center text-slate-300 text-xl">
                     <span class="text-xs text-slate-500 italic">Ninguna</span>
                 </div>
             </div>
 
-            <div class="bg-slate-900/40 border border-slate-800/80 rounded-xl p-3 flex flex-col gap-1.5">
-                <span class="text-[10px] uppercase font-bold tracking-wider text-rose-400/80 flex items-center gap-1.5">
+            <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-3 flex flex-col gap-1.5">
+                <span class="text-[10px] uppercase font-bold tracking-wider text-rose-400 flex items-center gap-1.5">
                     <span class="w-1.5 h-1.5 bg-rose-400 rounded-full"></span>Capturas de Negras
                 </span>
                 <div id="black-captures" class="flex flex-wrap gap-1 min-h-[32px] items-center text-slate-300 text-xl">
@@ -177,16 +186,88 @@
         </div>
 
         <div class="flex-1 flex flex-col min-h-0">
-            <h3 class="text-xs font-bold uppercase tracking-widest text-slate-500 mb-2">Registro de Movimientos</h3>
-            <div id="history-scroll-container" class="flex-1 overflow-y-auto bg-slate-900/30 border border-slate-800/60 rounded-xl p-4">
+            <h3 class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">Registro de Movimientos</h3>
+            <div id="history-scroll-container" class="flex-1 overflow-y-auto bg-slate-900/40 border border-slate-800/80 rounded-xl p-4">
                 <div id="move-history-list" class="grid grid-cols-12 gap-y-2 text-sm text-slate-300">
                     <div id="empty-history-notice" class="col-span-12 text-center text-xs text-slate-500 italic py-8">
-                        La batalla aún no ha comenzado...
+                        La partida está lista para comenzar...
                     </div>
                 </div>
             </div>
         </div>
     </aside>
+
+    <!-- MODAL: Selector de Fondos / Entornos y Escenarios 3D -->
+    <div id="modal-environments" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden transition-all duration-300 opacity-0 pointer-events-none">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-xl shadow-2xl p-6 flex flex-col gap-5 transform scale-95 transition-all max-h-[90vh]">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+                <div class="flex items-center gap-3">
+                    <div class="p-2.5 bg-rose-600/20 rounded-2xl text-rose-400">
+                        <i data-lucide="trees" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-extrabold text-slate-100">Escenarios y Fondos 3D</h2>
+                        <p class="text-xs text-slate-400">Objetos 3D envolventes: árboles de sakura, planetas, nubes, auroras y columnas reales</p>
+                    </div>
+                </div>
+                <button id="close-environment-modal" class="p-2 hover:bg-slate-800 rounded-xl transition text-slate-400 hover:text-slate-100">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <div id="environment-list-container" class="flex flex-col gap-3 overflow-y-auto pr-1">
+                <!-- Inyectado dinámicamente con los Entornos -->
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Selector de Bots de Ajedrez -->
+    <div id="modal-bots" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden transition-all duration-300 opacity-0 pointer-events-none">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-xl shadow-2xl p-6 flex flex-col gap-5 transform scale-95 transition-all max-h-[90vh]">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+                <div class="flex items-center gap-3">
+                    <div class="p-2.5 bg-indigo-600/20 rounded-2xl text-indigo-400">
+                        <i data-lucide="bot" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-extrabold text-slate-100">Seleccionar Oponente IA</h2>
+                        <p class="text-xs text-slate-400">Elige un bot con su propio ELO, estilo de juego y personalidad</p>
+                    </div>
+                </div>
+                <button id="close-bot-modal" class="p-2 hover:bg-slate-800 rounded-xl transition text-slate-400 hover:text-slate-100">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <div id="bot-list-container" class="flex flex-col gap-2.5 overflow-y-auto pr-1">
+                <!-- Inyectado dinámicamente con la lista de Bots -->
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Personalizador de Tableros y Minerales 3D -->
+    <div id="modal-themes" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden transition-all duration-300 opacity-0 pointer-events-none">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-xl shadow-2xl p-6 flex flex-col gap-5 transform scale-95 transition-all max-h-[90vh]">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+                <div class="flex items-center gap-3">
+                    <div class="p-2.5 bg-amber-500/20 rounded-2xl text-amber-400">
+                        <i data-lucide="sparkles" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-extrabold text-slate-100">Temas y Minerales 3D</h2>
+                        <p class="text-xs text-slate-400">Materiales nobles con destellos de brillo y acabados físicos</p>
+                    </div>
+                </div>
+                <button id="close-theme-modal" class="p-2 hover:bg-slate-800 rounded-xl transition text-slate-400 hover:text-slate-100">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <div id="theme-list-container" class="flex flex-col gap-3 overflow-y-auto pr-1">
+                <!-- Inyectado dinámicamente con los temas -->
+            </div>
+        </div>
+    </div>
 
     <!-- MODAL: Gestor de Multijugador Online (Crear / Unirse a Sala) -->
     <div id="modal-online" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden transition-all duration-300 opacity-0 pointer-events-none">
@@ -198,7 +279,7 @@
                     </div>
                     <div>
                         <h2 class="text-lg font-bold text-slate-100">Ajedrez Online PvP</h2>
-                        <p class="text-xs text-slate-400">Juega en tiempo real usando un código</p>
+                        <p class="text-xs text-slate-400">Partidas en tiempo real mediante código de sala</p>
                     </div>
                 </div>
                 <button id="close-online-modal" class="p-2 hover:bg-slate-800 rounded-xl transition text-slate-400 hover:text-slate-100">
@@ -219,7 +300,7 @@
             <!-- Vista 1: Crear Sala -->
             <div id="view-create-room" class="flex flex-col gap-4">
                 <p class="text-xs text-slate-300 leading-relaxed">
-                    Crea una sala privada. Tu amigo podrá ingresar digitando el código único de partida.
+                    Crea una sala privada y comparte el código con tu amigo para jugar inmediatamente.
                 </p>
                 <button id="btn-do-create" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 transition font-bold rounded-xl text-white shadow-lg flex items-center justify-center gap-2">
                     <i data-lucide="plus-circle" class="w-5 h-5"></i>
@@ -237,7 +318,7 @@
                 </div>
                 <button id="btn-do-join" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 transition font-bold rounded-xl text-white shadow-lg flex items-center justify-center gap-2">
                     <i data-lucide="log-in" class="w-5 h-5"></i>
-                    <span>Unirse a la Batalla</span>
+                    <span>Unirse a la Partida</span>
                 </button>
             </div>
 
@@ -254,22 +335,7 @@
                     <i data-lucide="copy" class="w-4 h-4 text-emerald-400"></i>
                     <span>Copiar Código</span>
                 </button>
-                <p class="text-xs text-slate-400 italic">Esperando que el segundo jugador ingrese el código...</p>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL: Mapa de Campaña -->
-    <div id="modal-campaign" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden transition-all duration-300 opacity-0 pointer-events-none">
-        <div class="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-xl shadow-2xl p-6 flex flex-col gap-6 transform scale-95 transition-all">
-            <div class="flex items-center justify-between">
-                <h2 class="text-xl font-black text-indigo-400 uppercase tracking-wide">Progreso de la Campaña</h2>
-                <button id="close-campaign" class="p-2 hover:bg-slate-800 rounded-xl transition text-slate-400 hover:text-slate-100">
-                    <i data-lucide="x" class="w-6 h-6"></i>
-                </button>
-            </div>
-            <div id="campaign-map-list" class="flex flex-col gap-3">
-                <!-- Se inyectará dinámicamente -->
+                <p class="text-xs text-slate-400 italic">Esperando que el segundo jugador se una...</p>
             </div>
         </div>
     </div>
@@ -286,10 +352,10 @@
             </div>
             <div class="flex items-center gap-3 w-full">
                 <button id="endgame-retry-btn" class="flex-1 py-3 bg-slate-800 hover:bg-slate-700 transition font-bold rounded-xl border border-slate-700">
-                    Reintentar
+                    Nueva Partida
                 </button>
                 <button id="endgame-next-btn" class="flex-1 py-3 bg-indigo-600 hover:bg-indigo-500 transition font-bold rounded-xl text-slate-100 shadow-lg">
-                    Siguiente Nivel
+                    Siguiente Bot
                 </button>
             </div>
         </div>
@@ -361,39 +427,39 @@
 
                 if (type === 'move') {
                     osc.type = 'triangle';
-                    osc.frequency.setValueAtTime(350, now);
-                    osc.frequency.exponentialRampToValueAtTime(150, now + 0.12);
-                    gain.gain.setValueAtTime(0.2, now);
+                    osc.frequency.setValueAtTime(360, now);
+                    osc.frequency.exponentialRampToValueAtTime(160, now + 0.12);
+                    gain.gain.setValueAtTime(0.25, now);
                     gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
                     osc.start(now);
                     osc.stop(now + 0.12);
                 } else if (type === 'capture') {
                     osc.type = 'sawtooth';
-                    osc.frequency.setValueAtTime(180, now);
-                    osc.frequency.linearRampToValueAtTime(60, now + 0.18);
-                    gain.gain.setValueAtTime(0.25, now);
+                    osc.frequency.setValueAtTime(200, now);
+                    osc.frequency.linearRampToValueAtTime(70, now + 0.18);
+                    gain.gain.setValueAtTime(0.3, now);
                     gain.gain.exponentialRampToValueAtTime(0.01, now + 0.18);
                     osc.start(now);
                     osc.stop(now + 0.18);
                 } else if (type === 'check') {
                     osc.type = 'sine';
-                    osc.frequency.setValueAtTime(520, now);
-                    osc.frequency.setValueAtTime(660, now + 0.08);
-                    gain.gain.setValueAtTime(0.3, now);
+                    osc.frequency.setValueAtTime(540, now);
+                    osc.frequency.setValueAtTime(680, now + 0.08);
+                    gain.gain.setValueAtTime(0.35, now);
                     gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
                     osc.start(now);
                     osc.stop(now + 0.25);
                 } else if (type === 'gameover') {
                     osc.type = 'square';
-                    osc.frequency.setValueAtTime(120, now);
-                    osc.frequency.linearRampToValueAtTime(40, now + 0.6);
+                    osc.frequency.setValueAtTime(130, now);
+                    osc.frequency.linearRampToValueAtTime(45, now + 0.6);
                     gain.gain.setValueAtTime(0.4, now);
                     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
                     osc.start(now);
                     osc.stop(now + 0.6);
                 }
             } catch (err) {
-                console.warn('El audio context falló al reproducir:', err);
+                console.warn('Audio Context no pudo reproducir el efecto:', err);
             }
         }
 
@@ -402,7 +468,7 @@
             if (!container) return;
             const toast = document.createElement('div');
             toast.className = `px-4 py-2.5 rounded-xl shadow-2xl border text-xs font-bold tracking-wide flex items-center gap-2 transform transition-all duration-300 translate-y-2 opacity-0 pointer-events-auto ${
-                isError ? 'bg-rose-950/90 border-rose-500/50 text-rose-200' : 'bg-emerald-950/90 border-emerald-500/50 text-emerald-200'
+                isError ? 'bg-rose-950/95 border-rose-500/60 text-rose-200' : 'bg-emerald-950/95 border-emerald-500/60 text-emerald-200'
             }`;
             toast.innerHTML = `<i data-lucide="${isError ? 'alert-circle' : 'check-circle'}" class="w-4 h-4"></i> <span>${msg}</span>`;
             container.appendChild(toast);
@@ -419,29 +485,53 @@
         }
     </script>
 
-    <!-- MOTOR DE JUEGO, RENDERING 3D, IA Y MULTIJUGADOR -->
     <script>
         const OPENING_BOOK = {
-            "e4": ["e5", "c5", "e6", "c6", "d5"],
+            "": ["e4", "d4", "Nf3", "c4"],
+            "e4": ["e5", "c5", "e6", "c6", "d5", "Nf6"],
+            "e4 e5": ["Nf3", "Bc4", "Nc3", "f4"],
+            "e4 e5 Nf3": ["Nc6", "Nf6", "d6"],
+            "e4 e5 Nf3 Nc6": ["Bc4", "Bb5", "d4", "Nc3"],
+            "e4 e5 Nf3 Nc6 Bc4": ["Bc5", "Nf6", "Be7"],
+            "e4 e5 Nf3 Nc6 Bc4 Bc5": ["c3", "d3", "O-O", "b4"],
+            "e4 e5 Nf3 Nc6 Bb5": ["a6", "Nf6", "d6", "f5"],
+            "e4 e5 Nf3 Nc6 Bb5 a6": ["Ba4", "Bxc6"],
+            "e4 e5 Nf3 Nc6 Bb5 a6 Ba4": ["Nf6", "d6"],
+            "e4 e5 Nf3 Nc6 Bb5 a6 Ba4 Nf6": ["O-O", "d3"],
+            "e4 e5 Nf3 Nc6 Bb5 a6 Ba4 Nf6 O-O": ["Be7", "Nxe4"],
+            "e4 c5": ["Nf3", "Nc3", "c3", "d4"],
+            "e4 c5 Nf3": ["d6", "e6", "Nc6", "g6", "a6"],
+            "e4 c5 Nf3 d6": ["d4", "Bb5+"],
+            "e4 c5 Nf3 d6 d4": ["cxd4"],
+            "e4 c5 Nf3 d6 d4 cxd4": ["Nxd4"],
+            "e4 c5 Nf3 d6 d4 cxd4 Nxd4": ["Nf6", "g6", "e6"],
+            "e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6": ["Nc3"],
+            "e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3": ["a6", "g6", "e6", "Nc6"],
+            "e4 e6": ["d4", "Nf3"],
+            "e4 e6 d4": ["d5"],
+            "e4 e6 d4 d5": ["Nc3", "Nd2", "e5", "exd5"],
+            "e4 c6": ["d4", "Nf3"],
+            "e4 c6 d4": ["d5"],
+            "e4 c6 d4 d5": ["Nc3", "e5", "exd5"],
             "e4 d5": ["exd5"],
             "e4 d5 exd5": ["Qxd5", "Nf6"],
-            "e4 d5 exd5 Qxd5 Nc3": ["Qa5", "Qd8"],
-            "e4 c5": ["Nf3", "Nc3"],
-            "e4 c5 Nf3": ["d6", "e6", "Nc6"],
-            "e4 c5 Nf3 d6 d4": ["cxd4"],
-            "e4 c5 Nf3 d6 d4 cxd4 Nxd4": ["Nf6"],
-            "e4 e6": ["d4"],
-            "e4 e6 d4": ["d5"],
-            "e4 c6": ["d4"],
-            "e4 c6 d4": ["d5"],
-            "e4 e5": ["Nf3", "Bc4", "f4"],
-            "e4 e5 f4": ["exd4", "d5"],
-            "e4 e5 Nf3": ["Nc6", "Nf6"],
-            "e4 e5 Nf3 Nc6": ["Bc4", "Bb5", "d4"],
-            "d4": ["d5", "Nf6", "e5"],
-            "d4 e5": ["dxe5"],
-            "d4 d5": ["c4"],
-            "d4 d5 c4": ["e6", "c6", "dxc4", "e5"]
+            "e4 d5 exd5 Qxd5": ["Nc3"],
+            "e4 d5 exd5 Qxd5 Nc3": ["Qa5", "Qd8", "Qe5+"],
+            "d4": ["d5", "Nf6", "f5", "e6", "g6"],
+            "d4 d5": ["c4", "Nf3", "Bf4"],
+            "d4 d5 c4": ["e6", "c6", "dxc4", "e5"],
+            "d4 d5 c4 e6": ["Nc3", "Nf3"],
+            "d4 d5 c4 c6": ["Nf3", "Nc3"],
+            "d4 Nf6": ["c4", "Nf3", "Bf4", "Bg5"],
+            "d4 Nf6 c4": ["e6", "g6", "c5", "e5"],
+            "d4 Nf6 c4 g6": ["Nc3", "Nf3"],
+            "d4 Nf6 c4 g6 Nc3": ["Bg7", "d5"],
+            "d4 Nf6 c4 g6 Nc3 Bg7": ["e4"],
+            "d4 Nf6 c4 g6 Nc3 Bg7 e4": ["d6", "O-O"],
+            "d4 Nf6 c4 e6": ["Nc3", "Nf3"],
+            "d4 Nf6 c4 e6 Nc3": ["Bb4", "d5"],
+            "c4": ["e5", "c5", "Nf6", "e6"],
+            "Nf3": ["d5", "Nf6", "c5", "g6"]
         };
 
         const OPENING_NAMES = {
@@ -456,15 +546,257 @@
             "d4 d5 c4": "Gambito de Dama 👑"
         };
 
-        const CAMPAIGN_LEVELS = [
-            { id: 1, name: "Bolivia - La Cumbre", flag: "🇧🇴", difficulty: "Desafiante (ELO 1400)", color: "emerald", depth: 2, bgGrad: [0x012417, 0x01130d] },
-            { id: 2, name: "Argentina - El Bastión", flag: "🇦🇷", difficulty: "Avanzado (ELO 1700)", color: "sky", depth: 3, bgGrad: [0x082f49, 0x0c1e2d] },
-            { id: 3, name: "Japón - El Templo Sakura", flag: "🇯🇵", difficulty: "Experto (ELO 2000)", color: "rose", depth: 3, bgGrad: [0x4c0519, 0x240209] },
-            { id: 4, name: "Islandia - El Glaciar Aurora", flag: "🇮🇸", difficulty: "Maestro (ELO 2200)", color: "cyan", depth: 4, bgGrad: [0x042f2e, 0x001514] },
-            { id: 5, name: "Rusia - La Fortaleza", flag: "🇷🇺", difficulty: "Gran Maestro (ELO 2500)", color: "slate", depth: 4, bgGrad: [0x0f172a, 0x020617] }
+        const BOTS_ROSTER = [
+            {
+                id: 'lucas',
+                name: "Lucas 'El Novato'",
+                avatar: "🌱",
+                elo: 900,
+                depth: 1,
+                desc: "Juega de forma relajada y comete descuidos tácticos ocasionales. Ideal para practicar.",
+                color: "text-emerald-400"
+            },
+            {
+                id: 'murillo',
+                name: "Capitán Murillo",
+                avatar: "🛡️",
+                elo: 1400,
+                depth: 2,
+                desc: "Juego defensivo y sólido. Conoce principios básicos de desarrollo y enroque.",
+                color: "text-indigo-400"
+            },
+            {
+                id: 'matias',
+                name: "Matías 'El Tanque'",
+                avatar: "⚔️",
+                elo: 1700,
+                depth: 3,
+                desc: "Especialista en control del centro, presión con peones y cadenas posicionales.",
+                color: "text-sky-400"
+            },
+            {
+                id: 'kenji',
+                name: "Sensei Kenji",
+                avatar: "⛩️",
+                elo: 2000,
+                depth: 3,
+                desc: "Táctico afilado, castiga cualquier pieza desprotegida y busca ataques rápidos al rey.",
+                color: "text-rose-400"
+            },
+            {
+                id: 'valdis',
+                name: "Valdis Glaciar",
+                avatar: "❄️",
+                elo: 2200,
+                depth: 4,
+                desc: "Maestro frío y calculador. Sobresale en finales de partida y piezas pesadas.",
+                color: "text-cyan-400"
+            },
+            {
+                id: 'volkov',
+                name: "Gran Maestro Volkov",
+                avatar: "🇷🇺",
+                elo: 2500,
+                depth: 4,
+                desc: "Profundo dominio de aperturas teóricas, juego posicional impecable y cálculo Minimax.",
+                color: "text-amber-400"
+            },
+            {
+                id: 'aurelius',
+                name: "Emperador Aurelius",
+                avatar: "👑",
+                elo: 2800,
+                depth: 5,
+                desc: "Máxima potencia táctica con búsqueda de reposo extrema. No perdona ningún error.",
+                color: "text-purple-400"
+            }
         ];
 
-        let currentLevelIndex = 0;
+        const BACKGROUND_ENVIRONMENTS = [
+            {
+                id: 'sakura_garden',
+                name: '🌸 Jardín Sakura Zen',
+                icon: '🌸',
+                desc: 'Árboles de cerezo rosa florecidos en 3D, linternas japonesas de piedra y pétalos cayendo.',
+                skyTop: '#fbcfe8',
+                skyBottom: '#4c0519',
+                fogColor: 0x2a0815,
+                ambientColor: 0xffe4e6,
+                ambientIntensity: 0.95,
+                dirLightColor: 0xfff1f2,
+                particleType: 'sakura',
+                particleColor: 0xf472b6,
+                particleCount: 220,
+                vignetteGradient: 'from-pink-950/70 via-transparent to-rose-950/30'
+            },
+            {
+                id: 'sky_clouds',
+                name: '☀️ Cielo Azul & Nubes',
+                icon: '☀️',
+                desc: 'Esponjosas nubes volumétricas 3D flotando en el horizonte, gran sol radiante y cielo brillante.',
+                skyTop: '#38bdf8',
+                skyBottom: '#0284c7',
+                fogColor: 0x0c4a6e,
+                ambientColor: 0xf0f9ff,
+                ambientIntensity: 1.15,
+                dirLightColor: 0xffffff,
+                particleType: 'clouds',
+                particleColor: 0xffffff,
+                particleCount: 160,
+                vignetteGradient: 'from-sky-950/60 via-transparent to-blue-950/20'
+            },
+            {
+                id: 'aurora_borealis',
+                name: '🌌 Aurora Boreal Ártica',
+                icon: '🌌',
+                desc: 'Cortinas ondulantes de luz aurora boreal 3D, montañas glaciares y pinos nevados.',
+                skyTop: '#064e3b',
+                skyBottom: '#022c22',
+                fogColor: 0x032018,
+                ambientColor: 0xd1fae5,
+                ambientIntensity: 0.9,
+                dirLightColor: 0xa7f3d0,
+                particleType: 'aurora',
+                particleColor: 0x34d399,
+                particleCount: 240,
+                vignetteGradient: 'from-emerald-950/80 via-transparent to-teal-950/40'
+            },
+            {
+                id: 'deep_cosmos',
+                name: '🪐 Cosmos & Nebulosa',
+                icon: '🪐',
+                desc: 'Planeta gigante anillado 3D, nubes de nebulosa brillante cósmica y asteroides orbitando.',
+                skyTop: '#3b0764',
+                skyBottom: '#0f172a',
+                fogColor: 0x140a2b,
+                ambientColor: 0xede9fe,
+                ambientIntensity: 0.9,
+                dirLightColor: 0xc084fc,
+                particleType: 'stars',
+                particleColor: 0xa855f7,
+                particleCount: 320,
+                vignetteGradient: 'from-slate-950/85 via-transparent to-purple-950/40'
+            },
+            {
+                id: 'golden_sunset',
+                name: '🌅 Atardecer Dorado',
+                icon: '🌅',
+                desc: 'Gran sol poniente resplandeciente en el horizonte, cordilleras de montañas y ascuas cálidas.',
+                skyTop: '#f97316',
+                skyBottom: '#7c2d12',
+                fogColor: 0x381206,
+                ambientColor: 0xffedd5,
+                ambientIntensity: 1.1,
+                dirLightColor: 0xfef08a,
+                particleType: 'embers',
+                particleColor: 0xfb923c,
+                particleCount: 190,
+                vignetteGradient: 'from-orange-950/75 via-transparent to-amber-950/30'
+            },
+            {
+                id: 'royal_hall',
+                name: '🏰 Salón Real de Palacio',
+                icon: '🏰',
+                desc: 'Columnas de mármol imperial con capiteles dorados, candelabros encendidos y arquitectura palaciega.',
+                skyTop: '#78350f',
+                skyBottom: '#1c1917',
+                fogColor: 0x24140b,
+                ambientColor: 0xfef3c7,
+                ambientIntensity: 1.0,
+                dirLightColor: 0xfde047,
+                particleType: 'bokeh',
+                particleColor: 0xfacc15,
+                particleCount: 180,
+                vignetteGradient: 'from-amber-950/80 via-transparent to-stone-950/40'
+            }
+        ];
+
+        const BOARD_THEMES = [
+            {
+                id: 'gold_silver',
+                name: 'Oro Imperial y Plata Esterlina',
+                icon: '👑',
+                desc: 'Elegancia deslumbrante con acabado en oro pulido 24k, plata metalizada y destellos de brillo.',
+                frameColor: 0x92400e,
+                frameRoughness: 0.2,
+                frameMetalness: 0.85,
+                lightSquare: { color: 0xfef08a, roughness: 0.15, metalness: 0.85 },
+                darkSquare: { color: 0x64748b, roughness: 0.2, metalness: 0.9 },
+                whitePiece: { color: 0xfff08a, roughness: 0.08, metalness: 0.95, emissive: 0x3b2d07, clearcoat: 1.0 },
+                blackPiece: { color: 0xcfd8e3, roughness: 0.1, metalness: 0.95, emissive: 0x1e293b, clearcoat: 1.0 },
+                sparkleColor: 0xfffae0,
+                sparkleDensity: 1.4,
+                swatch: ['#fef08a', '#64748b', '#facc15', '#cfd8e3']
+            },
+            {
+                id: 'marble_obsidian',
+                name: 'Mármol de Carrara & Obsidiana',
+                icon: '🏛️',
+                desc: 'Mármol blanco pulido clásico contrastado con obsidiana volcánica y reflejos vítreos.',
+                frameColor: 0x1e293b,
+                frameRoughness: 0.35,
+                frameMetalness: 0.35,
+                lightSquare: { color: 0xffffff, roughness: 0.1, metalness: 0.2 },
+                darkSquare: { color: 0x334155, roughness: 0.2, metalness: 0.5 },
+                whitePiece: { color: 0xffffff, roughness: 0.08, metalness: 0.2, emissive: 0x111827, clearcoat: 0.9 },
+                blackPiece: { color: 0x182234, roughness: 0.12, metalness: 0.85, emissive: 0x0b1120, clearcoat: 0.95 },
+                sparkleColor: 0xdbeafe,
+                sparkleDensity: 1.0,
+                swatch: ['#ffffff', '#334155', '#e2e8f0', '#182234']
+            },
+            {
+                id: 'cyber_neon',
+                name: 'Cyberpunk Neón Matrix',
+                icon: '⚡',
+                desc: 'Futurismo synthwave con resplandores de cian eléctrico, magenta y destellos de plasma.',
+                frameColor: 0x0f172a,
+                frameRoughness: 0.2,
+                frameMetalness: 0.9,
+                lightSquare: { color: 0x22d3ee, roughness: 0.08, metalness: 0.85 },
+                darkSquare: { color: 0x881337, roughness: 0.18, metalness: 0.9 },
+                whitePiece: { color: 0x67e8f9, roughness: 0.08, metalness: 0.9, emissive: 0x083344, clearcoat: 1.0 },
+                blackPiece: { color: 0xf43f5e, roughness: 0.1, metalness: 0.9, emissive: 0x4c0519, clearcoat: 1.0 },
+                sparkleColor: 0x67e8f9,
+                sparkleDensity: 1.3,
+                swatch: ['#22d3ee', '#881337', '#67e8f9', '#f43f5e']
+            },
+            {
+                id: 'wood_classic',
+                name: 'Madera de Caoba & Roble',
+                icon: '🪵',
+                desc: 'Calidez artesanal clásica con maderas nobles y barniz de torneo internacional.',
+                frameColor: 0x582606,
+                frameRoughness: 0.55,
+                frameMetalness: 0.08,
+                lightSquare: { color: 0xfef3c7, roughness: 0.4, metalness: 0.05 },
+                darkSquare: { color: 0x92400e, roughness: 0.45, metalness: 0.08 },
+                whitePiece: { color: 0xffedd5, roughness: 0.35, metalness: 0.12, emissive: 0x1c1008, clearcoat: 0.3 },
+                blackPiece: { color: 0x381f0d, roughness: 0.4, metalness: 0.25, emissive: 0x170b04, clearcoat: 0.3 },
+                sparkleColor: 0xfef08a,
+                sparkleDensity: 0.3,
+                swatch: ['#fef3c7', '#92400e', '#ffedd5', '#381f0d']
+            },
+            {
+                id: 'emerald_jade',
+                name: 'Esmeralda & Jade Místico',
+                icon: '💎',
+                desc: 'Mística verde esmeralda pulida con toques de malaquita, jade de realeza y fulgor cristalino.',
+                frameColor: 0x065f46,
+                frameRoughness: 0.3,
+                frameMetalness: 0.5,
+                lightSquare: { color: 0xd1fae5, roughness: 0.18, metalness: 0.4 },
+                darkSquare: { color: 0x047857, roughness: 0.22, metalness: 0.6 },
+                whitePiece: { color: 0xecfdf5, roughness: 0.08, metalness: 0.45, emissive: 0x064e3b, clearcoat: 1.0 },
+                blackPiece: { color: 0x064e3b, roughness: 0.12, metalness: 0.88, emissive: 0x022c22, clearcoat: 1.0 },
+                sparkleColor: 0xa7f3d0,
+                sparkleDensity: 1.35,
+                swatch: ['#d1fae5', '#047857', '#ecfdf5', '#064e3b']
+            }
+        ];
+
+        let currentBotIndex = 1; // Capitán Murillo por defecto
+        let currentThemeIndex = 0; // Oro y Plata por defecto
+        let currentEnvIndex = 0; // Sakura por defecto
         let currentMode = 'pve'; // 'pve' o 'online'
         let currentRoomCode = null;
         let myOnlineRole = 'w';
@@ -473,10 +805,15 @@
 
         let game = new Chess();
         let scene, camera, renderer, controls;
-        let boardGroup, piecesGroup, indicatorsGroup;
+        let boardGroup, piecesGroup, indicatorsGroup, sparklesGroup, sceneryGroup;
         let selectedSquare = null;
-        let particleSystem;
-        let currentThemeColor = 0x10b981;
+        let particleSystem = null;
+        let sakuraPetalSprites = [];
+        let skyDomeMesh = null;
+        let sparkleTexture = null;
+        let sakuraPetalTexture = null;
+        let activeSparkles = [];
+        let animatedSceneryObjects = [];
 
         const pieceUnicode = {
             'p': '♟', 'r': '♜', 'n': '♞', 'b': '♝', 'q': '♛', 'k': '♚',
@@ -504,6 +841,158 @@
                 return files[fileIdx] + (rankIdx + 1);
             }
             return null;
+        }
+
+        function createSparkleTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 64;
+            canvas.height = 64;
+            const ctx = canvas.getContext('2d');
+
+            const grad = ctx.createRadialGradient(32, 32, 0, 32, 32, 30);
+            grad.addColorStop(0, 'rgba(255, 255, 255, 1)');
+            grad.addColorStop(0.2, 'rgba(255, 250, 220, 0.9)');
+            grad.addColorStop(0.5, 'rgba(255, 235, 150, 0.35)');
+            grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, 64, 64);
+
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+            ctx.beginPath();
+            ctx.ellipse(32, 32, 28, 2, 0, 0, Math.PI * 2);
+            ctx.ellipse(32, 32, 2, 28, 0, 0, Math.PI * 2);
+            ctx.ellipse(32, 32, 14, 1.5, Math.PI / 4, 0, Math.PI * 2);
+            ctx.ellipse(32, 32, 14, 1.5, -Math.PI / 4, 0, Math.PI * 2);
+            ctx.fill();
+
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        function createSakuraPetalTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 64;
+            canvas.height = 64;
+            const ctx = canvas.getContext('2d');
+
+            ctx.save();
+            ctx.translate(32, 32);
+            ctx.beginPath();
+            ctx.moveTo(0, -26);
+            ctx.bezierCurveTo(18, -26, 26, 6, 0, 28);
+            ctx.bezierCurveTo(-26, 6, -18, -26, 0, -26);
+            ctx.closePath();
+
+            const grad = ctx.createLinearGradient(0, -26, 0, 28);
+            grad.addColorStop(0, 'rgba(255, 240, 245, 0.95)');
+            grad.addColorStop(0.4, 'rgba(251, 182, 206, 0.9)');
+            grad.addColorStop(1, 'rgba(244, 114, 182, 0.7)');
+            ctx.fillStyle = grad;
+            ctx.fill();
+
+            ctx.restore();
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        function initMineralSparkles() {
+            if (!sparklesGroup) return;
+
+            while (sparklesGroup.children.length > 0) {
+                sparklesGroup.remove(sparklesGroup.children[0]);
+            }
+            activeSparkles = [];
+
+            if (!sparkleTexture) {
+                sparkleTexture = createSparkleTexture();
+            }
+
+            const theme = BOARD_THEMES[currentThemeIndex];
+            const density = theme.sparkleDensity || 1.0;
+
+            piecesGroup.children.forEach(piece => {
+                if (!piece.userData || !piece.userData.isPiece) return;
+
+                const pieceType = piece.userData.type;
+                let sparkleCount = 1;
+                let heightRange = [0.4, 0.9];
+
+                if (pieceType === 'k') {
+                    sparkleCount = Math.round(4 * density);
+                    heightRange = [0.8, 1.6];
+                } else if (pieceType === 'q') {
+                    sparkleCount = Math.round(4 * density);
+                    heightRange = [0.7, 1.4];
+                } else if (pieceType === 'b' || pieceType === 'n') {
+                    sparkleCount = Math.round(3 * density);
+                    heightRange = [0.5, 1.2];
+                } else if (pieceType === 'r') {
+                    sparkleCount = Math.round(2 * density);
+                    heightRange = [0.5, 1.0];
+                } else {
+                    sparkleCount = Math.random() < (0.6 * density) ? 1 : 0;
+                    heightRange = [0.3, 0.85];
+                }
+
+                for (let i = 0; i < sparkleCount; i++) {
+                    const material = new THREE.SpriteMaterial({
+                        map: sparkleTexture,
+                        color: theme.sparkleColor || 0xffffff,
+                        transparent: true,
+                        opacity: 0,
+                        blending: THREE.AdditiveBlending,
+                        depthWrite: false
+                    });
+
+                    const sprite = new THREE.Sprite(material);
+                    const radius = 0.18 + Math.random() * 0.22;
+                    const angle = Math.random() * Math.PI * 2;
+                    const y = heightRange[0] + Math.random() * (heightRange[1] - heightRange[0]);
+
+                    const offset = new THREE.Vector3(
+                        Math.cos(angle) * radius,
+                        y,
+                        Math.sin(angle) * radius
+                    );
+
+                    sprite.position.copy(piece.position).add(offset);
+                    sparklesGroup.add(sprite);
+
+                    activeSparkles.push({
+                        sprite,
+                        parentPiece: piece,
+                        offset,
+                        phase: Math.random() * Math.PI * 2,
+                        speed: 1.8 + Math.random() * 2.6,
+                        maxScale: 0.35 + Math.random() * 0.35,
+                        rotationSpeed: (Math.random() - 0.5) * 2.5
+                    });
+                }
+            });
+        }
+
+        function updateMineralSparkles(time) {
+            if (!activeSparkles || activeSparkles.length === 0) return;
+
+            const t = (time || performance.now()) * 0.001;
+
+            activeSparkles.forEach(item => {
+                if (!item.parentPiece) return;
+
+                item.sprite.position.copy(item.parentPiece.position).add(item.offset);
+
+                const rawVal = Math.sin(t * item.speed + item.phase);
+                const intensity = Math.max(0, Math.pow(Math.max(0, rawVal), 5));
+
+                if (intensity > 0.01) {
+                    const scale = item.maxScale * (0.4 + intensity * 0.9);
+                    item.sprite.scale.set(scale, scale, 1);
+                    item.sprite.material.opacity = intensity * 0.95;
+                    item.sprite.material.rotation += item.rotationSpeed * 0.015;
+                    item.sprite.visible = true;
+                } else {
+                    item.sprite.visible = false;
+                    item.sprite.material.opacity = 0;
+                }
+            });
         }
 
         const localRoomBus = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('chess_local_rooms') : null;
@@ -609,7 +1098,7 @@
                     await setDoc(roomRef, initialRoomData);
                     listenToRoomUpdates(roomRef, roomCode);
                 } catch (err) {
-                    console.warn("Firestore error al crear sala, usando canal local:", err);
+                    console.warn("Firestore fallback al bus local:", err);
                     listenToLocalRoomUpdates(roomCode);
                 }
             } else {
@@ -626,7 +1115,7 @@
         async function joinOnlineRoom(inputCode) {
             const code = (inputCode || '').trim().toUpperCase();
             if (!code || code.length < 4) {
-                showToast("Ingresa un código válido de al menos 4 caracteres", true);
+                showToast("Ingresa un código válido de 4 a 6 caracteres", true);
                 return;
             }
 
@@ -647,7 +1136,7 @@
                         usingFirebase = true;
                     }
                 } catch (err) {
-                    console.warn("Excepción en Firestore al unirse, probando búsqueda local:", err);
+                    console.warn("Error en Firestore al unirse, probando búsqueda local:", err);
                 }
             }
 
@@ -661,7 +1150,7 @@
             }
 
             if (roomData.status === 'playing' && roomData.guestUid && roomData.guestUid !== window.currentUserId) {
-                showToast("La sala ya tiene dos jugadores en partida", true);
+                showToast("La sala ya cuenta con dos jugadores en partida", true);
                 return;
             }
 
@@ -686,7 +1175,7 @@
                     });
                     listenToRoomUpdates(roomRef, code);
                 } catch (err) {
-                    console.warn("Fallback a canal local tras error de updateDoc:", err);
+                    console.warn("Fallback a canal local:", err);
                     listenToLocalRoomUpdates(code);
                 }
             } else {
@@ -695,7 +1184,7 @@
 
             document.getElementById('online-room-code-display').innerText = `SALA: ${code} (Negras)`;
             toggleModal('modal-online', false);
-            showToast("¡Unido con éxito a la sala! Juegas con Negras.");
+            showToast("¡Te has unido con éxito! Juegas con Negras.");
         }
 
         function listenToRoomUpdates(roomRef, code) {
@@ -709,7 +1198,7 @@
                 const data = snapshot.data();
                 applyRemoteRoomState(data);
             }, (error) => {
-                console.warn("Error en el snapshot de Firebase, manteniendo bus local:", error);
+                console.warn("Error en snapshot:", error);
             });
         }
 
@@ -732,7 +1221,7 @@
                 try {
                     await updateDoc(roomRef, updateData);
                 } catch (err) {
-                    console.warn("Error al sincronizar jugada en Firestore:", err);
+                    console.warn("Error sincronizando en Firestore:", err);
                 }
             }
         }
@@ -745,16 +1234,20 @@
             const height = container.clientHeight || window.innerHeight;
 
             scene = new THREE.Scene();
-            scene.fog = new THREE.FogExp2(0x012417, 0.025);
+            const currentEnv = BACKGROUND_ENVIRONMENTS[currentEnvIndex];
+            
+            scene.fog = new THREE.Fog(currentEnv.fogColor, 18, 55);
 
-            camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
+            camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 140);
             setPresetCamera('white');
 
-            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: "high-performance" });
             renderer.setSize(width, height);
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             renderer.shadowMap.enabled = true;
             renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.35;
 
             container.innerHTML = '';
             container.appendChild(renderer.domElement);
@@ -762,47 +1255,657 @@
             controls = new THREE.OrbitControls(camera, renderer.domElement);
             controls.enableDamping = true;
             controls.dampingFactor = 0.05;
-            controls.maxPolarAngle = Math.PI / 2.15; // Evita que la cámara baje del nivel del tablero
-            controls.minPolarAngle = 0.1; // Previene giros bruscos en vista cenital
+            controls.maxPolarAngle = Math.PI / 2.15; // Bloquea la cámara para que nunca baje del tablero
+            controls.minPolarAngle = 0.1; 
             controls.minDistance = 5;
-            controls.maxDistance = 20;
+            controls.maxDistance = 24;
 
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.35);
+            // Luces de Escena
+            const ambientLight = new THREE.AmbientLight(currentEnv.ambientColor || 0xffffff, currentEnv.ambientIntensity || 0.95);
+            ambientLight.name = 'ambientLight';
             scene.add(ambientLight);
 
-            const dirLight = new THREE.DirectionalLight(0xffffff, 0.85);
-            dirLight.position.set(5, 12, 5);
+            const hemiLight = new THREE.HemisphereLight(0xffffff, 0x334155, 0.75);
+            hemiLight.name = 'hemiLight';
+            hemiLight.position.set(0, 20, 0);
+            scene.add(hemiLight);
+
+            // Luz Principal con Sombras
+            const dirLight = new THREE.DirectionalLight(currentEnv.dirLightColor || 0xfffbeb, 1.4);
+            dirLight.name = 'dirLight';
+            dirLight.position.set(7, 16, 8);
             dirLight.castShadow = true;
-            dirLight.shadow.mapSize.width = 1024;
-            dirLight.shadow.mapSize.height = 1024;
-            dirLight.shadow.bias = -0.0005;
+            dirLight.shadow.mapSize.width = 2048;
+            dirLight.shadow.mapSize.height = 2048;
+            dirLight.shadow.camera.near = 0.5;
+            dirLight.shadow.camera.far = 40;
+            dirLight.shadow.camera.left = -9;
+            dirLight.shadow.camera.right = 9;
+            dirLight.shadow.camera.top = 9;
+            dirLight.shadow.camera.bottom = -9;
+            dirLight.shadow.bias = -0.0003;
             scene.add(dirLight);
 
-            const rimLight = new THREE.DirectionalLight(0x818cf8, 0.4);
-            rimLight.position.set(-8, 6, -8);
+            // Luz de Relleno Secundaria
+            const fillLight = new THREE.DirectionalLight(0x93c5fd, 0.75);
+            fillLight.name = 'fillLight';
+            fillLight.position.set(-8, 12, -7);
+            scene.add(fillLight);
+
+            // Luz de Contorno y Brillo Especular
+            const rimLight = new THREE.DirectionalLight(0xa5b4fc, 0.6);
+            rimLight.name = 'rimLight';
+            rimLight.position.set(0, 8, -12);
             scene.add(rimLight);
 
             boardGroup = new THREE.Group();
             piecesGroup = new THREE.Group();
             indicatorsGroup = new THREE.Group();
+            sparklesGroup = new THREE.Group();
+            sceneryGroup = new THREE.Group();
+
+            scene.add(sceneryGroup);
             scene.add(boardGroup);
             scene.add(piecesGroup);
             scene.add(indicatorsGroup);
+            scene.add(sparklesGroup);
 
             buildPhysicalBoard();
             spawnProceduralPieces();
-            initLevelAtmosphere();
+            initBackgroundEnvironment();
 
             window.addEventListener('resize', onWindowResize);
         }
 
         function setPresetCamera(color) {
             if (color === 'white') {
-                camera.position.set(0, 10, 10);
+                camera.position.set(0, 11, 10);
             } else {
-                camera.position.set(0, 10, -10);
+                camera.position.set(0, 11, -10);
             }
             if (controls) controls.target.set(0, 0, 0);
+        }
+
+        function createSkyTexture(topColor, bottomColor) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 256;
+            canvas.height = 512;
+            const ctx = canvas.getContext('2d');
+            const grad = ctx.createLinearGradient(0, 0, 0, 512);
+            grad.addColorStop(0, topColor);
+            grad.addColorStop(0.5, bottomColor);
+            grad.addColorStop(1, '#05070e');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, 256, 512);
+
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        function createSakuraTree(x, z, scale = 1.0, rotationY = 0) {
+            const treeGroup = new THREE.Group();
+
+            // Tronco y ramas principales con material madera oscura
+            const woodMat = new THREE.MeshStandardMaterial({
+                color: 0x3d2314,
+                roughness: 0.85,
+                metalness: 0.05
+            });
+
+            const trunkGeom = new THREE.CylinderGeometry(0.35 * scale, 0.55 * scale, 3.8 * scale, 8);
+            const trunk = new THREE.Mesh(trunkGeom, woodMat);
+            trunk.position.y = (1.9 * scale) - 0.2;
+            trunk.rotation.z = (Math.random() - 0.5) * 0.15;
+            trunk.castShadow = true;
+            treeGroup.add(trunk);
+
+            // Ramas secundarias
+            const branchGeom = new THREE.CylinderGeometry(0.18 * scale, 0.28 * scale, 2.2 * scale, 6);
+            const b1 = new THREE.Mesh(branchGeom, woodMat);
+            b1.position.set(0.6 * scale, 2.6 * scale, 0);
+            b1.rotation.z = -Math.PI / 4;
+            b1.castShadow = true;
+            treeGroup.add(b1);
+
+            const b2 = new THREE.Mesh(branchGeom, woodMat);
+            b2.position.set(-0.6 * scale, 2.8 * scale, 0.3 * scale);
+            b2.rotation.z = Math.PI / 3.8;
+            b2.castShadow = true;
+            treeGroup.add(b2);
+
+            // Copas de flores de cerezo esponjosas (Sakura)
+            const foliageMat = new THREE.MeshStandardMaterial({
+                color: 0xf472b6,
+                roughness: 0.6,
+                metalness: 0.1,
+                emissive: 0x831843,
+                emissiveIntensity: 0.25
+            });
+
+            const clusterOffsets = [
+                [0, 3.8 * scale, 0, 1.4 * scale],
+                [1.3 * scale, 3.4 * scale, 0.2 * scale, 1.1 * scale],
+                [-1.2 * scale, 3.6 * scale, 0.4 * scale, 1.2 * scale],
+                [0.4 * scale, 4.4 * scale, -0.6 * scale, 1.15 * scale],
+                [-0.5 * scale, 3.2 * scale, -0.8 * scale, 1.0 * scale],
+                [0.8 * scale, 4.1 * scale, 0.7 * scale, 0.95 * scale]
+            ];
+
+            clusterOffsets.forEach(c => {
+                const sphereGeom = new THREE.DodecahedronGeometry(c[3], 1);
+                const foliage = new THREE.Mesh(sphereGeom, foliageMat);
+                foliage.position.set(c[0], c[1], c[2]);
+                foliage.castShadow = true;
+                treeGroup.add(foliage);
+            });
+
+            treeGroup.position.set(x, 0, z);
+            treeGroup.rotation.y = rotationY;
+            return treeGroup;
+        }
+
+        function createJapaneseLantern(x, z) {
+            const lanternGroup = new THREE.Group();
+            const stoneMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.85, metalness: 0.1 });
+            const glowMat = new THREE.MeshBasicMaterial({ color: 0xfef08a });
+
+            // Base
+            const base = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.5, 0.3, 6), stoneMat);
+            base.position.y = 0.15;
+            lanternGroup.add(base);
+
+            // Pilar
+            const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.22, 1.0, 6), stoneMat);
+            pillar.position.y = 0.8;
+            lanternGroup.add(pillar);
+
+            // Caja de luz
+            const lightBox = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.45, 0.5), glowMat);
+            lightBox.position.y = 1.45;
+            lanternGroup.add(lightBox);
+
+            // Tejado
+            const roof = new THREE.Mesh(new THREE.ConeGeometry(0.7, 0.4, 6), stoneMat);
+            roof.position.y = 1.85;
+            lanternGroup.add(roof);
+
+            lanternGroup.position.set(x, 0, z);
+            return lanternGroup;
+        }
+
+        function buildEnvironmentScenery(envId) {
+            // Limpiar props anteriores
+            while (sceneryGroup.children.length > 0) {
+                const child = sceneryGroup.children[0];
+                sceneryGroup.remove(child);
+                if (child.geometry) child.geometry.dispose();
+                if (child.material) child.material.dispose();
+            }
+            animatedSceneryObjects = [];
+
+            if (envId === 'sakura_garden') {
+                // 1. Árboles de Sakura en esquinas y fondos
+                sceneryGroup.add(createSakuraTree(-12, -10, 1.4, 0.4));
+                sceneryGroup.add(createSakuraTree(13, -11, 1.3, -0.6));
+                sceneryGroup.add(createSakuraTree(-13, 8, 1.25, 1.1));
+                sceneryGroup.add(createSakuraTree(14, 9, 1.35, -1.3));
+
+                // 2. Linternas japonesas de piedra
+                sceneryGroup.add(createJapaneseLantern(-8.5, -8.5));
+                sceneryGroup.add(createJapaneseLantern(8.5, -8.5));
+                sceneryGroup.add(createJapaneseLantern(-8.5, 8.5));
+                sceneryGroup.add(createJapaneseLantern(8.5, 8.5));
+
+                // 3. Suelo de jardín zen circular
+                const groundMat = new THREE.MeshStandardMaterial({ color: 0x1f1218, roughness: 0.9 });
+                const ground = new THREE.Mesh(new THREE.CircleGeometry(32, 32), groundMat);
+                ground.rotation.x = -Math.PI / 2;
+                ground.position.y = -0.3;
+                ground.receiveShadow = true;
+                sceneryGroup.add(ground);
+
+            } else if (envId === 'deep_cosmos') {
+                // 1. Planeta Gigante Anillado (Estilo Saturno cósmico)
+                const planetGroup = new THREE.Group();
+                const planetMat = new THREE.MeshStandardMaterial({
+                    color: 0x7c3aed,
+                    roughness: 0.4,
+                    metalness: 0.3,
+                    emissive: 0x2e1065,
+                    emissiveIntensity: 0.4
+                });
+                const planet = new THREE.Mesh(new THREE.SphereGeometry(7, 32, 32), planetMat);
+                planetGroup.add(planet);
+
+                // Anillo exterior
+                const ringMat = new THREE.MeshBasicMaterial({
+                    color: 0xc084fc,
+                    side: THREE.DoubleSide,
+                    transparent: true,
+                    opacity: 0.7
+                });
+                const ring = new THREE.Mesh(new THREE.RingGeometry(9, 14, 48), ringMat);
+                ring.rotation.x = Math.PI / 2.3;
+                ring.rotation.y = Math.PI / 7;
+                planetGroup.add(ring);
+
+                planetGroup.position.set(-26, 18, -35);
+                sceneryGroup.add(planetGroup);
+                animatedSceneryObjects.push({ type: 'rotate', object: planetGroup, speed: 0.002 });
+
+                // 2. Nubes de Nebulosa Volumétricas
+                const nebulaColors = [0xd946ef, 0x8b5cf6, 0x06b6d4, 0xec4899];
+                for (let i = 0; i < 7; i++) {
+                    const nebMat = new THREE.MeshBasicMaterial({
+                        color: nebulaColors[i % nebulaColors.length],
+                        transparent: true,
+                        opacity: 0.18,
+                        blending: THREE.AdditiveBlending,
+                        depthWrite: false
+                    });
+                    const neb = new THREE.Mesh(new THREE.DodecahedronGeometry(6 + Math.random() * 4, 1), nebMat);
+                    const angle = (i / 7) * Math.PI * 2;
+                    neb.position.set(Math.cos(angle) * 32, 8 + Math.random() * 12, Math.sin(angle) * 32);
+                    sceneryGroup.add(neb);
+                    animatedSceneryObjects.push({ type: 'nebula_pulse', object: neb, phase: i * 1.2 });
+                }
+
+                // 3. Asteroides flotantes en órbita
+                const asteroidMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.8 });
+                for (let i = 0; i < 14; i++) {
+                    const ast = new THREE.Mesh(new THREE.DodecahedronGeometry(0.5 + Math.random() * 0.9, 0), asteroidMat);
+                    const r = 16 + Math.random() * 14;
+                    const a = Math.random() * Math.PI * 2;
+                    ast.position.set(Math.cos(a) * r, -1 + Math.random() * 10, Math.sin(a) * r);
+                    sceneryGroup.add(ast);
+                    animatedSceneryObjects.push({ type: 'orbit', object: ast, radius: r, angle: a, speed: 0.003 + Math.random() * 0.004 });
+                }
+
+            } else if (envId === 'sky_clouds') {
+                // 1. Gran Sol Radiante
+                const sunGroup = new THREE.Group();
+                const sunMat = new THREE.MeshBasicMaterial({ color: 0xfffbeb });
+                const sunMesh = new THREE.Mesh(new THREE.SphereGeometry(6, 24, 24), sunMat);
+                sunGroup.add(sunMesh);
+
+                const haloMat = new THREE.MeshBasicMaterial({
+                    color: 0xfef08a,
+                    transparent: true,
+                    opacity: 0.35,
+                    blending: THREE.AdditiveBlending,
+                    side: THREE.BackSide
+                });
+                const halo = new THREE.Mesh(new THREE.SphereGeometry(8.5, 24, 24), haloMat);
+                sunGroup.add(halo);
+
+                sunGroup.position.set(22, 28, -38);
+                sceneryGroup.add(sunGroup);
+
+                // 2. Nubes Volumétricas Flotantes en 3D
+                const cloudMat = new THREE.MeshStandardMaterial({
+                    color: 0xffffff,
+                    roughness: 0.4,
+                    metalness: 0.05,
+                    emissive: 0xdbeafe,
+                    emissiveIntensity: 0.15
+                });
+
+                function createFluffyCloud(x, y, z, scale = 1.0) {
+                    const cloud = new THREE.Group();
+                    const spheres = [
+                        [0, 0, 0, 2.0],
+                        [1.6, -0.2, 0, 1.5],
+                        [-1.6, -0.3, 0.2, 1.4],
+                        [0.8, 0.8, 0, 1.6],
+                        [-0.7, 0.7, -0.2, 1.45],
+                        [0, 0, 1.2, 1.4],
+                        [0, 0, -1.2, 1.3]
+                    ];
+                    spheres.forEach(s => {
+                        const m = new THREE.Mesh(new THREE.SphereGeometry(s[3] * scale, 12, 12), cloudMat);
+                        m.position.set(s[0] * scale, s[1] * scale, s[2] * scale);
+                        cloud.add(m);
+                    });
+                    cloud.position.set(x, y, z);
+                    return cloud;
+                }
+
+                const cloudPositions = [
+                    [-22, 14, -20, 1.4],
+                    [18, 16, -26, 1.6],
+                    [-18, 10, 22, 1.3],
+                    [24, 12, 18, 1.5],
+                    [0, 18, -32, 2.0]
+                ];
+
+                cloudPositions.forEach(cp => {
+                    const cloud = createFluffyCloud(cp[0], cp[1], cp[2], cp[3]);
+                    sceneryGroup.add(cloud);
+                    animatedSceneryObjects.push({ type: 'cloud_drift', object: cloud, speed: 0.01 + Math.random() * 0.015 });
+                });
+
+            } else if (envId === 'aurora_borealis') {
+                // 1. Cortinas de Aurora Boreal Ondulantes
+                const auroraGroup = new THREE.Group();
+                const ribbonGeom = new THREE.PlaneGeometry(55, 14, 32, 6);
+                const ribbonMat = new THREE.MeshBasicMaterial({
+                    color: 0x34d399,
+                    transparent: true,
+                    opacity: 0.45,
+                    blending: THREE.AdditiveBlending,
+                    side: THREE.DoubleSide,
+                    depthWrite: false
+                });
+
+                const ribbon1 = new THREE.Mesh(ribbonGeom, ribbonMat);
+                ribbon1.position.set(0, 18, -25);
+                ribbon1.rotation.y = 0.15;
+                auroraGroup.add(ribbon1);
+
+                const ribbonMat2 = new THREE.MeshBasicMaterial({
+                    color: 0x22d3ee,
+                    transparent: true,
+                    opacity: 0.35,
+                    blending: THREE.AdditiveBlending,
+                    side: THREE.DoubleSide,
+                    depthWrite: false
+                });
+                const ribbon2 = new THREE.Mesh(ribbonGeom, ribbonMat2);
+                ribbon2.position.set(-6, 22, -30);
+                ribbon2.rotation.y = -0.2;
+                auroraGroup.add(ribbon2);
+
+                sceneryGroup.add(auroraGroup);
+                animatedSceneryObjects.push({ type: 'aurora_wave', ribbons: [ribbon1, ribbon2] });
+
+                // 2. Montañas e Iglús/Pinos Nevados
+                const snowPineMat = new THREE.MeshStandardMaterial({ color: 0x064e3b, roughness: 0.8 });
+                const snowTopMat = new THREE.MeshStandardMaterial({ color: 0xf0fdf4, roughness: 0.5 });
+
+                function createSnowPine(x, z, scale = 1.0) {
+                    const pine = new THREE.Group();
+                    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.2 * scale, 0.3 * scale, 1.2 * scale, 6), snowPineMat);
+                    trunk.position.y = 0.6 * scale;
+                    pine.add(trunk);
+
+                    const cones = [
+                        [2.0 * scale, 1.8 * scale, 1.5 * scale],
+                        [1.5 * scale, 1.4 * scale, 2.5 * scale],
+                        [1.0 * scale, 1.0 * scale, 3.3 * scale]
+                    ];
+                    cones.forEach(cn => {
+                        const cone = new THREE.Mesh(new THREE.ConeGeometry(cn[1], cn[0], 7), snowPineMat);
+                        cone.position.y = cn[2];
+                        cone.castShadow = true;
+                        pine.add(cone);
+
+                        const snowCap = new THREE.Mesh(new THREE.ConeGeometry(cn[1] * 0.6, cn[0] * 0.4, 7), snowTopMat);
+                        snowCap.position.y = cn[2] + cn[0] * 0.35;
+                        pine.add(snowCap);
+                    });
+                    pine.position.set(x, 0, z);
+                    return pine;
+                }
+
+                sceneryGroup.add(createSnowPine(-11, -9, 1.2));
+                sceneryGroup.add(createSnowPine(-13, -7, 1.4));
+                sceneryGroup.add(createSnowPine(12, -9, 1.3));
+                sceneryGroup.add(createSnowPine(14, -6, 1.1));
+                sceneryGroup.add(createSnowPine(-12, 10, 1.3));
+                sceneryGroup.add(createSnowPine(13, 9, 1.25));
+
+            } else if (envId === 'golden_sunset') {
+                // 1. Sol Crepuscular Poniente
+                const sunMesh = new THREE.Mesh(
+                    new THREE.SphereGeometry(9, 32, 32),
+                    new THREE.MeshBasicMaterial({ color: 0xfef08a })
+                );
+                sunMesh.position.set(0, 4, -42);
+                sceneryGroup.add(sunMesh);
+
+                // 2. Siluetas de Montañas y Dunas
+                const mountainMat = new THREE.MeshStandardMaterial({ color: 0x270f06, roughness: 0.95 });
+                const m1 = new THREE.Mesh(new THREE.ConeGeometry(18, 14, 5), mountainMat);
+                m1.position.set(-22, 4, -36);
+                sceneryGroup.add(m1);
+
+                const m2 = new THREE.Mesh(new THREE.ConeGeometry(24, 18, 5), mountainMat);
+                m2.position.set(16, 6, -40);
+                sceneryGroup.add(m2);
+
+                const m3 = new THREE.Mesh(new THREE.ConeGeometry(14, 10, 5), mountainMat);
+                m3.position.set(0, 2, -35);
+                sceneryGroup.add(m3);
+
+            } else if (envId === 'royal_hall') {
+                // 1. Columnas de Mármol Imperial con Capiteles Dorados
+                const marbleMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.2, metalness: 0.1 });
+                const goldCapMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.15, metalness: 0.85 });
+
+                function createPalaceColumn(x, z) {
+                    const col = new THREE.Group();
+                    // Base dorada
+                    const b = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.4, 1.4), goldCapMat);
+                    b.position.y = 0.2;
+                    col.add(b);
+
+                    // Fuste
+                    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.55, 8.5, 16), marbleMat);
+                    shaft.position.y = 4.65;
+                    shaft.castShadow = true;
+                    col.add(shaft);
+
+                    // Capitel dorado corintio
+                    const cap = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.6, 1.3), goldCapMat);
+                    cap.position.y = 9.2;
+                    col.add(cap);
+
+                    // Candelabro con luz
+                    const torch = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.08, 0.8, 8), goldCapMat);
+                    torch.position.set(0.65, 5.0, 0);
+                    torch.rotation.z = -Math.PI / 4;
+                    col.add(torch);
+
+                    const flame = new THREE.Mesh(new THREE.SphereGeometry(0.2, 8, 8), new THREE.MeshBasicMaterial({ color: 0xf59e0b }));
+                    flame.position.set(1.0, 5.4, 0);
+                    col.add(flame);
+
+                    col.position.set(x, -0.2, z);
+                    return col;
+                }
+
+                // Disponer columnas majestuosas a los lados
+                sceneryGroup.add(createPalaceColumn(-10, -9));
+                sceneryGroup.add(createPalaceColumn(-10, 0));
+                sceneryGroup.add(createPalaceColumn(-10, 9));
+                sceneryGroup.add(createPalaceColumn(10, -9));
+                sceneryGroup.add(createPalaceColumn(10, 0));
+                sceneryGroup.add(createPalaceColumn(10, 9));
+            }
+        }
+
+        function initBackgroundEnvironment() {
+            const env = BACKGROUND_ENVIRONMENTS[currentEnvIndex];
+
+            // 1. Actualizar Niebla y Renderer
+            if (scene.fog) {
+                scene.fog.color.setHex(env.fogColor);
+            }
+            renderer.setClearColor(env.fogColor);
+
+            // 2. Actualizar Luces de la Escena
+            const amb = scene.getObjectByName('ambientLight');
+            if (amb) {
+                amb.color.setHex(env.ambientColor);
+                amb.intensity = env.ambientIntensity || 0.95;
+            }
+            const dir = scene.getObjectByName('dirLight');
+            if (dir) {
+                dir.color.setHex(env.dirLightColor);
+            }
+
+            // 3. Crear o Actualizar Bóveda Celeste 3D (SkyDome)
+            if (skyDomeMesh) {
+                scene.remove(skyDomeMesh);
+                if (skyDomeMesh.geometry) skyDomeMesh.geometry.dispose();
+                if (skyDomeMesh.material) skyDomeMesh.material.dispose();
+            }
+
+            const skyGeo = new THREE.SphereGeometry(75, 32, 24);
+            const skyTex = createSkyTexture(env.skyTop, env.skyBottom);
+            const skyMat = new THREE.MeshBasicMaterial({
+                map: skyTex,
+                side: THREE.BackSide,
+                depthWrite: false
+            });
+            skyDomeMesh = new THREE.Mesh(skyGeo, skyMat);
+            scene.add(skyDomeMesh);
+
+            // 4. Limpiar Sistemas de Partículas Previos
+            if (particleSystem) {
+                scene.remove(particleSystem);
+                if (particleSystem.geometry) particleSystem.geometry.dispose();
+                if (particleSystem.material) particleSystem.material.dispose();
+                particleSystem = null;
+            }
+
+            sakuraPetalSprites.forEach(p => {
+                scene.remove(p.sprite);
+                if (p.sprite.material) p.sprite.material.dispose();
+            });
+            sakuraPetalSprites = [];
+
+            // 5. Instanciar Efecto de Partículas según el Entorno
+            if (env.particleType === 'sakura') {
+                if (!sakuraPetalTexture) sakuraPetalTexture = createSakuraPetalTexture();
+
+                const count = env.particleCount || 180;
+                for (let i = 0; i < count; i++) {
+                    const mat = new THREE.SpriteMaterial({
+                        map: sakuraPetalTexture,
+                        transparent: true,
+                        opacity: 0.75 + Math.random() * 0.25,
+                        blending: THREE.NormalBlending,
+                        depthWrite: false
+                    });
+                    const sprite = new THREE.Sprite(mat);
+                    const scale = 0.2 + Math.random() * 0.28;
+                    sprite.scale.set(scale, scale, 1);
+
+                    const x = (Math.random() - 0.5) * 28;
+                    const y = 0.5 + Math.random() * 14;
+                    const z = (Math.random() - 0.5) * 28;
+                    sprite.position.set(x, y, z);
+
+                    scene.add(sprite);
+                    sakuraPetalSprites.push({
+                        sprite,
+                        speedY: 0.015 + Math.random() * 0.025,
+                        speedX: 0.008 + Math.random() * 0.015,
+                        swayPhase: Math.random() * Math.PI * 2,
+                        swaySpeed: 1.5 + Math.random() * 2,
+                        rotSpeed: (Math.random() - 0.5) * 2
+                    });
+                }
+            } else {
+                const count = env.particleCount || 200;
+                const geometry = new THREE.BufferGeometry();
+                const positions = new Float32Array(count * 3);
+
+                for (let i = 0; i < count * 3; i += 3) {
+                    positions[i] = (Math.random() - 0.5) * 32;
+                    positions[i + 1] = Math.random() * 16;
+                    positions[i + 2] = (Math.random() - 0.5) * 32;
+                }
+
+                geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+                const material = new THREE.PointsMaterial({
+                    color: env.particleColor,
+                    size: env.particleType === 'stars' ? 0.18 : 0.24,
+                    transparent: true,
+                    opacity: 0.75,
+                    blending: THREE.AdditiveBlending,
+                    depthWrite: false
+                });
+
+                particleSystem = new THREE.Points(geometry, material);
+                scene.add(particleSystem);
+            }
+
+            // 6. Construir los Objetos y Escenarios 3D del Entorno
+            buildEnvironmentScenery(env.id);
+
+            // 7. Actualizar Viñeta de Fondo
+            const vignette = document.getElementById('vignette-overlay');
+            if (vignette && env.vignetteGradient) {
+                vignette.className = `absolute inset-0 bg-gradient-to-t ${env.vignetteGradient} pointer-events-none z-10 transition-colors duration-700`;
+            }
+        }
+
+        function updateEnvironmentParticles(time) {
+            const t = (time || performance.now()) * 0.001;
+
+            // Animación de Pétalos de Sakura
+            if (sakuraPetalSprites.length > 0) {
+                sakuraPetalSprites.forEach(p => {
+                    p.sprite.position.y -= p.speedY;
+                    p.sprite.position.x += Math.sin(t * p.swaySpeed + p.swayPhase) * 0.012 + p.speedX;
+                    p.sprite.position.z += Math.cos(t * p.swaySpeed * 0.8 + p.swayPhase) * 0.008;
+                    p.sprite.material.rotation += p.rotSpeed * 0.01;
+
+                    if (p.sprite.position.y < 0) {
+                        p.sprite.position.y = 13 + Math.random() * 2;
+                        p.sprite.position.x = (Math.random() - 0.5) * 26;
+                        p.sprite.position.z = (Math.random() - 0.5) * 26;
+                    }
+                });
+            }
+
+            // Animación de Partículas Estándar
+            if (particleSystem) {
+                const positions = particleSystem.geometry.attributes.position.array;
+                for (let i = 1; i < positions.length; i += 3) {
+                    positions[i] -= 0.018;
+                    if (positions[i] < 0) {
+                        positions[i] = 15;
+                    }
+                }
+                particleSystem.geometry.attributes.position.needsUpdate = true;
+            }
+
+            // Animación de los Objetos Escénicos 3D del Fondo
+            animatedSceneryObjects.forEach(item => {
+                if (item.type === 'rotate') {
+                    item.object.rotation.y += item.speed;
+                } else if (item.type === 'orbit') {
+                    item.angle += item.speed;
+                    item.object.position.x = Math.cos(item.angle) * item.radius;
+                    item.object.position.z = Math.sin(item.angle) * item.radius;
+                    item.object.rotation.x += 0.01;
+                    item.object.rotation.y += 0.015;
+                } else if (item.type === 'nebula_pulse') {
+                    const s = 1.0 + Math.sin(t * 1.5 + item.phase) * 0.12;
+                    item.object.scale.set(s, s, s);
+                } else if (item.type === 'cloud_drift') {
+                    item.object.position.x += item.speed;
+                    if (item.object.position.x > 36) item.object.position.x = -36;
+                } else if (item.type === 'aurora_wave') {
+                    item.ribbons.forEach((rib, idx) => {
+                        const pos = rib.geometry.attributes.position;
+                        for (let i = 0; i < pos.count; i++) {
+                            const u = pos.getX(i);
+                            const wave = Math.sin(u * 0.15 + t * 1.2 + idx) * 1.6;
+                            pos.setZ(i, wave);
+                        }
+                        pos.needsUpdate = true;
+                    });
+                }
+            });
+
+            // Rotación Lenta del Domo Celeste
+            if (skyDomeMesh) {
+                skyDomeMesh.rotation.y += 0.0003;
+            }
         }
 
         function buildPhysicalBoard() {
@@ -810,22 +1913,31 @@
                 boardGroup.remove(boardGroup.children[0]);
             }
 
-            const frameGeom = new THREE.BoxGeometry(SQUARE_SIZE * 8 + 0.8, 0.3, SQUARE_SIZE * 8 + 0.8);
-            const frameMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.6, metalness: 0.1 });
+            const theme = BOARD_THEMES[currentThemeIndex];
+
+            // Marco Físico del Tablero
+            const frameGeom = new THREE.BoxGeometry(SQUARE_SIZE * 8 + 0.9, 0.35, SQUARE_SIZE * 8 + 0.9);
+            const frameMat = new THREE.MeshStandardMaterial({
+                color: theme.frameColor,
+                roughness: theme.frameRoughness !== undefined ? theme.frameRoughness : 0.3,
+                metalness: theme.frameMetalness !== undefined ? theme.frameMetalness : 0.6
+            });
             const frameMesh = new THREE.Mesh(frameGeom, frameMat);
-            frameMesh.position.y = -0.16;
+            frameMesh.position.y = -0.18;
             frameMesh.receiveShadow = true;
             boardGroup.add(frameMesh);
 
-            const sqGeom = new THREE.BoxGeometry(SQUARE_SIZE, 0.15, SQUARE_SIZE);
+            const sqGeom = new THREE.BoxGeometry(SQUARE_SIZE, 0.16, SQUARE_SIZE);
 
             for (let r = 0; r < 8; r++) {
                 for (let f = 0; f < 8; f++) {
                     const isLight = (r + f) % 2 === 0;
+                    const sqConfig = isLight ? theme.lightSquare : theme.darkSquare;
+
                     const sqMat = new THREE.MeshStandardMaterial({
-                        color: isLight ? 0xe2e8f0 : 0x334155,
-                        roughness: isLight ? 0.2 : 0.45,
-                        metalness: isLight ? 0.1 : 0.3
+                        color: sqConfig.color,
+                        roughness: sqConfig.roughness,
+                        metalness: sqConfig.metalness
                     });
 
                     const cell = new THREE.Mesh(sqGeom, sqMat);
@@ -845,13 +1957,19 @@
         }
 
         function createPieceModel(type, isWhite) {
+            const theme = BOARD_THEMES[currentThemeIndex];
             const pieceGroup = new THREE.Group();
-            const colorHex = isWhite ? 0xf8fafc : 0x0f172a;
-            const pieceMat = new THREE.MeshStandardMaterial({
-                color: colorHex,
-                roughness: isWhite ? 0.25 : 0.35,
-                metalness: isWhite ? 0.3 : 0.8,
-                emissive: isWhite ? 0x000000 : 0x110000
+            const config = isWhite ? theme.whitePiece : theme.blackPiece;
+
+            const pieceMat = new THREE.MeshPhysicalMaterial({
+                color: config.color,
+                roughness: config.roughness,
+                metalness: config.metalness,
+                clearcoat: config.clearcoat !== undefined ? config.clearcoat : 0.85,
+                clearcoatRoughness: 0.1,
+                reflectivity: 0.9,
+                emissive: config.emissive || 0x000000,
+                emissiveIntensity: 0.35
             });
 
             const baseGeom = new THREE.CylinderGeometry(0.5, 0.55, 0.15, 16);
@@ -935,7 +2053,6 @@
                     kCrossHM.position.y = 1.55;
                     kStemM.castShadow = true;
                     kCrossVM.castShadow = true;
-                    kCrossHM.castShadow = true;
                     pieceGroup.add(kStemM, kCrossVM, kCrossHM);
                     break;
             }
@@ -965,72 +2082,44 @@
                             isPiece: true,
                             square: squareName,
                             type: cell.type,
-                            color: cell.color
+                            color: cell.color,
+                            originalY: 0
                         };
 
                         piecesGroup.add(model);
                     }
                 }
             }
-        }
 
-        function initLevelAtmosphere() {
-            if (particleSystem) scene.remove(particleSystem);
-
-            const particleCount = 200;
-            const geometry = new THREE.BufferGeometry();
-            const positions = new Float32Array(particleCount * 3);
-
-            for (let i = 0; i < particleCount * 3; i += 3) {
-                positions[i] = (Math.random() - 0.5) * 20;
-                positions[i + 1] = Math.random() * 10;
-                positions[i + 2] = (Math.random() - 0.5) * 20;
-            }
-
-            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-
-            const level = CAMPAIGN_LEVELS[currentLevelIndex];
-            if (level.color === 'emerald') currentThemeColor = 0x10b981;
-            else if (level.color === 'sky') currentThemeColor = 0x0ea5e9;
-            else if (level.color === 'rose') currentThemeColor = 0xf43f5e;
-            else if (level.color === 'cyan') currentThemeColor = 0x06b6d4;
-            else currentThemeColor = 0x64748b;
-
-            const material = new THREE.PointsMaterial({
-                color: currentThemeColor,
-                size: 0.12,
-                transparent: true,
-                opacity: 0.6,
-                blending: THREE.AdditiveBlending
-            });
-
-            particleSystem = new THREE.Points(geometry, material);
-            scene.add(particleSystem);
-
-            scene.fog.color.setHex(level.bgGrad[0]);
-            renderer.setClearColor(level.bgGrad[0]);
-        }
-
-        function updateParticles() {
-            if (!particleSystem) return;
-            const positions = particleSystem.geometry.attributes.position.array;
-            for (let i = 1; i < positions.length; i += 3) {
-                positions[i] -= 0.015; 
-                if (positions[i] < 0) {
-                    positions[i] = 10; 
-                }
-            }
-            particleSystem.geometry.attributes.position.needsUpdate = true;
+            initMineralSparkles();
         }
 
         function setupInteractions() {
             const raycaster = new THREE.Raycaster();
             const mouse = new THREE.Vector2();
+            let pointerDownPos = { x: 0, y: 0 };
+            let isDragging = false;
 
-            window.addEventListener('click', (event) => {
+            const domEl = renderer.domElement;
+
+            domEl.addEventListener('pointerdown', (e) => {
+                pointerDownPos.x = e.clientX;
+                pointerDownPos.y = e.clientY;
+                isDragging = false;
+            });
+
+            domEl.addEventListener('pointermove', (e) => {
+                const dist = Math.hypot(e.clientX - pointerDownPos.x, e.clientY - pointerDownPos.y);
+                if (dist > 6) isDragging = true;
+            });
+
+            domEl.addEventListener('pointerup', (event) => {
+                if (isDragging) return;
+
                 if (event.clientX > window.innerWidth - 384 && document.getElementById('history-panel').classList.contains('translate-x-0')) {
                     return; 
                 }
+
                 const rect = renderer.domElement.getBoundingClientRect();
                 mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
                 mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
@@ -1038,625 +2127,1104 @@
                 raycaster.setFromCamera(mouse, camera);
 
                 const pieceIntersects = raycaster.intersectObjects(piecesGroup.children, true);
-                const boardIntersects = raycaster.intersectObjects(boardGroup.children, false);
-
-                let clickedSquare = null;
-
                 if (pieceIntersects.length > 0) {
-                    let obj = pieceIntersects[0].object;
-                    while (obj.parent && obj.parent !== piecesGroup) {
-                        obj = obj.parent;
+                    let rootPiece = pieceIntersects[0].object;
+                    while (rootPiece.parent && rootPiece.parent !== piecesGroup) {
+                        rootPiece = rootPiece.parent;
                     }
-                    if (obj.userData && obj.userData.square) {
-                        clickedSquare = obj.userData.square;
-                    }
-                } else if (boardIntersects.length > 0) {
-                    const squareObj = boardIntersects[0].object;
-                    if (squareObj.userData && squareObj.userData.squareName) {
-                        clickedSquare = squareObj.userData.squareName;
+                    if (rootPiece && rootPiece.userData && rootPiece.userData.square) {
+                        onSquareClicked(rootPiece.userData.square);
+                        return;
                     }
                 }
 
-                if (clickedSquare) {
-                    handleSquareClick(clickedSquare);
+                const boardIntersects = raycaster.intersectObjects(boardGroup.children);
+                if (boardIntersects.length > 0) {
+                    const intersectedObj = boardIntersects[0].object;
+                    if (intersectedObj.userData && intersectedObj.userData.isSquare) {
+                        onSquareClicked(intersectedObj.userData.squareName);
+                    }
                 }
             });
         }
 
-        function handleSquareClick(square) {
+        function onSquareClicked(squareName) {
             if (game.game_over()) return;
 
             if (currentMode === 'online') {
                 if (game.turn() !== myOnlineRole) {
-                    showToast("Espera el turno de tu rival", true);
+                    showToast("Es el turno de tu rival", true);
                     return;
                 }
-            } else if (currentMode === 'pve') {
-                if (game.turn() === 'b') return; // Esperar a la IA
+            } else {
+                if (game.turn() === 'b') return;
             }
 
-            const pieceOnSquare = game.get(square);
+            const pieceOnSquare = game.get(squareName);
 
             if (selectedSquare) {
-                if (selectedSquare === square) {
-                    clearHighlights();
-                    selectedSquare = null;
+                if (selectedSquare === squareName) {
+                    clearSelection();
                     return;
                 }
 
                 const moves = game.moves({ square: selectedSquare, verbose: true });
-                const validMove = moves.find(m => m.to === square);
+                const moveObj = moves.find(m => m.to === squareName);
 
-                if (validMove) {
-                    executeMove(validMove);
-                    clearHighlights();
-                    selectedSquare = null;
+                if (moveObj) {
+                    let isPromotion = moveObj.flags.includes('p') ? 'q' : undefined;
+
+                    executeMove({
+                        from: selectedSquare,
+                        to: squareName,
+                        promotion: isPromotion
+                    });
                     return;
                 }
             }
 
-            if (pieceOnSquare && pieceOnSquare.color === game.turn()) {
-                selectedSquare = square;
-                highlightSquareAndMoves(square);
+            const activeColor = currentMode === 'online' ? myOnlineRole : 'w';
+            if (pieceOnSquare && pieceOnSquare.color === activeColor) {
+                selectedSquare = squareName;
+                highlightValidMoves(squareName);
+                playSynthSound('move');
             } else {
-                clearHighlights();
-                selectedSquare = null;
+                clearSelection();
             }
         }
 
-        function highlightSquareAndMoves(square) {
-            clearHighlights();
+        function highlightValidMoves(squareName) {
+            clearIndicators();
 
-            const coords = squareToCoords(square);
-            const selGeom = new THREE.BoxGeometry(SQUARE_SIZE, 0.18, SQUARE_SIZE);
-            const selMat = new THREE.MeshBasicMaterial({ color: 0x6366f1, transparent: true, opacity: 0.55 });
-            const selMesh = new THREE.Mesh(selGeom, selMat);
-            selMesh.position.set(coords.x, 0.02, coords.z);
-            indicatorsGroup.add(selMesh);
+            piecesGroup.children.forEach(piece => {
+                if (piece.userData && piece.userData.square === squareName) {
+                    piece.position.y = 0.25;
+                } else if (piece.userData) {
+                    piece.position.y = 0;
+                }
+            });
 
-            const moves = game.moves({ square: square, verbose: true });
+            const selCoords = squareToCoords(squareName);
+            const selRing = createHighlightIndicator(selCoords.x, selCoords.z, 0x10b981, 0.42, 0.08);
+            indicatorsGroup.add(selRing);
+
+            const moves = game.moves({ square: squareName, verbose: true });
             moves.forEach(m => {
                 const targetCoords = squareToCoords(m.to);
-                const isCapture = m.captured;
-                const ringGeom = new THREE.RingGeometry(0.2, 0.45, 16);
-                ringGeom.rotateX(-Math.PI / 2);
-
-                const ringMat = new THREE.MeshBasicMaterial({
-                    color: isCapture ? 0xf43f5e : 0x10b981,
-                    side: THREE.DoubleSide,
-                    transparent: true,
-                    opacity: 0.75
-                });
-
-                const ringMesh = new THREE.Mesh(ringGeom, ringMat);
-                ringMesh.position.set(targetCoords.x, 0.09, targetCoords.z);
-                indicatorsGroup.add(ringMesh);
+                const isCapture = game.get(m.to) !== null;
+                const optRing = createHighlightIndicator(
+                    targetCoords.x, 
+                    targetCoords.z, 
+                    isCapture ? 0xf43f5e : 0x38bdf8, 
+                    isCapture ? 0.42 : 0.28,
+                    isCapture ? 0.08 : 0.28
+                );
+                indicatorsGroup.add(optRing);
             });
         }
 
-        function clearHighlights() {
+        function createHighlightIndicator(x, z, colorHex, size = 0.35, innerRatio = 0.06) {
+            const geom = new THREE.RingGeometry(size - innerRatio, size, 32);
+            const mat = new THREE.MeshBasicMaterial({ 
+                color: colorHex, 
+                side: THREE.DoubleSide,
+                transparent: true,
+                opacity: 0.85
+            });
+            const mesh = new THREE.Mesh(geom, mat);
+            mesh.rotation.x = Math.PI / 2;
+            mesh.position.set(x, 0.09, z);
+            return mesh;
+        }
+
+        function clearSelection() {
+            selectedSquare = null;
+            clearIndicators();
+            piecesGroup.children.forEach(piece => {
+                if (piece.userData) piece.position.y = 0;
+            });
+        }
+
+        function clearIndicators() {
             while (indicatorsGroup.children.length > 0) {
                 indicatorsGroup.remove(indicatorsGroup.children[0]);
             }
         }
 
-        function executeMove(moveObj) {
-            const result = game.move({
-                from: moveObj.from,
-                to: moveObj.to,
-                promotion: 'q'
-            });
-
+        function executeMove(movePayload) {
+            const result = game.move(movePayload);
             if (!result) return;
-
-            spawnProceduralPieces();
 
             if (result.captured) {
                 playSynthSound('capture');
-            } else if (game.in_check()) {
-                playSynthSound('check');
             } else {
                 playSynthSound('move');
             }
 
+            spawnProceduralPieces();
+            clearSelection();
             updateHUDAndHistory();
-            updateTurnIndicator(game.turn() === 'w');
-
-            if (currentMode === 'online') {
-                syncMoveToOnlineServer();
-            }
 
             if (checkEndGameCondition()) return;
 
-            if (currentMode === 'pve' && game.turn() === 'b') {
-                setTimeout(makeBotMove, 400);
+            updateTurnIndicator(game.turn() === 'w');
+
+            if (currentMode === 'pve') {
+                setTimeout(executeAIMove, 600);
+            } else if (currentMode === 'online' && !isUpdatingFromRemote) {
+                syncMoveToOnlineServer();
             }
         }
 
-        function makeBotMove() {
-            if (game.game_over()) return;
+        function updateHUDAndHistory() {
+            const historyList = document.getElementById('move-history-list');
+            if (!historyList) return;
+            historyList.innerHTML = '';
 
-            const moves = game.moves({ verbose: true });
-            if (moves.length === 0) return;
+            const moves = game.history();
+            if (moves.length === 0) {
+                historyList.innerHTML = `
+                    <div id="empty-history-notice" class="col-span-12 text-center text-xs text-slate-500 italic py-8">
+                        La partida está lista para comenzar...
+                    </div>
+                `;
+            } else {
+                for (let i = 0; i < moves.length; i += 2) {
+                    const moveNumber = Math.floor(i / 2) + 1;
+                    const whiteMove = moves[i];
+                    const blackMove = moves[i + 1] || '';
 
-            const historyStr = game.history().join(" ");
-            let selectedMove = null;
+                    const rowNum = document.createElement('div');
+                    rowNum.className = "col-span-2 text-slate-500 font-mono font-bold text-xs";
+                    rowNum.innerText = `${moveNumber}.`;
 
-            for (const key in OPENING_BOOK) {
-                if (historyStr === key || historyStr.endsWith(key)) {
-                    const candidates = OPENING_BOOK[key];
-                    const choiceSAN = candidates[Math.floor(Math.random() * candidates.length)];
-                    selectedMove = moves.find(m => m.san === choiceSAN || m.to === choiceSAN);
-                    if (selectedMove) break;
+                    const moveW = document.createElement('div');
+                    moveW.className = `col-span-5 font-semibold text-xs tracking-wide py-0.5 ${i === moves.length - 1 || i === moves.length - 2 ? 'text-indigo-400 font-bold' : 'text-slate-200'}`;
+                    moveW.innerText = whiteMove;
+
+                    const moveB = document.createElement('div');
+                    moveB.className = `col-span-5 font-semibold text-xs tracking-wide py-0.5 ${i + 1 === moves.length - 1 ? 'text-indigo-400 font-bold' : 'text-slate-300'}`;
+                    moveB.innerText = blackMove;
+
+                    historyList.appendChild(rowNum);
+                    historyList.appendChild(moveW);
+                    historyList.appendChild(moveB);
+                }
+
+                const scrollContainer = document.getElementById('history-scroll-container');
+                if (scrollContainer) scrollContainer.scrollTop = scrollContainer.scrollHeight;
+            }
+
+            updateCapturedPiecesUI();
+            detectOpening();
+        }
+
+        function detectOpening() {
+            const historyStr = game.history({ verbose: false }).join(' ');
+            const badge = document.getElementById('opening-badge');
+            const text = document.getElementById('opening-text');
+            if (!badge || !text) return;
+
+            let matchedOpening = null;
+            let maxWords = 0;
+
+            for (const key in OPENING_NAMES) {
+                if (historyStr.startsWith(key)) {
+                    const wordCount = key.split(' ').length;
+                    if (wordCount > maxWords) {
+                        maxWords = wordCount;
+                        matchedOpening = OPENING_NAMES[key];
+                    }
                 }
             }
 
-            if (!selectedMove) {
-                const depth = CAMPAIGN_LEVELS[currentLevelIndex].depth;
-                selectedMove = getBestMoveMinimax(depth);
+            if (matchedOpening) {
+                text.innerText = matchedOpening;
+                badge.classList.remove('hidden');
+                if (window.lucide) lucide.createIcons();
+            } else {
+                if (game.history().length <= 1) {
+                    badge.classList.add('hidden');
+                }
             }
-
-            if (!selectedMove) {
-                selectedMove = moves[Math.floor(Math.random() * moves.length)];
-            }
-
-            executeMove(selectedMove);
         }
 
-        function getBestMoveMinimax(depth) {
-            const moves = game.moves({ verbose: true });
-            let bestMove = null;
-            let bestValue = -Infinity;
+        function getOpeningMove(gameInstance) {
+            const sanHistory = gameInstance.history({ verbose: false }).join(' ');
+            
+            if (OPENING_BOOK[sanHistory]) {
+                const candidates = OPENING_BOOK[sanHistory];
+                const legalMoves = gameInstance.moves();
+                const validChoices = candidates.filter(m => legalMoves.includes(m));
+                if (validChoices.length > 0) {
+                    const choiceSan = validChoices[Math.floor(Math.random() * validChoices.length)];
+                    const verboseMoves = gameInstance.moves({ verbose: true });
+                    return verboseMoves.find(m => m.san === choiceSan);
+                }
+            }
 
-            moves.sort(() => Math.random() - 0.5);
+            if (gameInstance.history().length < 8) {
+                const moves = gameInstance.moves({ verbose: true });
+                const castleMove = moves.find(m => m.san === 'O-O' || m.san === 'O-O-O');
+                if (castleMove) return castleMove;
+            }
+
+            return null;
+        }
+
+        function updateCapturedPiecesUI() {
+            const whiteCapturesContainer = document.getElementById('white-captures');
+            const blackCapturesContainer = document.getElementById('black-captures');
+            if (!whiteCapturesContainer || !blackCapturesContainer) return;
+
+            const initialPieces = {
+                w: { p: 8, r: 2, n: 2, b: 2, q: 1 },
+                b: { p: 8, r: 2, n: 2, b: 2, q: 1 }
+            };
+
+            const currentBoard = game.board();
+            const currentCount = {
+                w: { p: 0, r: 0, n: 0, b: 0, q: 0 },
+                b: { p: 0, r: 0, n: 0, b: 0, q: 0 }
+            };
+
+            for (let r = 0; r < 8; r++) {
+                for (let f = 0; f < 8; f++) {
+                    const piece = currentBoard[r][f];
+                    if (piece && piece.type !== 'k') {
+                        currentCount[piece.color][piece.type]++;
+                    }
+                }
+            }
+
+            whiteCapturesContainer.innerHTML = '';
+            let hasWhiteCaptures = false;
+            Object.keys(initialPieces.b).forEach(type => {
+                const diff = initialPieces.b[type] - currentCount.b[type];
+                if (diff > 0) {
+                    hasWhiteCaptures = true;
+                    for (let i = 0; i < diff; i++) {
+                        const unicode = pieceUnicode[type]; 
+                        const badge = document.createElement('span');
+                        badge.className = "inline-flex items-center justify-center bg-slate-900 border border-slate-800 text-slate-100 font-bold px-2 py-0.5 rounded text-sm shadow-sm";
+                        badge.innerText = unicode;
+                        whiteCapturesContainer.appendChild(badge);
+                    }
+                }
+            });
+            if (!hasWhiteCaptures) {
+                whiteCapturesContainer.innerHTML = '<span class="text-xs text-slate-500 italic">Ninguna</span>';
+            }
+
+            blackCapturesContainer.innerHTML = '';
+            let hasBlackCaptures = false;
+            Object.keys(initialPieces.w).forEach(type => {
+                const diff = initialPieces.w[type] - currentCount.w[type];
+                if (diff > 0) {
+                    hasBlackCaptures = true;
+                    for (let i = 0; i < diff; i++) {
+                        const unicode = pieceUnicode[type.toUpperCase()]; 
+                        const badge = document.createElement('span');
+                        badge.className = "inline-flex items-center justify-center bg-slate-800 border border-slate-700 text-slate-300 font-bold px-2 py-0.5 rounded text-sm shadow-sm";
+                        badge.innerText = unicode;
+                        blackCapturesContainer.appendChild(badge);
+                    }
+                }
+            });
+            if (!hasBlackCaptures) {
+                blackCapturesContainer.innerHTML = '<span class="text-xs text-slate-500 italic">Ninguna</span>';
+            }
+        }
+
+        function executeAIMove() {
+            if (game.game_over() || currentMode !== 'pve') return;
+
+            const moves = game.moves();
+            if (moves.length === 0) return;
+
+            const bot = BOTS_ROSTER[currentBotIndex];
+            let chosenMove = getOpeningMove(game);
+
+            if (!chosenMove) {
+                chosenMove = findBestMove(game, bot.depth);
+            }
+
+            if (chosenMove) {
+                game.move(chosenMove);
+
+                if (game.in_check()) {
+                    playSynthSound('check');
+                } else {
+                    playSynthSound('move');
+                }
+
+                spawnProceduralPieces();
+                updateHUDAndHistory();
+                updateTurnIndicator(true);
+
+                checkEndGameCondition();
+            }
+        }
+
+        const PIECE_VALUES = { p: 100, n: 320, b: 330, r: 500, q: 900, k: 20000 };
+
+        const PAWN_PST = [
+            [0,  0,  0,  0,  0,  0,  0,  0],
+            [50, 50, 50, 50, 50, 50, 50, 50],
+            [10, 10, 20, 30, 30, 20, 10, 10],
+            [5,  5, 10, 27, 27, 10,  5,  5],
+            [0,  0,  0, 22, 22,  0,  0,  0],
+            [5, -5,-10,  0,  0,-10, -5,  5],
+            [5, 10, 10,-20,-20, 10, 10,  5],
+            [0,  0,  0,  0,  0,  0,  0,  0]
+        ];
+
+        const KNIGHT_PST = [
+            [-50,-40,-30,-30,-30,-30,-40,-50],
+            [-40,-20,  0,  5,  5,  0,-20,-40],
+            [-30,  5, 15, 20, 20, 15,  5,-30],
+            [-30,  0, 20, 25, 25, 20,  0,-30],
+            [-30,  5, 20, 25, 25, 20,  5,-30],
+            [-30, 10, 15, 20, 20, 15, 10,-30],
+            [-40,-20,  0,  5,  5,  0,-20,-40],
+            [-50,-40,-30,-30,-30,-30,-40,-50]
+        ];
+
+        const BISHOP_PST = [
+            [-20,-10,-10,-10,-10,-10,-10,-20],
+            [-10,  5,  0,  0,  0,  0,  5,-10],
+            [-10,  0, 10, 10, 10, 10,  0,-10],
+            [-10, 10, 10, 15, 15, 10, 10,-10],
+            [-10,  5, 15, 15, 15, 15,  5,-10],
+            [-10, 10, 10, 10, 10, 10, 10,-10],
+            [-10,  5,  0,  0,  0,  0,  5,-10],
+            [-20,-10,-10,-10,-10,-10,-10,-20]
+        ];
+
+        const ROOK_PST = [
+            [  0,  0,  0,  5,  5,  0,  0,  0],
+            [ 15, 20, 20, 20, 20, 20, 20, 15],
+            [ -5,  0,  0,  0,  0,  0,  0, -5],
+            [ -5,  0,  0,  0,  0,  0,  0, -5],
+            [ -5,  0,  0,  0,  0,  0,  0, -5],
+            [ -5,  0,  0,  0,  0,  0,  0, -5],
+            [ -5,  0,  0,  0,  0,  0,  0, -5],
+            [  0,  0,  0,  5,  5,  0,  0,  0]
+        ];
+
+        const QUEEN_PST = [
+            [-20,-10,-10, -5, -5,-10,-10,-20],
+            [-10,  0,  0,  0,  0,  0,  0,-10],
+            [-10,  0,  5,  5,  5,  5,  0,-10],
+            [ -5,  0,  5,  5,  5,  5,  0, -5],
+            [  0,  0,  5,  5,  5,  5,  0, -5],
+            [-10,  5,  5,  5,  5,  5,  0,-10],
+            [-10,  0,  5,  0,  0,  5,  0,-10],
+            [-20,-10,-10, -5, -5,-10,-10,-20]
+        ];
+
+        const KING_PST_MID = [
+            [-30,-40,-40,-50,-50,-40,-40,-30],
+            [-30,-40,-40,-50,-50,-40,-40,-30],
+            [-30,-40,-40,-50,-50,-40,-40,-30],
+            [-30,-40,-40,-50,-50,-40,-40,-30],
+            [-20,-30,-30,-40,-40,-30,-30,-20],
+            [-10,-20,-20,-20,-20,-20,-20,-10],
+            [ 20, 20,  0, -5, -5,  0, 20, 20],
+            [ 25, 35, 10,  0,  0, 10, 35, 25]
+        ];
+
+        const KING_PST_END = [
+            [-50,-40,-30,-20,-20,-30,-40,-50],
+            [-30,-20,-10,  0,  0,-10,-20,-30],
+            [-30,-10, 20, 30, 30, 20,-10,-30],
+            [-30,-10, 30, 40, 40, 30,-10,-30],
+            [-30,-10, 30, 40, 40, 30,-10,-30],
+            [-30,-10, 20, 30, 30, 20,-10,-30],
+            [-30,-30,  0,  0,  0,  0,-30,-30],
+            [-50,-30,-30,-30,-30,-30,-30,-50]
+        ];
+
+        function scoreMove(move) {
+            let score = 0;
+
+            if (move.captured) {
+                const victimVal = PIECE_VALUES[move.captured] || 100;
+                const attackerVal = PIECE_VALUES[move.piece] || 100;
+                score += 2000 + (victimVal * 10 - attackerVal);
+            }
+
+            if (move.promotion) {
+                score += 1500;
+            }
+
+            if (move.flags && (move.flags.includes('k') || move.flags.includes('q') || move.san === 'O-O' || move.san === 'O-O-O')) {
+                score += 1200;
+            }
+
+            if (move.san && move.san.includes('+')) {
+                score += 400;
+            }
+
+            if (['d4', 'e4', 'd5', 'e5'].includes(move.to)) {
+                score += 100;
+            } else if (['c4', 'f4', 'c5', 'f5', 'c3', 'f3', 'c6', 'f6'].includes(move.to)) {
+                score += 40;
+            }
+
+            return score;
+        }
+
+        function staticBoardEvaluation(board, gameInstance) {
+            let totalEvaluation = 0;
+            let nonPawnMaterial = 0;
+
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const piece = board[r][c];
+                    if (piece && piece.type !== 'p' && piece.type !== 'k') {
+                        nonPawnMaterial += PIECE_VALUES[piece.type];
+                    }
+                }
+            }
+
+            const isEndgame = nonPawnMaterial < 1800;
+            const fen = gameInstance ? gameInstance.fen() : '';
+            const castlingRights = fen ? (fen.split(' ')[2] || '') : '';
+
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const piece = board[r][c];
+                    if (piece) {
+                        let value = PIECE_VALUES[piece.type];
+                        let pstValue = 0;
+
+                        const row = piece.color === 'w' ? r : 7 - r;
+                        const col = c;
+
+                        if (piece.type === 'p') {
+                            pstValue = PAWN_PST[row][col];
+                            for (let r2 = 0; r2 < 8; r2++) {
+                                if (r2 !== r && board[r2][c] && board[r2][c].type === 'p' && board[r2][c].color === piece.color) {
+                                    pstValue -= 15;
+                                }
+                            }
+                            let isPassed = true;
+                            const step = piece.color === 'w' ? -1 : 1;
+                            for (let r2 = r + step; r2 >= 0 && r2 < 8; r2 += step) {
+                                for (let c2 = Math.max(0, c - 1); c2 <= Math.min(7, c + 1); c2++) {
+                                    if (board[r2][c2] && board[r2][c2].type === 'p' && board[r2][c2].color !== piece.color) {
+                                        isPassed = false;
+                                        break;
+                                    }
+                                }
+                            }
+                            if (isPassed) pstValue += isEndgame ? 45 : 20;
+                        } else if (piece.type === 'n') {
+                            pstValue = KNIGHT_PST[row][col];
+                        } else if (piece.type === 'b') {
+                            pstValue = BISHOP_PST[row][col];
+                        } else if (piece.type === 'r') {
+                            pstValue = ROOK_PST[row][col];
+                            let hasFriendlyPawn = false;
+                            for (let r2 = 0; r2 < 8; r2++) {
+                                if (board[r2][c] && board[r2][c].type === 'p' && board[r2][c].color === piece.color) {
+                                    hasFriendlyPawn = true;
+                                    break;
+                                }
+                            }
+                            if (!hasFriendlyPawn) pstValue += 25;
+                        } else if (piece.type === 'q') {
+                            pstValue = QUEEN_PST[row][col];
+                        } else if (piece.type === 'k') {
+                            pstValue = isEndgame ? KING_PST_END[row][col] : KING_PST_MID[row][col];
+
+                            if (!isEndgame) {
+                                const shieldCols = [Math.max(0, col - 1), col, Math.min(7, col + 1)];
+                                const shieldRow = piece.color === 'w' ? 6 : 1;
+                                let shieldCount = 0;
+                                for (const sc of shieldCols) {
+                                    if (board[shieldRow] && board[shieldRow][sc] && board[shieldRow][sc].type === 'p' && board[shieldRow][sc].color === piece.color) {
+                                        shieldCount++;
+                                    }
+                                }
+                                pstValue += shieldCount * 18;
+                            }
+                        }
+
+                        value += pstValue;
+                        totalEvaluation += piece.color === 'w' ? -value : value;
+                    }
+                }
+            }
+
+            if (board[7][6] && board[7][6].type === 'k' && board[7][6].color === 'w') totalEvaluation -= 70;
+            if (board[7][2] && board[7][2].type === 'k' && board[7][2].color === 'w') totalEvaluation -= 60;
+            if (board[0][6] && board[0][6].type === 'k' && board[0][6].color === 'b') totalEvaluation += 70;
+            if (board[0][2] && board[0][2].type === 'k' && board[0][2].color === 'b') totalEvaluation += 60;
+
+            if (castlingRights) {
+                if (!castlingRights.includes('K') && !castlingRights.includes('Q') && board[7][4] && board[7][4].type === 'k' && board[7][4].color === 'w') {
+                    totalEvaluation += 50;
+                }
+                if (!castlingRights.includes('k') && !castlingRights.includes('q') && board[0][4] && board[0][4].type === 'k' && board[0][4].color === 'b') {
+                    totalEvaluation -= 50;
+                }
+            }
+
+            return totalEvaluation;
+        }
+
+        function quiescenceSearch(gameInstance, alpha, beta, isMaximizing, qDepth = 3) {
+            const standPat = staticBoardEvaluation(gameInstance.board(), gameInstance);
+
+            if (qDepth === 0) return standPat;
+
+            if (isMaximizing) {
+                if (standPat >= beta) return beta;
+                if (standPat > alpha) alpha = standPat;
+
+                const captures = gameInstance.moves({ verbose: true }).filter(m => m.captured || m.promotion || (m.san && m.san.includes('+')));
+                captures.sort((a, b) => scoreMove(b) - scoreMove(a));
+
+                for (let i = 0; i < captures.length; i++) {
+                    gameInstance.move(captures[i]);
+                    const score = quiescenceSearch(gameInstance, alpha, beta, false, qDepth - 1);
+                    gameInstance.undo();
+
+                    if (score >= beta) return beta;
+                    if (score > alpha) alpha = score;
+                }
+                return alpha;
+            } else {
+                if (standPat <= alpha) return alpha;
+                if (standPat < beta) beta = standPat;
+
+                const captures = gameInstance.moves({ verbose: true }).filter(m => m.captured || m.promotion || (m.san && m.san.includes('+')));
+                captures.sort((a, b) => scoreMove(b) - scoreMove(a));
+
+                for (let i = 0; i < captures.length; i++) {
+                    gameInstance.move(captures[i]);
+                    const score = quiescenceSearch(gameInstance, alpha, beta, true, qDepth - 1);
+                    gameInstance.undo();
+
+                    if (score <= alpha) return alpha;
+                    if (score < beta) beta = score;
+                }
+                return beta;
+            }
+        }
+
+        function evaluateBoardMinimax(gameInstance, depth, alpha, beta, isMaximizing) {
+            if (depth === 0 || gameInstance.game_over()) {
+                return quiescenceSearch(gameInstance, alpha, beta, isMaximizing, 3);
+            }
+
+            const moves = gameInstance.moves({ verbose: true });
+            moves.sort((a, b) => scoreMove(b) - scoreMove(a));
+
+            if (isMaximizing) {
+                let value = -999999;
+                for (let i = 0; i < moves.length; i++) {
+                    gameInstance.move(moves[i]);
+                    value = Math.max(value, evaluateBoardMinimax(gameInstance, depth - 1, alpha, beta, false));
+                    gameInstance.undo();
+                    alpha = Math.max(alpha, value);
+                    if (alpha >= beta) break;
+                }
+                return value;
+            } else {
+                let value = 999999;
+                for (let i = 0; i < moves.length; i++) {
+                    gameInstance.move(moves[i]);
+                    value = Math.min(value, evaluateBoardMinimax(gameInstance, depth - 1, alpha, beta, true));
+                    gameInstance.undo();
+                    beta = Math.min(beta, value);
+                    if (alpha >= beta) break;
+                }
+                return value;
+            }
+        }
+
+        function findBestMove(gameInstance, depth) {
+            const moves = gameInstance.moves({ verbose: true });
+            if (moves.length === 0) return null;
+
+            moves.sort((a, b) => scoreMove(b) - scoreMove(a));
+
+            let bestMove = moves[0];
+            let bestValue = -999999;
+            let alpha = -1000000;
+            let beta = 1000000;
 
             for (let i = 0; i < moves.length; i++) {
                 const move = moves[i];
-                game.move(move);
-                const boardValue = minimax(depth - 1, -Infinity, Infinity, false);
-                game.undo();
+                gameInstance.move(move);
+                const boardValue = evaluateBoardMinimax(gameInstance, depth - 1, alpha, beta, false);
+                gameInstance.undo();
 
                 if (boardValue > bestValue) {
                     bestValue = boardValue;
                     bestMove = move;
                 }
+                alpha = Math.max(alpha, boardValue);
             }
-
             return bestMove;
-        }
-
-        function minimax(depth, alpha, beta, isMaximizing) {
-            if (depth === 0 || game.game_over()) {
-                return evaluateBoard();
-            }
-
-            const moves = game.moves({ verbose: true });
-
-            if (isMaximizing) {
-                let maxEval = -Infinity;
-                for (let i = 0; i < moves.length; i++) {
-                    game.move(moves[i]);
-                    const evalVal = minimax(depth - 1, alpha, beta, false);
-                    game.undo();
-                    maxEval = Math.max(maxEval, evalVal);
-                    alpha = Math.max(alpha, evalVal);
-                    if (beta <= alpha) break;
-                }
-                return maxEval;
-            } else {
-                let minEval = Infinity;
-                for (let i = 0; i < moves.length; i++) {
-                    game.move(moves[i]);
-                    const evalVal = minimax(depth - 1, alpha, beta, true);
-                    game.undo();
-                    minEval = Math.min(minEval, evalVal);
-                    beta = Math.min(beta, evalVal);
-                    if (beta <= alpha) break;
-                }
-                return minEval;
-            }
-        }
-
-        function evaluateBoard() {
-            let totalEval = 0;
-            const board = game.board();
-
-            const values = { p: 10, r: 50, n: 30, b: 35, q: 90, k: 1000 };
-
-            for (let r = 0; r < 8; r++) {
-                for (let f = 0; f < 8; f++) {
-                    const piece = board[r][f];
-                    if (piece) {
-                        const val = values[piece.type] || 0;
-                        if (piece.color === 'b') {
-                            totalEval += val;
-                        } else {
-                            totalEval -= val;
-                        }
-                    }
-                }
-            }
-
-            return totalEval;
         }
 
         function checkEndGameCondition() {
             if (game.game_over()) {
                 playSynthSound('gameover');
                 let title = "Fin de la Partida";
-                let desc = "El juego ha concluido.";
+                let desc = "La batalla ha terminado en tablas por rey ahogado o material insuficiente.";
 
                 if (game.in_checkmate()) {
-                    if (game.turn() === 'b') {
-                        title = "¡Victoria Magistral! 🏆";
-                        desc = "Has propinado un jaque mate impecable.";
+                    if (currentMode === 'pve') {
+                        const bot = BOTS_ROSTER[currentBotIndex];
+                        if (game.turn() === 'b') {
+                            title = "¡Victoria Heroica!";
+                            desc = `Has superado a ${bot.name} (${bot.elo} ELO) con maestría.`;
+                            const nextBtn = document.getElementById('endgame-next-btn');
+                            if (nextBtn) nextBtn.style.display = currentBotIndex < BOTS_ROSTER.length - 1 ? 'block' : 'none';
+                        } else {
+                            title = "Derrota Inminente";
+                            desc = `${bot.name} ha capturado tu rey. ¡Ajusta tu estrategia e inténtalo de nuevo!`;
+                            const nextBtn = document.getElementById('endgame-next-btn');
+                            if (nextBtn) nextBtn.style.display = 'none';
+                        }
                     } else {
-                        title = "Derrota ⚔️";
-                        desc = "Tu rey ha caído en combate.";
+                        const winnerRole = game.turn() === 'b' ? 'w' : 'b';
+                        if (winnerRole === myOnlineRole) {
+                            title = "¡Victoria Online!";
+                            desc = "Has derrotado a tu oponente en la partida multijugador.";
+                        } else {
+                            title = "Derrota Online";
+                            desc = "Tu rey ha sido derrotado en la partida multijugador.";
+                        }
+                        const nextBtn = document.getElementById('endgame-next-btn');
+                        if (nextBtn) nextBtn.style.display = 'none';
                     }
-                } else if (game.in_draw()) {
-                    title = "Tablas 🤝";
-                    desc = "La batalla termina en empate.";
                 }
 
                 document.getElementById('endgame-title').innerText = title;
                 document.getElementById('endgame-desc').innerText = desc;
-
                 toggleModal('modal-endgame', true);
                 return true;
             }
             return false;
         }
 
-        function updateHUDAndHistory() {
-            const moves = game.history({ verbose: true });
-
-            const historyList = document.getElementById('move-history-list');
-            const notice = document.getElementById('empty-history-notice');
-            if (notice && moves.length > 0) notice.remove();
-
-            historyList.innerHTML = '';
-            for (let i = 0; i < moves.length; i += 2) {
-                const moveNum = Math.floor(i / 2) + 1;
-                const whiteMove = moves[i] ? moves[i].san : '';
-                const blackMove = moves[i + 1] ? moves[i + 1].san : '';
-
-                const row = document.createElement('div');
-                row.className = 'col-span-12 grid grid-cols-12 gap-2 text-xs py-1 border-b border-slate-800/40 items-center';
-                row.innerHTML = `
-                    <span class="col-span-3 text-slate-500 font-mono font-bold">${moveNum}.</span>
-                    <span class="col-span-4 text-indigo-200 font-semibold">${whiteMove}</span>
-                    <span class="col-span-5 text-rose-300 font-semibold">${blackMove}</span>
-                `;
-                historyList.appendChild(row);
-            }
-
-            const scrollContainer = document.getElementById('history-scroll-container');
-            if (scrollContainer) scrollContainer.scrollTop = scrollContainer.scrollHeight;
-
-            const board = game.board();
-            const counts = { p: 8, r: 2, n: 2, b: 2, q: 1, k: 1 };
-            const currentWhite = { p: 0, r: 0, n: 0, b: 0, q: 0, k: 0 };
-            const currentBlack = { p: 0, r: 0, n: 0, b: 0, q: 0, k: 0 };
-
-            for (let r = 0; r < 8; r++) {
-                for (let f = 0; f < 8; f++) {
-                    const p = board[r][f];
-                    if (p) {
-                        if (p.color === 'w') currentWhite[p.type]++;
-                        else currentBlack[p.type]++;
-                    }
-                }
-            }
-
-            const whiteCapturesEl = document.getElementById('white-captures');
-            const blackCapturesEl = document.getElementById('black-captures');
-
-            whiteCapturesEl.innerHTML = '';
-            blackCapturesEl.innerHTML = '';
-
-            let whiteCapturedHTML = '';
-            let blackCapturedHTML = '';
-
-            for (const t in counts) {
-                const lostBlack = counts[t] - currentBlack[t];
-                if (lostBlack > 0) {
-                    for (let i = 0; i < lostBlack; i++) {
-                        whiteCapturedHTML += `<span title="${t}">${pieceUnicode[t] || t}</span>`;
-                    }
-                }
-
-                const lostWhite = counts[t] - currentWhite[t];
-                if (lostWhite > 0) {
-                    for (let i = 0; i < lostWhite; i++) {
-                        blackCapturedHTML += `<span title="${t}">${pieceUnicode[t.toUpperCase()] || t}</span>`;
-                    }
-                }
-            }
-
-            whiteCapturesEl.innerHTML = whiteCapturedHTML || '<span class="text-xs text-slate-500 italic">Ninguna</span>';
-            blackCapturesEl.innerHTML = blackCapturedHTML || '<span class="text-xs text-slate-500 italic">Ninguna</span>';
-
-            const sanHistoryStr = game.history().join(" ");
-            let openingFound = null;
-
-            for (const key in OPENING_NAMES) {
-                if (sanHistoryStr.startsWith(key)) {
-                    openingFound = OPENING_NAMES[key];
-                }
-            }
-
-            const openingBadge = document.getElementById('opening-badge');
-            const openingText = document.getElementById('opening-text');
-            if (openingFound) {
-                openingText.innerText = openingFound;
-                openingBadge.classList.remove('hidden');
-            } else if (moves.length < 2) {
-                openingBadge.classList.add('hidden');
-            }
-        }
-
         function updateTurnIndicator(isWhiteTurn) {
             const dot = document.getElementById('turn-dot');
             const text = document.getElementById('turn-text');
-
-            if (isWhiteTurn) {
-                dot.className = 'relative inline-flex rounded-full h-3.5 w-3.5 bg-indigo-500';
-                text.innerText = 'Tu Turno (Blancas)';
+            if (!dot || !text) return;
+            
+            if (currentMode === 'online') {
+                const isMyTurn = game.turn() === myOnlineRole;
+                dot.className = `relative inline-flex rounded-full h-3.5 w-3.5 ${isMyTurn ? 'bg-emerald-500' : 'bg-rose-500'}`;
+                text.innerText = isMyTurn ? `Tu turno (${myOnlineRole === 'w' ? 'Blancas' : 'Negras'})` : "Turno del Rival...";
             } else {
-                dot.className = 'relative inline-flex rounded-full h-3.5 w-3.5 bg-rose-500';
-                text.innerText = currentMode === 'pve' ? 'Pensando Bot (Negras)...' : 'Turno Oponente (Negras)';
+                if (isWhiteTurn) {
+                    dot.className = "relative inline-flex rounded-full h-3.5 w-3.5 bg-indigo-500";
+                    text.innerText = "Tu turno (Blancas)";
+                } else {
+                    const bot = BOTS_ROSTER[currentBotIndex];
+                    dot.className = "relative inline-flex rounded-full h-3.5 w-3.5 bg-rose-500";
+                    text.innerText = `Pensando (${bot.name})...`;
+                }
             }
         }
 
         function toggleModal(id, show) {
-            const el = document.getElementById(id);
-            if (!el) return;
+            const modal = document.getElementById(id);
+            if (!modal) return;
             if (show) {
-                el.classList.remove('hidden');
+                modal.classList.remove('hidden');
                 setTimeout(() => {
-                    el.classList.remove('opacity-0', 'pointer-events-none');
-                    const child = el.firstElementChild;
-                    if (child) child.classList.remove('scale-95');
+                    modal.classList.remove('opacity-0', 'pointer-events-none');
+                    const card = modal.querySelector('.transform');
+                    if (card) card.classList.remove('scale-95');
                 }, 10);
             } else {
-                el.classList.add('opacity-0', 'pointer-events-none');
-                const child = el.firstElementChild;
-                if (child) child.classList.add('scale-95');
+                modal.classList.add('opacity-0', 'pointer-events-none');
+                const card = modal.querySelector('.transform');
+                if (card) card.classList.add('scale-95');
                 setTimeout(() => {
-                    el.classList.add('hidden');
+                    modal.classList.add('hidden');
                 }, 300);
             }
         }
 
-        function showViewInOnlineModal(view) {
-            const createView = document.getElementById('view-create-room');
-            const joinView = document.getElementById('view-join-room');
-            const waitingView = document.getElementById('view-waiting-room');
-
-            createView.classList.add('hidden');
-            joinView.classList.add('hidden');
-            waitingView.classList.add('hidden');
-
-            if (view === 'create') createView.classList.remove('hidden');
-            if (view === 'join') joinView.classList.remove('hidden');
-            if (view === 'waiting') waitingView.classList.remove('hidden');
-        }
-
-        function renderCampaignMap() {
-            const container = document.getElementById('campaign-map-list');
+        function renderEnvironmentList() {
+            const container = document.getElementById('environment-list-container');
             if (!container) return;
-
             container.innerHTML = '';
-            CAMPAIGN_LEVELS.forEach((lvl, idx) => {
-                const isActive = idx === currentLevelIndex;
-                const isUnlocked = idx <= currentLevelIndex;
 
-                const item = document.createElement('div');
-                item.className = `p-4 rounded-2xl border transition-all flex items-center justify-between cursor-pointer ${
-                    isActive ? 'bg-indigo-900/40 border-indigo-500 shadow-lg' : isUnlocked ? 'bg-slate-800/50 border-slate-700 hover:border-slate-500' : 'bg-slate-900/30 border-slate-800/40 opacity-50 cursor-not-allowed'
+            BACKGROUND_ENVIRONMENTS.forEach((env, idx) => {
+                const isSelected = idx === currentEnvIndex;
+                const card = document.createElement('div');
+                card.className = `flex items-center justify-between p-3.5 rounded-2xl border transition-all cursor-pointer ${
+                    isSelected ? 'bg-rose-950/60 border-rose-500 shadow-rose-500/20 shadow-lg' : 'bg-slate-800/40 hover:bg-slate-800/80 border-slate-700/60'
                 }`;
 
-                item.innerHTML = `
-                    <div class="flex items-center gap-3">
-                        <span class="text-2xl">${lvl.flag}</span>
+                card.innerHTML = `
+                    <div class="flex items-center gap-3.5">
+                        <div class="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl ${
+                            isSelected ? 'bg-rose-600 shadow-md border border-rose-400' : 'bg-slate-800 border border-slate-700'
+                        }">
+                            <span>${env.icon}</span>
+                        </div>
                         <div>
-                            <h4 class="text-sm font-bold text-slate-100">${lvl.name}</h4>
-                            <p class="text-xs text-slate-400">${lvl.difficulty}</p>
+                            <div class="flex items-center gap-2">
+                                <h4 class="text-sm font-bold text-slate-100">${env.name}</h4>
+                            </div>
+                            <p class="text-xs text-slate-400 mt-0.5 line-clamp-1">${env.desc}</p>
                         </div>
                     </div>
-                    <div class="flex items-center gap-2">
-                        ${isActive ? '<span class="text-xs font-bold bg-indigo-500/20 text-indigo-300 px-2.5 py-1 rounded-lg border border-indigo-500/30">ACTIVO</span>' : ''}
-                        <i data-lucide="${isUnlocked ? 'chevron-right' : 'lock'}" class="w-5 h-5 text-slate-400"></i>
+                    <div class="pl-2">
+                        ${isSelected ? `
+                            <span class="p-1.5 bg-rose-500/20 rounded-xl text-rose-400 inline-flex">
+                                <i data-lucide="check" class="w-5 h-5"></i>
+                            </span>
+                        ` : `
+                            <span class="text-xs font-semibold text-slate-400 hover:text-white px-3 py-1.5 rounded-xl bg-slate-800 border border-slate-700 inline-block">
+                                Aplicar
+                            </span>
+                        `}
                     </div>
                 `;
 
-                if (isUnlocked) {
-                    item.onclick = () => {
-                        currentLevelIndex = idx;
-                        switchLevel(idx);
-                        toggleModal('modal-campaign', false);
-                    };
-                }
+                card.addEventListener('click', () => {
+                    applyEnvironment(idx);
+                });
 
-                container.appendChild(item);
+                container.appendChild(card);
             });
 
             if (window.lucide) lucide.createIcons();
         }
 
-        function switchLevel(index) {
-            currentLevelIndex = index;
-            const lvl = CAMPAIGN_LEVELS[index];
-            document.getElementById('level-display').innerHTML = `<span class="mr-1">${lvl.flag}</span> Nivel ${lvl.id}: ${lvl.name}`;
-            resetGame();
-            initLevelAtmosphere();
-            showToast(`Campaña cambiada a: ${lvl.name}`);
+        function applyEnvironment(envIndex) {
+            currentEnvIndex = envIndex;
+            const env = BACKGROUND_ENVIRONMENTS[envIndex];
+            initBackgroundEnvironment();
+            renderEnvironmentList();
+            toggleModal('modal-environments', false);
+            showToast(`Escenario 3D aplicado: ${env.name}`);
         }
 
-        function resetGame() {
-            if (currentMode === 'online' && game.history().length > 0) {
-                showToast("No se pueden reiniciar partidas multijugador online", true);
+        function renderBotList() {
+            const container = document.getElementById('bot-list-container');
+            if (!container) return;
+            container.innerHTML = '';
+
+            BOTS_ROSTER.forEach((bot, idx) => {
+                const isSelected = idx === currentBotIndex;
+                const card = document.createElement('div');
+                card.className = `flex items-center justify-between p-3.5 rounded-2xl border transition-all cursor-pointer ${
+                    isSelected ? 'bg-indigo-950/70 border-indigo-500 shadow-indigo-500/20 shadow-lg' : 'bg-slate-800/40 hover:bg-slate-800/80 border-slate-700/60'
+                }`;
+
+                card.innerHTML = `
+                    <div class="flex items-center gap-3.5">
+                        <div class="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl ${
+                            isSelected ? 'bg-indigo-600 shadow-md' : 'bg-slate-800'
+                        }">
+                            <span>${bot.avatar}</span>
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h4 class="text-sm font-bold text-slate-100">${bot.name}</h4>
+                                <span class="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-slate-900 border border-slate-700 text-indigo-300">
+                                    ${bot.elo} ELO
+                                </span>
+                            </div>
+                            <p class="text-xs text-slate-400 mt-0.5 line-clamp-1">${bot.desc}</p>
+                        </div>
+                    </div>
+                    <div class="pl-2">
+                        ${isSelected ? `
+                            <span class="p-1.5 bg-indigo-500/20 rounded-xl text-indigo-400 inline-flex">
+                                <i data-lucide="check" class="w-5 h-5"></i>
+                            </span>
+                        ` : `
+                            <span class="text-xs font-semibold text-slate-400 hover:text-white px-3 py-1.5 rounded-xl bg-slate-800 border border-slate-700 inline-block">
+                                Elegir
+                            </span>
+                        `}
+                    </div>
+                `;
+
+                card.addEventListener('click', () => {
+                    selectBot(idx);
+                });
+
+                container.appendChild(card);
+            });
+
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function selectBot(botIndex) {
+            currentBotIndex = botIndex;
+            const bot = BOTS_ROSTER[botIndex];
+            document.getElementById('bot-avatar-display').innerText = bot.avatar;
+            document.getElementById('bot-name-display').innerHTML = `${bot.name} <i data-lucide="chevron-down" class="w-3 h-3 text-slate-400 group-hover:text-white transition"></i>`;
+            document.getElementById('bot-elo-badge').innerText = bot.elo;
+            if (window.lucide) lucide.createIcons();
+
+            toggleModal('modal-bots', false);
+            showToast(`Rival seleccionado: ${bot.name} (${bot.elo} ELO)`);
+            restartGame();
+        }
+
+        function renderThemeList() {
+            const container = document.getElementById('theme-list-container');
+            if (!container) return;
+            container.innerHTML = '';
+
+            BOARD_THEMES.forEach((theme, idx) => {
+                const isSelected = idx === currentThemeIndex;
+                const card = document.createElement('div');
+                card.className = `flex items-center justify-between p-3.5 rounded-2xl border transition-all cursor-pointer ${
+                    isSelected ? 'bg-amber-950/50 border-amber-500 shadow-amber-500/20 shadow-lg' : 'bg-slate-800/40 hover:bg-slate-800/80 border-slate-700/60'
+                }`;
+
+                const swatchesHtml = theme.swatch.map(c => `<span class="w-3.5 h-3.5 rounded-full border border-black/30 shadow-inner" style="background-color: ${c};"></span>`).join('');
+
+                card.innerHTML = `
+                    <div class="flex items-center gap-3.5">
+                        <div class="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl ${
+                            isSelected ? 'bg-amber-500/30 border border-amber-400' : 'bg-slate-800 border border-slate-700'
+                        }">
+                            <span>${theme.icon}</span>
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h4 class="text-sm font-bold text-slate-100">${theme.name}</h4>
+                                <div class="flex items-center gap-1">${swatchesHtml}</div>
+                            </div>
+                            <p class="text-xs text-slate-400 mt-0.5 line-clamp-1">${theme.desc}</p>
+                        </div>
+                    </div>
+                    <div class="pl-2">
+                        ${isSelected ? `
+                            <span class="p-1.5 bg-amber-500/20 rounded-xl text-amber-400 inline-flex">
+                                <i data-lucide="check" class="w-5 h-5"></i>
+                            </span>
+                        ` : `
+                            <span class="text-xs font-semibold text-slate-400 hover:text-white px-3 py-1.5 rounded-xl bg-slate-800 border border-slate-700 inline-block">
+                                Aplicar
+                            </span>
+                        `}
+                    </div>
+                `;
+
+                card.addEventListener('click', () => {
+                    applyBoardTheme(idx);
+                });
+
+                container.appendChild(card);
+            });
+
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function applyBoardTheme(themeIndex) {
+            currentThemeIndex = themeIndex;
+            const theme = BOARD_THEMES[themeIndex];
+            buildPhysicalBoard();
+            spawnProceduralPieces();
+            renderThemeList();
+            toggleModal('modal-themes', false);
+            showToast(`Tema aplicado: ${theme.name}`);
+        }
+
+        function restartGame() {
+            if (currentMode === 'online') {
+                showToast("No se puede reiniciar una partida online en curso", true);
                 return;
             }
             game.reset();
-            clearHighlights();
-            selectedSquare = null;
+            clearSelection();
             spawnProceduralPieces();
+            initBackgroundEnvironment();
             updateHUDAndHistory();
             updateTurnIndicator(true);
+            setPresetCamera('white');
+            showToast("Partida reiniciada");
+        }
+
+        function switchGameMode(newMode) {
+            currentMode = newMode;
+            const pveBtn = document.getElementById('mode-pve-btn');
+            const onlineBtn = document.getElementById('mode-online-btn');
+            const btnOpenBotModal = document.getElementById('btn-open-bot-modal');
+            const onlineBadge = document.getElementById('online-info-badge');
+            const btnOnlineLobby = document.getElementById('btn-online-lobby');
+            const btnReset = document.getElementById('btn-reset');
+
+            if (newMode === 'pve') {
+                pveBtn.className = "px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 bg-indigo-600 text-white shadow-md";
+                onlineBtn.className = "px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 text-slate-400 hover:text-white";
+                btnOpenBotModal.classList.remove('hidden');
+                onlineBadge.classList.add('hidden');
+                btnOnlineLobby.classList.add('hidden');
+                btnReset.classList.remove('opacity-40', 'cursor-not-allowed');
+
+                game.reset();
+                clearSelection();
+                spawnProceduralPieces();
+                updateHUDAndHistory();
+                updateTurnIndicator(true);
+                setPresetCamera('white');
+            } else {
+                onlineBtn.className = "px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 bg-emerald-600 text-white shadow-md";
+                pveBtn.className = "px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 text-slate-400 hover:text-white";
+                btnOpenBotModal.classList.add('hidden');
+                onlineBadge.classList.remove('hidden');
+                btnOnlineLobby.classList.remove('hidden');
+                btnReset.classList.add('opacity-40', 'cursor-not-allowed');
+
+                if (!currentRoomCode) {
+                    toggleModal('modal-online', true);
+                }
+            }
+        }
+
+        function showViewInOnlineModal(viewName) {
+            const vCreate = document.getElementById('view-create-room');
+            const vJoin = document.getElementById('view-join-room');
+            const vWait = document.getElementById('view-waiting-room');
+            const tabCreate = document.getElementById('tab-create-btn');
+            const tabJoin = document.getElementById('tab-join-btn');
+
+            if (!vCreate || !vJoin || !vWait) return;
+
+            vCreate.classList.add('hidden');
+            vJoin.classList.add('hidden');
+            vWait.classList.add('hidden');
+
+            if (viewName === 'create') {
+                vCreate.classList.remove('hidden');
+                tabCreate.className = "flex-1 py-2 text-xs font-bold rounded-xl transition bg-emerald-600 text-white shadow";
+                tabJoin.className = "flex-1 py-2 text-xs font-bold rounded-xl transition text-slate-400 hover:text-white";
+            } else if (viewName === 'join') {
+                vJoin.classList.remove('hidden');
+                tabJoin.className = "flex-1 py-2 text-xs font-bold rounded-xl transition bg-indigo-600 text-white shadow";
+                tabCreate.className = "flex-1 py-2 text-xs font-bold rounded-xl transition text-slate-400 hover:text-white";
+            } else if (viewName === 'waiting') {
+                vWait.classList.remove('hidden');
+            }
+        }
+
+        function copyRoomCodeToClipboard() {
+            if (!currentRoomCode) return;
+            const tempInput = document.createElement('textarea');
+            tempInput.value = currentRoomCode;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            try {
+                document.execCommand('copy');
+                showToast("¡Código copiado al portapapeles!");
+            } catch (e) {
+                showToast("No se pudo copiar el código", true);
+            }
+            document.body.removeChild(tempInput);
         }
 
         function onWindowResize() {
             const container = document.getElementById('canvas-container');
-            if (!container || !renderer || !camera) return;
+            if (!container || !camera || !renderer) return;
 
-            const width = container.clientWidth || window.innerWidth;
-            const height = container.clientHeight || window.innerHeight;
+            const width = container.clientWidth;
+            const height = container.clientHeight;
 
             camera.aspect = width / height;
             camera.updateProjectionMatrix();
+
             renderer.setSize(width, height);
         }
 
         function setupUIEventListeners() {
-            document.getElementById('mode-pve-btn').onclick = () => {
-                currentMode = 'pve';
-                document.getElementById('mode-pve-btn').className = "px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 bg-indigo-600 text-white shadow-md";
-                document.getElementById('mode-online-btn').className = "px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 text-slate-400 hover:text-white";
+            const inputRoomCodeEl = document.getElementById('input-room-code');
+            if (inputRoomCodeEl) {
+                inputRoomCodeEl.addEventListener('input', (e) => {
+                    e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                });
+                inputRoomCodeEl.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        joinOnlineRoom(e.target.value);
+                    }
+                });
+            }
 
-                document.getElementById('pve-info-badge').classList.remove('hidden');
-                document.getElementById('online-info-badge').classList.add('hidden');
-                document.getElementById('btn-online-lobby').classList.add('hidden');
+            const historyPanel = document.getElementById('history-panel');
+            const btnToggleHistory = document.getElementById('btn-toggle-history');
+            const btnCloseHistory = document.getElementById('btn-close-history');
 
-                const resetBtn = document.getElementById('btn-reset');
-                if (resetBtn) {
-                    resetBtn.classList.remove('opacity-40', 'cursor-not-allowed');
-                    resetBtn.title = "Reiniciar Partida";
-                }
+            if (btnToggleHistory) btnToggleHistory.addEventListener('click', () => historyPanel.classList.toggle('translate-x-full'));
+            if (btnCloseHistory) btnCloseHistory.addEventListener('click', () => historyPanel.classList.add('translate-x-full'));
 
-                setPresetCamera('white');
-                resetGame();
-                showToast("Modo Campaña Bot activado");
-            };
+            document.getElementById('mode-pve-btn').addEventListener('click', () => switchGameMode('pve'));
+            document.getElementById('mode-online-btn').addEventListener('click', () => switchGameMode('online'));
 
-            document.getElementById('mode-online-btn').onclick = () => {
-                currentMode = 'online';
-                document.getElementById('mode-online-btn').className = "px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 bg-emerald-600 text-white shadow-md";
-                document.getElementById('mode-pve-btn').className = "px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 text-slate-400 hover:text-white";
+            document.getElementById('btn-open-bot-modal').addEventListener('click', () => {
+                renderBotList();
+                toggleModal('modal-bots', true);
+            });
+            document.getElementById('close-bot-modal').addEventListener('click', () => toggleModal('modal-bots', false));
 
-                document.getElementById('pve-info-badge').classList.add('hidden');
-                document.getElementById('online-info-badge').classList.remove('hidden');
-                document.getElementById('btn-online-lobby').classList.remove('hidden');
+            // Selector de Fondos / Entornos y Escenarios 3D
+            document.getElementById('btn-environments').addEventListener('click', () => {
+                renderEnvironmentList();
+                toggleModal('modal-environments', true);
+            });
+            document.getElementById('close-environment-modal').addEventListener('click', () => toggleModal('modal-environments', false));
 
-                const resetBtn = document.getElementById('btn-reset');
-                if (resetBtn) {
-                    resetBtn.classList.add('opacity-40', 'cursor-not-allowed');
-                    resetBtn.title = "Reinicio no disponible en partidas online";
-                }
+            document.getElementById('btn-themes').addEventListener('click', () => {
+                renderThemeList();
+                toggleModal('modal-themes', true);
+            });
+            document.getElementById('close-theme-modal').addEventListener('click', () => toggleModal('modal-themes', false));
 
-                toggleModal('modal-online', true);
-                showViewInOnlineModal('create');
-            };
-
-            document.getElementById('btn-online-lobby').onclick = () => {
-                toggleModal('modal-online', true);
-            };
-
-            document.getElementById('close-online-modal').onclick = () => toggleModal('modal-online', false);
-
-            document.getElementById('tab-create-btn').onclick = () => {
-                document.getElementById('tab-create-btn').className = "flex-1 py-2 text-xs font-bold rounded-xl transition bg-emerald-600 text-white shadow";
-                document.getElementById('tab-join-btn').className = "flex-1 py-2 text-xs font-bold rounded-xl transition text-slate-400 hover:text-white";
-                showViewInOnlineModal('create');
-            };
-
-            document.getElementById('tab-join-btn').onclick = () => {
-                document.getElementById('tab-join-btn').className = "flex-1 py-2 text-xs font-bold rounded-xl transition bg-indigo-600 text-white shadow";
-                document.getElementById('tab-create-btn').className = "flex-1 py-2 text-xs font-bold rounded-xl transition text-slate-400 hover:text-white";
-                showViewInOnlineModal('join');
-            };
-
-            document.getElementById('btn-do-create').onclick = createOnlineRoom;
-
-            document.getElementById('btn-do-join').onclick = () => {
+            document.getElementById('btn-online-lobby').addEventListener('click', () => toggleModal('modal-online', true));
+            document.getElementById('close-online-modal').addEventListener('click', () => toggleModal('modal-online', false));
+            document.getElementById('tab-create-btn').addEventListener('click', () => showViewInOnlineModal('create'));
+            document.getElementById('tab-join-btn').addEventListener('click', () => showViewInOnlineModal('join'));
+            document.getElementById('btn-do-create').addEventListener('click', createOnlineRoom);
+            document.getElementById('btn-do-join').addEventListener('click', () => {
                 const code = document.getElementById('input-room-code').value;
                 joinOnlineRoom(code);
-            };
+            });
 
-            const copyHandler = () => {
-                if (currentRoomCode) {
-                    try {
-                        const tempInput = document.createElement('input');
-                        tempInput.value = currentRoomCode;
-                        document.body.appendChild(tempInput);
-                        tempInput.select();
-                        document.execCommand('copy');
-                        document.body.removeChild(tempInput);
-                        showToast("Código copiado al portapapeles");
-                    } catch (e) {
-                        showToast(`Código: ${currentRoomCode}`);
-                    }
-                }
-            };
+            document.getElementById('btn-copy-code').addEventListener('click', copyRoomCodeToClipboard);
+            document.getElementById('btn-copy-modal-code').addEventListener('click', copyRoomCodeToClipboard);
 
-            document.getElementById('btn-copy-code').onclick = copyHandler;
-            document.getElementById('btn-copy-modal-code').onclick = copyHandler;
+            document.getElementById('btn-camera').addEventListener('click', () => {
+                setPresetCamera(currentMode === 'online' ? (myOnlineRole === 'w' ? 'white' : 'black') : 'white');
+            });
+            document.getElementById('btn-reset').addEventListener('click', restartGame);
 
-            document.getElementById('btn-toggle-history').onclick = () => {
-                const panel = document.getElementById('history-panel');
-                panel.classList.toggle('translate-x-full');
-            };
+            document.getElementById('endgame-retry-btn').addEventListener('click', () => {
+                restartGame();
+                toggleModal('modal-endgame', false);
+            });
 
-            document.getElementById('btn-close-history').onclick = () => {
-                document.getElementById('history-panel').classList.add('translate-x-full');
-            };
-
-            document.getElementById('btn-campaign').onclick = () => {
-                renderCampaignMap();
-                toggleModal('modal-campaign', true);
-            };
-
-            document.getElementById('close-campaign').onclick = () => toggleModal('modal-campaign', false);
-
-            document.getElementById('btn-camera').onclick = () => {
-                setPresetCamera(myOnlineRole === 'b' ? 'black' : 'white');
-            };
-
-            document.getElementById('btn-reset').onclick = () => {
-                if (currentMode === 'online') {
-                    showToast("No se pueden reiniciar partidas multijugador online", true);
-                    return;
-                }
-                resetGame();
-            };
-
-            document.getElementById('endgame-retry-btn').onclick = () => {
-                if (currentMode === 'online') {
-                    showToast("En multijugador debes crear o unirte a una nueva sala", true);
-                    toggleModal('modal-endgame', false);
-                    toggleModal('modal-online', true);
-                    return;
+            document.getElementById('endgame-next-btn').addEventListener('click', () => {
+                if (currentBotIndex < BOTS_ROSTER.length - 1) {
+                    selectBot(currentBotIndex + 1);
                 }
                 toggleModal('modal-endgame', false);
-                resetGame();
-            };
-
-            document.getElementById('endgame-next-btn').onclick = () => {
-                toggleModal('modal-endgame', false);
-                if (currentLevelIndex < CAMPAIGN_LEVELS.length - 1) {
-                    switchLevel(currentLevelIndex + 1);
-                } else {
-                    resetGame();
-                }
-            };
+            });
         }
 
-        function animate() {
+        function animate(time) {
             requestAnimationFrame(animate);
 
             if (controls) controls.update();
-            updateParticles();
+            updateEnvironmentParticles(time);
+            updateMineralSparkles(time);
 
             if (renderer && scene && camera) {
                 renderer.render(scene, camera);
@@ -1668,6 +3236,7 @@
             initEngine3D();
             setupInteractions();
             setupUIEventListeners();
+            updateHUDAndHistory();
             animate();
         };
     </script>
