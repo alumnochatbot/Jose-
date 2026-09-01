@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Master Chess 3D: Entornos Vivos, Escenarios 3D, Bots y Multijugador</title>
+    <title>Master Chess 3D: Minerales Preciosos, Escenarios Vivos y Multijugador</title>
     <!-- Tailwind CSS para diseño moderno -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Iconos de Lucide -->
@@ -22,7 +22,6 @@
             overflow: hidden;
             touch-action: manipulation;
         }
-        /* Estilizaciones de barra de scroll para el panel de historial y modales */
         ::-webkit-scrollbar {
             width: 6px;
             height: 6px;
@@ -111,13 +110,13 @@
         <div class="flex items-center gap-1.5 sm:gap-2">
             <!-- Botón de Fondos / Entornos 3D con Escenarios -->
             <button id="btn-environments" class="flex items-center gap-1.5 bg-slate-900/90 hover:bg-rose-950/40 border border-rose-500/40 hover:border-rose-400/80 px-3 py-2 rounded-xl transition shadow-xl text-xs font-bold text-rose-300">
-                <i data-lucide="trees" class="w-4 h-4 text-rose-400"></i>
+                <i data-lucide="palmtree" class="w-4 h-4 text-rose-400"></i>
                 <span class="hidden sm:inline">Escenarios 3D</span>
             </button>
 
             <!-- Botón de Temas / Minerales -->
             <button id="btn-themes" class="flex items-center gap-1.5 bg-slate-900/90 hover:bg-amber-950/40 border border-amber-500/40 hover:border-amber-400/80 px-3 py-2 rounded-xl transition shadow-xl text-xs font-bold text-amber-300">
-                <i data-lucide="sparkles" class="w-4 h-4 text-amber-400"></i>
+                <i data-lucide="gem" class="w-4 h-4 text-amber-400"></i>
                 <span class="hidden sm:inline">Minerales</span>
             </button>
 
@@ -203,11 +202,11 @@
             <div class="flex items-center justify-between border-b border-slate-800 pb-4">
                 <div class="flex items-center gap-3">
                     <div class="p-2.5 bg-rose-600/20 rounded-2xl text-rose-400">
-                        <i data-lucide="trees" class="w-6 h-6"></i>
+                        <i data-lucide="palmtree" class="w-6 h-6"></i>
                     </div>
                     <div>
                         <h2 class="text-lg font-extrabold text-slate-100">Escenarios y Fondos 3D</h2>
-                        <p class="text-xs text-slate-400">Objetos 3D envolventes: árboles de sakura, planetas, nubes, auroras y columnas reales</p>
+                        <p class="text-xs text-slate-400">Playa tropical al atardecer, volcanes de lava, metrópolis cyberpunk, cueva de amatista y más</p>
                     </div>
                 </div>
                 <button id="close-environment-modal" class="p-2 hover:bg-slate-800 rounded-xl transition text-slate-400 hover:text-slate-100">
@@ -251,11 +250,11 @@
             <div class="flex items-center justify-between border-b border-slate-800 pb-4">
                 <div class="flex items-center gap-3">
                     <div class="p-2.5 bg-amber-500/20 rounded-2xl text-amber-400">
-                        <i data-lucide="sparkles" class="w-6 h-6"></i>
+                        <i data-lucide="gem" class="w-6 h-6"></i>
                     </div>
                     <div>
-                        <h2 class="text-lg font-extrabold text-slate-100">Temas y Minerales 3D</h2>
-                        <p class="text-xs text-slate-400">Materiales nobles con destellos de brillo y acabados físicos</p>
+                        <h2 class="text-lg font-extrabold text-slate-100">Temas y Minerales 3D Preciosos</h2>
+                        <p class="text-xs text-slate-400">Oro, Plata, Rubí, Zafiro, Amatista, Diamante, Ópalo de Fuego y Jade con destellos animados</p>
                     </div>
                 </div>
                 <button id="close-theme-modal" class="p-2 hover:bg-slate-800 rounded-xl transition text-slate-400 hover:text-slate-100">
@@ -614,6 +613,22 @@
 
         const BACKGROUND_ENVIRONMENTS = [
             {
+                id: 'tropical_beach_sunset',
+                name: '🏖️ Atardecer en Playa Tropical',
+                icon: '🏖️',
+                desc: 'Océano cálido en el horizonte, gran sol radiante dorado con corona de luz, palmeras y antorchas tiki sobre arena.',
+                skyTop: '#ff7a00',
+                skyBottom: '#7c2d12',
+                fogColor: 0x4a1805,
+                ambientColor: 0xffedd5,
+                ambientIntensity: 1.15,
+                dirLightColor: 0xffedd5,
+                particleType: 'beach_embers',
+                particleColor: 0xfdba74,
+                particleCount: 160,
+                vignetteGradient: 'from-amber-950/75 via-transparent to-orange-950/30'
+            },
+            {
                 id: 'sakura_garden',
                 name: '🌸 Jardín Sakura Zen',
                 icon: '🌸',
@@ -630,15 +645,79 @@
                 vignetteGradient: 'from-pink-950/70 via-transparent to-rose-950/30'
             },
             {
+                id: 'volcano_magma',
+                name: '🌋 Templo Volcánico de Lava',
+                icon: '🌋',
+                desc: 'Ríos de magma incandescente, suelo de basalto con grietas ardientes, árboles quemados sin hojas y picos de lava.',
+                skyTop: '#7f1d1d',
+                skyBottom: '#1c1917',
+                fogColor: 0x2b0606,
+                ambientColor: 0xfecaca,
+                ambientIntensity: 1.1,
+                dirLightColor: 0xf87171,
+                particleType: 'lava_embers',
+                particleColor: 0xef4444,
+                particleCount: 280,
+                vignetteGradient: 'from-red-950/85 via-transparent to-stone-950/40'
+            },
+            {
+                id: 'fairy_forest',
+                name: '🍄 Bosque Mágico de Hadas',
+                icon: '🍄',
+                desc: 'Champiñones gigantes bioluminiscentes, árboles antiguos encantados y orbes de hadas flotantes.',
+                skyTop: '#065f46',
+                skyBottom: '#1e1b4b',
+                fogColor: 0x06201b,
+                ambientColor: 0xa7f3d0,
+                ambientIntensity: 0.9,
+                dirLightColor: 0x6ee7b7,
+                particleType: 'fireflies',
+                particleColor: 0x6ee7b7,
+                particleCount: 210,
+                vignetteGradient: 'from-emerald-950/80 via-transparent to-purple-950/35'
+            },
+            {
+                id: 'cyber_city',
+                name: '🌆 Metrópolis Cyberpunk 2099',
+                icon: '🌆',
+                desc: 'Rascacielos con paneles y bordes de neón, antenas de comunicación y autos voladores en crucero aéreo.',
+                skyTop: '#3b0764',
+                skyBottom: '#020617',
+                fogColor: 0x130a2a,
+                ambientColor: 0xe0e7ff,
+                ambientIntensity: 1.0,
+                dirLightColor: 0xa855f7,
+                particleType: 'cyber_sparks',
+                particleColor: 0x06b6d4,
+                particleCount: 240,
+                vignetteGradient: 'from-purple-950/85 via-transparent to-cyan-950/40'
+            },
+            {
+                id: 'crystal_cavern',
+                name: '🔮 Cueva de Geodas de Amatista',
+                icon: '🔮',
+                desc: 'Grandes pilares de amatista y decenas de pequeños minerales brillantes dispersos por el suelo.',
+                skyTop: '#581c87',
+                skyBottom: '#090514',
+                fogColor: 0x1a0b2e,
+                ambientColor: 0xf3e8ff,
+                ambientIntensity: 0.9,
+                dirLightColor: 0xd8b4fe,
+                particleType: 'crystal_dust',
+                particleColor: 0xc084fc,
+                particleCount: 240,
+                vignetteGradient: 'from-purple-950/90 via-transparent to-fuchsia-950/40'
+            },
+            {
                 id: 'sky_clouds',
                 name: '☀️ Cielo Azul & Nubes',
                 icon: '☀️',
-                desc: 'Esponjosas nubes volumétricas 3D flotando en el horizonte, gran sol radiante y cielo brillante.',
-                skyTop: '#38bdf8',
-                skyBottom: '#0284c7',
-                fogColor: 0x0c4a6e,
+                desc: 'Nubes 3D esponjosas directamente a la vista, sol radiante de mediodía y cielo despejado.',
+                skyTop: '#0284c7',
+                skyBottom: '#38bdf8',
+                fogColor: 0x075985,
                 ambientColor: 0xf0f9ff,
-                ambientIntensity: 1.15,
+                ambientIntensity: 1.25,
                 dirLightColor: 0xffffff,
                 particleType: 'clouds',
                 particleColor: 0xffffff,
@@ -649,16 +728,16 @@
                 id: 'aurora_borealis',
                 name: '🌌 Aurora Boreal Ártica',
                 icon: '🌌',
-                desc: 'Cortinas ondulantes de luz aurora boreal 3D, montañas glaciares y pinos nevados.',
+                desc: 'Terreno nevado, pinos cargados de nieve y majestuosas cortinas ondulantes de aurora boreal en el cielo.',
                 skyTop: '#064e3b',
                 skyBottom: '#022c22',
                 fogColor: 0x032018,
                 ambientColor: 0xd1fae5,
-                ambientIntensity: 0.9,
+                ambientIntensity: 0.95,
                 dirLightColor: 0xa7f3d0,
                 particleType: 'aurora',
                 particleColor: 0x34d399,
-                particleCount: 240,
+                particleCount: 250,
                 vignetteGradient: 'from-emerald-950/80 via-transparent to-teal-950/40'
             },
             {
@@ -676,22 +755,6 @@
                 particleColor: 0xa855f7,
                 particleCount: 320,
                 vignetteGradient: 'from-slate-950/85 via-transparent to-purple-950/40'
-            },
-            {
-                id: 'golden_sunset',
-                name: '🌅 Atardecer Dorado',
-                icon: '🌅',
-                desc: 'Gran sol poniente resplandeciente en el horizonte, cordilleras de montañas y ascuas cálidas.',
-                skyTop: '#f97316',
-                skyBottom: '#7c2d12',
-                fogColor: 0x381206,
-                ambientColor: 0xffedd5,
-                ambientIntensity: 1.1,
-                dirLightColor: 0xfef08a,
-                particleType: 'embers',
-                particleColor: 0xfb923c,
-                particleCount: 190,
-                vignetteGradient: 'from-orange-950/75 via-transparent to-amber-950/30'
             },
             {
                 id: 'royal_hall',
@@ -714,89 +777,113 @@
         const BOARD_THEMES = [
             {
                 id: 'gold_silver',
-                name: 'Oro Imperial y Plata Esterlina',
+                name: '👑 Oro Imperial & Plata Esterlina',
                 icon: '👑',
-                desc: 'Elegancia deslumbrante con acabado en oro pulido 24k, plata metalizada y destellos de brillo.',
-                frameColor: 0x92400e,
-                frameRoughness: 0.2,
-                frameMetalness: 0.85,
-                lightSquare: { color: 0xfef08a, roughness: 0.15, metalness: 0.85 },
-                darkSquare: { color: 0x64748b, roughness: 0.2, metalness: 0.9 },
-                whitePiece: { color: 0xfff08a, roughness: 0.08, metalness: 0.95, emissive: 0x3b2d07, clearcoat: 1.0 },
-                blackPiece: { color: 0xcfd8e3, roughness: 0.1, metalness: 0.95, emissive: 0x1e293b, clearcoat: 1.0 },
-                sparkleColor: 0xfffae0,
-                sparkleDensity: 1.4,
-                swatch: ['#fef08a', '#64748b', '#facc15', '#cfd8e3']
+                desc: 'Metales nobles de realeza con acabado reflectante y destellos dorados.',
+                swatch: ['#facc15', '#e2e8f0', '#78350f'],
+                frameColor: 0x78350f,
+                lightSquare: { color: 0xfef08a, roughness: 0.25, metalness: 0.75 },
+                darkSquare: { color: 0x94a3b8, roughness: 0.2, metalness: 0.85 },
+                whitePiece: { color: 0xfde047, roughness: 0.15, metalness: 0.9, emissive: 0x422006 },
+                blackPiece: { color: 0xe2e8f0, roughness: 0.15, metalness: 0.95, emissive: 0x0f172a },
+                sparkleColor: 0xfef08a
             },
             {
-                id: 'marble_obsidian',
-                name: 'Mármol de Carrara & Obsidiana',
-                icon: '🏛️',
-                desc: 'Mármol blanco pulido clásico contrastado con obsidiana volcánica y reflejos vítreos.',
-                frameColor: 0x1e293b,
-                frameRoughness: 0.35,
-                frameMetalness: 0.35,
-                lightSquare: { color: 0xffffff, roughness: 0.1, metalness: 0.2 },
-                darkSquare: { color: 0x334155, roughness: 0.2, metalness: 0.5 },
-                whitePiece: { color: 0xffffff, roughness: 0.08, metalness: 0.2, emissive: 0x111827, clearcoat: 0.9 },
-                blackPiece: { color: 0x182234, roughness: 0.12, metalness: 0.85, emissive: 0x0b1120, clearcoat: 0.95 },
-                sparkleColor: 0xdbeafe,
-                sparkleDensity: 1.0,
-                swatch: ['#ffffff', '#334155', '#e2e8f0', '#182234']
+                id: 'ruby_sapphire',
+                name: '💎 Rubí Real & Zafiro Estelar',
+                icon: '💎',
+                desc: 'Gemas preciosas facetadas con refracción carmesí y azul cósmico con destellos estelares.',
+                swatch: ['#ef4444', '#3b82f6', '#1e1b4b'],
+                frameColor: 0x1e1b4b,
+                lightSquare: { color: 0xfca5a5, roughness: 0.2, metalness: 0.3 },
+                darkSquare: { color: 0x1e3a8a, roughness: 0.2, metalness: 0.5 },
+                whitePiece: { color: 0xef4444, roughness: 0.1, metalness: 0.4, clearcoat: 1.0, emissive: 0x450a0a },
+                blackPiece: { color: 0x2563eb, roughness: 0.1, metalness: 0.5, clearcoat: 1.0, emissive: 0x172554 },
+                sparkleColor: 0xffedd5
             },
             {
-                id: 'cyber_neon',
-                name: 'Cyberpunk Neón Matrix',
-                icon: '⚡',
-                desc: 'Futurismo synthwave con resplandores de cian eléctrico, magenta y destellos de plasma.',
-                frameColor: 0x0f172a,
-                frameRoughness: 0.2,
-                frameMetalness: 0.9,
-                lightSquare: { color: 0x22d3ee, roughness: 0.08, metalness: 0.85 },
-                darkSquare: { color: 0x881337, roughness: 0.18, metalness: 0.9 },
-                whitePiece: { color: 0x67e8f9, roughness: 0.08, metalness: 0.9, emissive: 0x083344, clearcoat: 1.0 },
-                blackPiece: { color: 0xf43f5e, roughness: 0.1, metalness: 0.9, emissive: 0x4c0519, clearcoat: 1.0 },
-                sparkleColor: 0x67e8f9,
-                sparkleDensity: 1.3,
-                swatch: ['#22d3ee', '#881337', '#67e8f9', '#f43f5e']
+                id: 'amethyst_quartz',
+                name: '🔮 Amatista Astral & Cuarzo Rosa',
+                icon: '🔮',
+                desc: 'Geodas místicas con fluorescencia púrpura profunda y cuarzo brillante.',
+                swatch: ['#c084fc', '#f472b6', '#3b0764'],
+                frameColor: 0x3b0764,
+                lightSquare: { color: 0xfbcfe8, roughness: 0.25, metalness: 0.2 },
+                darkSquare: { color: 0x6b21a8, roughness: 0.2, metalness: 0.4 },
+                whitePiece: { color: 0xf472b6, roughness: 0.15, metalness: 0.3, clearcoat: 0.9, emissive: 0x500724 },
+                blackPiece: { color: 0x9333ea, roughness: 0.15, metalness: 0.4, clearcoat: 0.9, emissive: 0x2e1065 },
+                sparkleColor: 0xf0abfc
             },
             {
-                id: 'wood_classic',
-                name: 'Madera de Caoba & Roble',
-                icon: '🪵',
-                desc: 'Calidez artesanal clásica con maderas nobles y barniz de torneo internacional.',
-                frameColor: 0x582606,
-                frameRoughness: 0.55,
-                frameMetalness: 0.08,
-                lightSquare: { color: 0xfef3c7, roughness: 0.4, metalness: 0.05 },
-                darkSquare: { color: 0x92400e, roughness: 0.45, metalness: 0.08 },
-                whitePiece: { color: 0xffedd5, roughness: 0.35, metalness: 0.12, emissive: 0x1c1008, clearcoat: 0.3 },
-                blackPiece: { color: 0x381f0d, roughness: 0.4, metalness: 0.25, emissive: 0x170b04, clearcoat: 0.3 },
-                sparkleColor: 0xfef08a,
-                sparkleDensity: 0.3,
-                swatch: ['#fef3c7', '#92400e', '#ffedd5', '#381f0d']
+                id: 'diamond_platinum',
+                name: '✨ Diamante Puro & Platino Espejo',
+                icon: '✨',
+                desc: 'Máxima refracción de luz cristalina, acabado de alta joyerí­a y destellos celestes.',
+                swatch: ['#ffffff', '#cbd5e1', '#334155'],
+                frameColor: 0x334155,
+                lightSquare: { color: 0xffffff, roughness: 0.1, metalness: 0.1 },
+                darkSquare: { color: 0x64748b, roughness: 0.2, metalness: 0.7 },
+                whitePiece: { color: 0xffffff, roughness: 0.05, metalness: 0.1, clearcoat: 1.0, emissive: 0x38bdf8 },
+                blackPiece: { color: 0x94a3b8, roughness: 0.1, metalness: 0.9, clearcoat: 0.8, emissive: 0x0f172a },
+                sparkleColor: 0xbae6fd
+            },
+            {
+                id: 'fire_opal',
+                name: '🔥 Ópalo de Fuego & Obsidiana Dorada',
+                icon: '🔥',
+                desc: 'Vetas ardientes de magma volcánico cristalizado con resplandor naranja y dorado.',
+                swatch: ['#f97316', '#1c1917', '#7c2d12'],
+                frameColor: 0x7c2d12,
+                lightSquare: { color: 0xfdba74, roughness: 0.25, metalness: 0.3 },
+                darkSquare: { color: 0x292524, roughness: 0.35, metalness: 0.6 },
+                whitePiece: { color: 0xf97316, roughness: 0.2, metalness: 0.3, clearcoat: 0.9, emissive: 0x7c2d12 },
+                blackPiece: { color: 0x1c1917, roughness: 0.25, metalness: 0.8, clearcoat: 0.7, emissive: 0xb45309 },
+                sparkleColor: 0xfde047
             },
             {
                 id: 'emerald_jade',
-                name: 'Esmeralda & Jade Místico',
-                icon: '💎',
-                desc: 'Mística verde esmeralda pulida con toques de malaquita, jade de realeza y fulgor cristalino.',
-                frameColor: 0x065f46,
-                frameRoughness: 0.3,
-                frameMetalness: 0.5,
-                lightSquare: { color: 0xd1fae5, roughness: 0.18, metalness: 0.4 },
-                darkSquare: { color: 0x047857, roughness: 0.22, metalness: 0.6 },
-                whitePiece: { color: 0xecfdf5, roughness: 0.08, metalness: 0.45, emissive: 0x064e3b, clearcoat: 1.0 },
-                blackPiece: { color: 0x064e3b, roughness: 0.12, metalness: 0.88, emissive: 0x022c22, clearcoat: 1.0 },
-                sparkleColor: 0xa7f3d0,
-                sparkleDensity: 1.35,
-                swatch: ['#d1fae5', '#047857', '#ecfdf5', '#064e3b']
+                name: '🌿 Esmeralda & Jade Místico',
+                icon: '🌿',
+                desc: 'Gemas ancestrales verdes con destellos mágicos y pulido cristalino.',
+                swatch: ['#34d399', '#065f46', '#022c22'],
+                frameColor: 0x022c22,
+                lightSquare: { color: 0xa7f3d0, roughness: 0.25, metalness: 0.2 },
+                darkSquare: { color: 0x065f46, roughness: 0.3, metalness: 0.4 },
+                whitePiece: { color: 0x34d399, roughness: 0.15, metalness: 0.3, clearcoat: 0.9, emissive: 0x064e3b },
+                blackPiece: { color: 0x022c22, roughness: 0.2, metalness: 0.7, clearcoat: 0.8, emissive: 0x047857 },
+                sparkleColor: 0x6ee7b7
+            },
+            {
+                id: 'marble_obsidian',
+                name: '🏛️ Mármol de Carrara & Obsidiana',
+                icon: '🏛️',
+                desc: 'Mármol clásico blanco perlado pulido con obsidiana volcánica brillante.',
+                swatch: ['#f8fafc', '#0f172a', '#334155'],
+                frameColor: 0x1e293b,
+                lightSquare: { color: 0xf1f5f9, roughness: 0.2, metalness: 0.1 },
+                darkSquare: { color: 0x1e293b, roughness: 0.3, metalness: 0.4 },
+                whitePiece: { color: 0xffffff, roughness: 0.2, metalness: 0.1, clearcoat: 0.8 },
+                blackPiece: { color: 0x0f172a, roughness: 0.25, metalness: 0.5, clearcoat: 0.8 },
+                sparkleColor: 0xffffff
+            },
+            {
+                id: 'cyber_matrix',
+                name: '⚡ Cyberpunk Neón Matrix',
+                icon: '⚡',
+                desc: 'Tecnología retro-futurista con materiales translúcidos brillantes.',
+                swatch: ['#06b6d4', '#ec4899', '#020617'],
+                frameColor: 0x0f172a,
+                lightSquare: { color: 0x06b6d4, roughness: 0.1, metalness: 0.6 },
+                darkSquare: { color: 0xbe185d, roughness: 0.2, metalness: 0.7 },
+                whitePiece: { color: 0x22d3ee, roughness: 0.1, metalness: 0.4, clearcoat: 1.0, emissive: 0x0891b2 },
+                blackPiece: { color: 0xf43f5e, roughness: 0.1, metalness: 0.5, clearcoat: 1.0, emissive: 0x9f1239 },
+                sparkleColor: 0x67e8f9
             }
         ];
 
         let currentBotIndex = 1; // Capitán Murillo por defecto
-        let currentThemeIndex = 0; // Oro y Plata por defecto
-        let currentEnvIndex = 0; // Sakura por defecto
+        let currentThemeIndex = 0; // Oro & Plata por defecto
+        let currentEnvIndex = 0; // Atardecer en Playa Tropical por defecto
         let currentMode = 'pve'; // 'pve' o 'online'
         let currentRoomCode = null;
         let myOnlineRole = 'w';
@@ -805,15 +892,14 @@
 
         let game = new Chess();
         let scene, camera, renderer, controls;
-        let boardGroup, piecesGroup, indicatorsGroup, sparklesGroup, sceneryGroup;
+        let boardGroup, piecesGroup, indicatorsGroup, sceneryGroup, sparklesGroup;
         let selectedSquare = null;
         let particleSystem = null;
         let sakuraPetalSprites = [];
-        let skyDomeMesh = null;
-        let sparkleTexture = null;
-        let sakuraPetalTexture = null;
-        let activeSparkles = [];
         let animatedSceneryObjects = [];
+        let sparkleSprites = [];
+        let skyDomeMesh = null;
+        let dirLight, ambientLight, hemiLight, rimLight;
 
         const pieceUnicode = {
             'p': '♟', 'r': '♜', 'n': '♞', 'b': '♝', 'q': '♛', 'k': '♚',
@@ -841,158 +927,6 @@
                 return files[fileIdx] + (rankIdx + 1);
             }
             return null;
-        }
-
-        function createSparkleTexture() {
-            const canvas = document.createElement('canvas');
-            canvas.width = 64;
-            canvas.height = 64;
-            const ctx = canvas.getContext('2d');
-
-            const grad = ctx.createRadialGradient(32, 32, 0, 32, 32, 30);
-            grad.addColorStop(0, 'rgba(255, 255, 255, 1)');
-            grad.addColorStop(0.2, 'rgba(255, 250, 220, 0.9)');
-            grad.addColorStop(0.5, 'rgba(255, 235, 150, 0.35)');
-            grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
-            ctx.fillStyle = grad;
-            ctx.fillRect(0, 0, 64, 64);
-
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
-            ctx.beginPath();
-            ctx.ellipse(32, 32, 28, 2, 0, 0, Math.PI * 2);
-            ctx.ellipse(32, 32, 2, 28, 0, 0, Math.PI * 2);
-            ctx.ellipse(32, 32, 14, 1.5, Math.PI / 4, 0, Math.PI * 2);
-            ctx.ellipse(32, 32, 14, 1.5, -Math.PI / 4, 0, Math.PI * 2);
-            ctx.fill();
-
-            return new THREE.CanvasTexture(canvas);
-        }
-
-        function createSakuraPetalTexture() {
-            const canvas = document.createElement('canvas');
-            canvas.width = 64;
-            canvas.height = 64;
-            const ctx = canvas.getContext('2d');
-
-            ctx.save();
-            ctx.translate(32, 32);
-            ctx.beginPath();
-            ctx.moveTo(0, -26);
-            ctx.bezierCurveTo(18, -26, 26, 6, 0, 28);
-            ctx.bezierCurveTo(-26, 6, -18, -26, 0, -26);
-            ctx.closePath();
-
-            const grad = ctx.createLinearGradient(0, -26, 0, 28);
-            grad.addColorStop(0, 'rgba(255, 240, 245, 0.95)');
-            grad.addColorStop(0.4, 'rgba(251, 182, 206, 0.9)');
-            grad.addColorStop(1, 'rgba(244, 114, 182, 0.7)');
-            ctx.fillStyle = grad;
-            ctx.fill();
-
-            ctx.restore();
-            return new THREE.CanvasTexture(canvas);
-        }
-
-        function initMineralSparkles() {
-            if (!sparklesGroup) return;
-
-            while (sparklesGroup.children.length > 0) {
-                sparklesGroup.remove(sparklesGroup.children[0]);
-            }
-            activeSparkles = [];
-
-            if (!sparkleTexture) {
-                sparkleTexture = createSparkleTexture();
-            }
-
-            const theme = BOARD_THEMES[currentThemeIndex];
-            const density = theme.sparkleDensity || 1.0;
-
-            piecesGroup.children.forEach(piece => {
-                if (!piece.userData || !piece.userData.isPiece) return;
-
-                const pieceType = piece.userData.type;
-                let sparkleCount = 1;
-                let heightRange = [0.4, 0.9];
-
-                if (pieceType === 'k') {
-                    sparkleCount = Math.round(4 * density);
-                    heightRange = [0.8, 1.6];
-                } else if (pieceType === 'q') {
-                    sparkleCount = Math.round(4 * density);
-                    heightRange = [0.7, 1.4];
-                } else if (pieceType === 'b' || pieceType === 'n') {
-                    sparkleCount = Math.round(3 * density);
-                    heightRange = [0.5, 1.2];
-                } else if (pieceType === 'r') {
-                    sparkleCount = Math.round(2 * density);
-                    heightRange = [0.5, 1.0];
-                } else {
-                    sparkleCount = Math.random() < (0.6 * density) ? 1 : 0;
-                    heightRange = [0.3, 0.85];
-                }
-
-                for (let i = 0; i < sparkleCount; i++) {
-                    const material = new THREE.SpriteMaterial({
-                        map: sparkleTexture,
-                        color: theme.sparkleColor || 0xffffff,
-                        transparent: true,
-                        opacity: 0,
-                        blending: THREE.AdditiveBlending,
-                        depthWrite: false
-                    });
-
-                    const sprite = new THREE.Sprite(material);
-                    const radius = 0.18 + Math.random() * 0.22;
-                    const angle = Math.random() * Math.PI * 2;
-                    const y = heightRange[0] + Math.random() * (heightRange[1] - heightRange[0]);
-
-                    const offset = new THREE.Vector3(
-                        Math.cos(angle) * radius,
-                        y,
-                        Math.sin(angle) * radius
-                    );
-
-                    sprite.position.copy(piece.position).add(offset);
-                    sparklesGroup.add(sprite);
-
-                    activeSparkles.push({
-                        sprite,
-                        parentPiece: piece,
-                        offset,
-                        phase: Math.random() * Math.PI * 2,
-                        speed: 1.8 + Math.random() * 2.6,
-                        maxScale: 0.35 + Math.random() * 0.35,
-                        rotationSpeed: (Math.random() - 0.5) * 2.5
-                    });
-                }
-            });
-        }
-
-        function updateMineralSparkles(time) {
-            if (!activeSparkles || activeSparkles.length === 0) return;
-
-            const t = (time || performance.now()) * 0.001;
-
-            activeSparkles.forEach(item => {
-                if (!item.parentPiece) return;
-
-                item.sprite.position.copy(item.parentPiece.position).add(item.offset);
-
-                const rawVal = Math.sin(t * item.speed + item.phase);
-                const intensity = Math.max(0, Math.pow(Math.max(0, rawVal), 5));
-
-                if (intensity > 0.01) {
-                    const scale = item.maxScale * (0.4 + intensity * 0.9);
-                    item.sprite.scale.set(scale, scale, 1);
-                    item.sprite.material.opacity = intensity * 0.95;
-                    item.sprite.material.rotation += item.rotationSpeed * 0.015;
-                    item.sprite.visible = true;
-                } else {
-                    item.sprite.visible = false;
-                    item.sprite.material.opacity = 0;
-                }
-            });
         }
 
         const localRoomBus = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('chess_local_rooms') : null;
@@ -1098,7 +1032,7 @@
                     await setDoc(roomRef, initialRoomData);
                     listenToRoomUpdates(roomRef, roomCode);
                 } catch (err) {
-                    console.warn("Firestore fallback al bus local:", err);
+                    console.warn("Firestore error al crear sala, usando canal local:", err);
                     listenToLocalRoomUpdates(roomCode);
                 }
             } else {
@@ -1115,7 +1049,7 @@
         async function joinOnlineRoom(inputCode) {
             const code = (inputCode || '').trim().toUpperCase();
             if (!code || code.length < 4) {
-                showToast("Ingresa un código válido de 4 a 6 caracteres", true);
+                showToast("Ingresa un código válido de al menos 4 caracteres", true);
                 return;
             }
 
@@ -1136,7 +1070,7 @@
                         usingFirebase = true;
                     }
                 } catch (err) {
-                    console.warn("Error en Firestore al unirse, probando búsqueda local:", err);
+                    console.warn("Excepción en Firestore al unirse, probando búsqueda local:", err);
                 }
             }
 
@@ -1150,7 +1084,7 @@
             }
 
             if (roomData.status === 'playing' && roomData.guestUid && roomData.guestUid !== window.currentUserId) {
-                showToast("La sala ya cuenta con dos jugadores en partida", true);
+                showToast("La sala ya tiene dos jugadores en partida", true);
                 return;
             }
 
@@ -1175,7 +1109,7 @@
                     });
                     listenToRoomUpdates(roomRef, code);
                 } catch (err) {
-                    console.warn("Fallback a canal local:", err);
+                    console.warn("Fallback a canal local tras error de updateDoc:", err);
                     listenToLocalRoomUpdates(code);
                 }
             } else {
@@ -1184,7 +1118,7 @@
 
             document.getElementById('online-room-code-display').innerText = `SALA: ${code} (Negras)`;
             toggleModal('modal-online', false);
-            showToast("¡Te has unido con éxito! Juegas con Negras.");
+            showToast("¡Unido con éxito a la sala! Juegas con Negras.");
         }
 
         function listenToRoomUpdates(roomRef, code) {
@@ -1198,7 +1132,7 @@
                 const data = snapshot.data();
                 applyRemoteRoomState(data);
             }, (error) => {
-                console.warn("Error en snapshot:", error);
+                console.warn("Error en el snapshot de Firebase, manteniendo bus local:", error);
             });
         }
 
@@ -1221,7 +1155,7 @@
                 try {
                     await updateDoc(roomRef, updateData);
                 } catch (err) {
-                    console.warn("Error sincronizando en Firestore:", err);
+                    console.warn("Error al sincronizar jugada en Firestore:", err);
                 }
             }
         }
@@ -1234,20 +1168,18 @@
             const height = container.clientHeight || window.innerHeight;
 
             scene = new THREE.Scene();
-            const currentEnv = BACKGROUND_ENVIRONMENTS[currentEnvIndex];
-            
-            scene.fog = new THREE.Fog(currentEnv.fogColor, 18, 55);
+            scene.fog = new THREE.FogExp2(0x1e1b4b, 0.015);
 
-            camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 140);
+            camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 150);
             setPresetCamera('white');
 
-            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: "high-performance" });
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
             renderer.setSize(width, height);
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             renderer.shadowMap.enabled = true;
             renderer.shadowMap.type = THREE.PCFSoftShadowMap;
             renderer.toneMapping = THREE.ACESFilmicToneMapping;
-            renderer.toneMappingExposure = 1.35;
+            renderer.toneMappingExposure = 1.1;
 
             container.innerHTML = '';
             container.appendChild(renderer.domElement);
@@ -1255,110 +1187,342 @@
             controls = new THREE.OrbitControls(camera, renderer.domElement);
             controls.enableDamping = true;
             controls.dampingFactor = 0.05;
-            controls.maxPolarAngle = Math.PI / 2.15; // Bloquea la cámara para que nunca baje del tablero
-            controls.minPolarAngle = 0.1; 
-            controls.minDistance = 5;
-            controls.maxDistance = 24;
+            controls.maxPolarAngle = Math.PI / 2.05; // Impide que la cámara baje del tablero
+            controls.minPolarAngle = 0.1;
+            controls.minDistance = 5.5;
+            controls.maxDistance = 26;
 
-            // Luces de Escena
-            const ambientLight = new THREE.AmbientLight(currentEnv.ambientColor || 0xffffff, currentEnv.ambientIntensity || 0.95);
-            ambientLight.name = 'ambientLight';
+            ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
             scene.add(ambientLight);
 
-            const hemiLight = new THREE.HemisphereLight(0xffffff, 0x334155, 0.75);
-            hemiLight.name = 'hemiLight';
-            hemiLight.position.set(0, 20, 0);
+            hemiLight = new THREE.HemisphereLight(0xffffff, 0x334155, 0.6);
             scene.add(hemiLight);
 
-            // Luz Principal con Sombras
-            const dirLight = new THREE.DirectionalLight(currentEnv.dirLightColor || 0xfffbeb, 1.4);
-            dirLight.name = 'dirLight';
-            dirLight.position.set(7, 16, 8);
+            dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
+            dirLight.position.set(7, 16, 7);
             dirLight.castShadow = true;
             dirLight.shadow.mapSize.width = 2048;
             dirLight.shadow.mapSize.height = 2048;
             dirLight.shadow.camera.near = 0.5;
             dirLight.shadow.camera.far = 40;
-            dirLight.shadow.camera.left = -9;
-            dirLight.shadow.camera.right = 9;
-            dirLight.shadow.camera.top = 9;
-            dirLight.shadow.camera.bottom = -9;
-            dirLight.shadow.bias = -0.0003;
+            dirLight.shadow.camera.left = -12;
+            dirLight.shadow.camera.right = 12;
+            dirLight.shadow.camera.top = 12;
+            dirLight.shadow.camera.bottom = -12;
+            dirLight.shadow.bias = -0.0004;
             scene.add(dirLight);
 
-            // Luz de Relleno Secundaria
-            const fillLight = new THREE.DirectionalLight(0x93c5fd, 0.75);
-            fillLight.name = 'fillLight';
-            fillLight.position.set(-8, 12, -7);
-            scene.add(fillLight);
-
-            // Luz de Contorno y Brillo Especular
-            const rimLight = new THREE.DirectionalLight(0xa5b4fc, 0.6);
-            rimLight.name = 'rimLight';
-            rimLight.position.set(0, 8, -12);
+            rimLight = new THREE.DirectionalLight(0xc084fc, 0.6);
+            rimLight.position.set(-10, 8, -10);
             scene.add(rimLight);
 
             boardGroup = new THREE.Group();
             piecesGroup = new THREE.Group();
             indicatorsGroup = new THREE.Group();
-            sparklesGroup = new THREE.Group();
             sceneryGroup = new THREE.Group();
+            sparklesGroup = new THREE.Group();
 
-            scene.add(sceneryGroup);
             scene.add(boardGroup);
             scene.add(piecesGroup);
             scene.add(indicatorsGroup);
+            scene.add(sceneryGroup);
             scene.add(sparklesGroup);
 
+            initBackgroundEnvironment();
             buildPhysicalBoard();
             spawnProceduralPieces();
-            initBackgroundEnvironment();
 
             window.addEventListener('resize', onWindowResize);
         }
 
         function setPresetCamera(color) {
             if (color === 'white') {
-                camera.position.set(0, 11, 10);
+                camera.position.set(0, 11, 11.5);
             } else {
-                camera.position.set(0, 11, -10);
+                camera.position.set(0, 11, -11.5);
             }
             if (controls) controls.target.set(0, 0, 0);
         }
 
-        function createSkyTexture(topColor, bottomColor) {
+        function createSkyDomeTexture(topColorHex, bottomColorHex) {
             const canvas = document.createElement('canvas');
-            canvas.width = 256;
+            canvas.width = 512;
             canvas.height = 512;
             const ctx = canvas.getContext('2d');
-            const grad = ctx.createLinearGradient(0, 0, 0, 512);
-            grad.addColorStop(0, topColor);
-            grad.addColorStop(0.5, bottomColor);
-            grad.addColorStop(1, '#05070e');
-            ctx.fillStyle = grad;
-            ctx.fillRect(0, 0, 256, 512);
-
+            const gradient = ctx.createLinearGradient(0, 0, 0, 512);
+            gradient.addColorStop(0, topColorHex);
+            gradient.addColorStop(1, bottomColorHex);
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 512, 512);
             return new THREE.CanvasTexture(canvas);
+        }
+
+        function initBackgroundEnvironment() {
+            const env = BACKGROUND_ENVIRONMENTS[currentEnvIndex];
+
+            if (skyDomeMesh) {
+                scene.remove(skyDomeMesh);
+                if (skyDomeMesh.geometry) skyDomeMesh.geometry.dispose();
+                if (skyDomeMesh.material) skyDomeMesh.material.dispose();
+            }
+
+            const skyTexture = createSkyDomeTexture(env.skyTop, env.skyBottom);
+            const skyGeom = new THREE.SphereGeometry(65, 32, 24);
+            const skyMat = new THREE.MeshBasicMaterial({
+                map: skyTexture,
+                side: THREE.BackSide,
+                fog: false
+            });
+            skyDomeMesh = new THREE.Mesh(skyGeom, skyMat);
+            scene.add(skyDomeMesh);
+
+            scene.fog.color.setHex(env.fogColor);
+            ambientLight.color.setHex(env.ambientColor);
+            ambientLight.intensity = env.ambientIntensity || 0.9;
+            dirLight.color.setHex(env.dirLightColor);
+
+            const vignette = document.getElementById('vignette-overlay');
+            if (vignette && env.vignetteGradient) {
+                vignette.className = `absolute inset-0 bg-gradient-to-t ${env.vignetteGradient} pointer-events-none z-10 transition-colors duration-700`;
+            }
+
+            buildEnvironmentScenery(env.id);
+            initEnvironmentParticles(env);
+        }
+
+        function createPalmTree(x, z, scale = 1.0, tiltZ = 0.2) {
+            const tree = new THREE.Group();
+            const trunkMat = new THREE.MeshStandardMaterial({ color: 0x6b4226, roughness: 0.9 });
+            const leafMat = new THREE.MeshStandardMaterial({ color: 0x15803d, roughness: 0.6, side: THREE.DoubleSide });
+            const coconutMat = new THREE.MeshStandardMaterial({ color: 0x451a03, roughness: 0.8 });
+
+            let currentY = 0;
+            let currentX = 0;
+            const segments = 6;
+            for (let i = 0; i < segments; i++) {
+                const segH = 0.8 * scale;
+                const rBottom = (0.35 - i * 0.03) * scale;
+                const rTop = (0.32 - i * 0.03) * scale;
+                const segGeom = new THREE.CylinderGeometry(rTop, rBottom, segH, 8);
+                const segMesh = new THREE.Mesh(segGeom, trunkMat);
+                segMesh.position.set(currentX, currentY + segH / 2, 0);
+                segMesh.rotation.z = tiltZ * (i / segments);
+                segMesh.castShadow = true;
+                tree.add(segMesh);
+
+                currentY += segH * 0.95;
+                currentX += Math.sin(tiltZ) * segH * 0.6;
+            }
+
+            const crownCenter = new THREE.Vector3(currentX, currentY, 0);
+            for (let a = 0; a < 7; a++) {
+                const angle = (a / 7) * Math.PI * 2;
+                const leafGeom = new THREE.PlaneGeometry(0.7 * scale, 3.2 * scale, 4, 6);
+                const leaf = new THREE.Mesh(leafGeom, leafMat);
+                leaf.position.copy(crownCenter);
+                leaf.rotation.y = angle;
+                leaf.rotation.x = 0.85;
+                leaf.rotation.z = 0.2;
+                leaf.castShadow = true;
+                tree.add(leaf);
+            }
+
+            for (let c = 0; c < 3; c++) {
+                const coconut = new THREE.Mesh(new THREE.SphereGeometry(0.22 * scale, 8, 8), coconutMat);
+                const ca = (c / 3) * Math.PI * 2;
+                coconut.position.set(currentX + Math.cos(ca) * 0.3 * scale, currentY - 0.2 * scale, Math.sin(ca) * 0.3 * scale);
+                tree.add(coconut);
+            }
+
+            tree.position.set(x, -0.2, z);
+            return tree;
+        }
+
+        function createTikiTorch(x, z) {
+            const torch = new THREE.Group();
+            const woodMat = new THREE.MeshStandardMaterial({ color: 0x582606, roughness: 0.9 });
+            const post = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.1, 2.8, 6), woodMat);
+            post.position.y = 1.4;
+            torch.add(post);
+
+            const bowl = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.12, 0.4, 6), woodMat);
+            bowl.position.y = 2.8;
+            torch.add(bowl);
+
+            const flameMat = new THREE.MeshBasicMaterial({ color: 0xf97316 });
+            const flame = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.5, 6), flameMat);
+            flame.position.y = 3.15;
+            torch.add(flame);
+
+            torch.position.set(x, -0.2, z);
+            return torch;
+        }
+
+        function createBurntTree(x, z, scale = 1.0, rotY = 0) {
+            const tree = new THREE.Group();
+            const charMat = new THREE.MeshStandardMaterial({ color: 0x171717, roughness: 0.95, metalness: 0.1 });
+            
+            const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.25 * scale, 0.45 * scale, 3.6 * scale, 7), charMat);
+            trunk.position.y = (1.8 * scale) - 0.2;
+            trunk.castShadow = true;
+            tree.add(trunk);
+
+            const branchConfigs = [
+                { y: 2.2 * scale, len: 1.6 * scale, rZ: 0.7, rY: 0.2 },
+                { y: 2.7 * scale, len: 1.3 * scale, rZ: -0.75, rY: 1.8 },
+                { y: 3.1 * scale, len: 1.1 * scale, rZ: 0.6, rY: -1.2 },
+                { y: 3.4 * scale, len: 0.9 * scale, rZ: -0.5, rY: 2.7 }
+            ];
+
+            branchConfigs.forEach(b => {
+                const branchMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.06 * scale, 0.14 * scale, b.len, 5), charMat);
+                branchMesh.position.set(0, b.y, 0);
+                branchMesh.rotation.y = b.rY;
+                branchMesh.rotation.z = b.rZ;
+                branchMesh.position.x += Math.sin(b.rZ) * (b.len * 0.45);
+                branchMesh.castShadow = true;
+                tree.add(branchMesh);
+            });
+
+            tree.position.set(x, 0, z);
+            tree.rotation.y = rotY;
+            return tree;
+        }
+
+        function createSnowyPineTree(x, z, scale = 1.0) {
+            const tree = new THREE.Group();
+            const woodMat = new THREE.MeshStandardMaterial({ color: 0x271911, roughness: 0.9 });
+            const pineMat = new THREE.MeshStandardMaterial({ color: 0x064e3b, roughness: 0.7 });
+            const snowMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.35, metalness: 0.1 });
+
+            const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.2 * scale, 0.35 * scale, 1.8 * scale, 7), woodMat);
+            trunk.position.y = 0.8 * scale;
+            trunk.castShadow = true;
+            tree.add(trunk);
+
+            const tiers = [
+                { y: 1.5 * scale, r: 1.8 * scale, h: 1.4 * scale },
+                { y: 2.4 * scale, r: 1.4 * scale, h: 1.3 * scale },
+                { y: 3.2 * scale, r: 0.9 * scale, h: 1.2 * scale }
+            ];
+
+            tiers.forEach(t => {
+                const foliage = new THREE.Mesh(new THREE.ConeGeometry(t.r, t.h, 7), pineMat);
+                foliage.position.y = t.y;
+                foliage.castShadow = true;
+                tree.add(foliage);
+
+                const snow = new THREE.Mesh(new THREE.ConeGeometry(t.r * 1.03, t.h * 0.45, 7), snowMat);
+                snow.position.y = t.y + t.h * 0.28;
+                tree.add(snow);
+            });
+
+            tree.position.set(x, -0.2, z);
+            return tree;
+        }
+
+        function createCyberBuilding(x, z, width, height, depth, neonColorHex) {
+            const bldgGroup = new THREE.Group();
+            const wallMat = new THREE.MeshStandardMaterial({ color: 0x090d16, roughness: 0.3, metalness: 0.85 });
+            const neonMat = new THREE.MeshBasicMaterial({ color: neonColorHex });
+
+            const body = new THREE.Mesh(new THREE.BoxGeometry(width, height, depth), wallMat);
+            body.position.y = height / 2 - 0.4;
+            body.castShadow = true;
+            bldgGroup.add(body);
+
+            const roofTrim = new THREE.Mesh(new THREE.BoxGeometry(width + 0.15, 0.3, depth + 0.15), neonMat);
+            roofTrim.position.y = height - 0.3;
+            bldgGroup.add(roofTrim);
+
+            const antenna = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.12, 3.5, 6), wallMat);
+            antenna.position.set(0, height + 1.6, 0);
+            bldgGroup.add(antenna);
+
+            const beacon = new THREE.Mesh(new THREE.SphereGeometry(0.18, 8, 8), new THREE.MeshBasicMaterial({ color: 0xff0055 }));
+            beacon.position.set(0, height + 3.4, 0);
+            bldgGroup.add(beacon);
+
+            for (let wy = 3; wy < height - 2; wy += 2.8) {
+                const winBand = new THREE.Mesh(new THREE.BoxGeometry(width + 0.08, 0.4, depth + 0.08), neonMat);
+                winBand.position.y = wy;
+                bldgGroup.add(winBand);
+            }
+
+            bldgGroup.position.set(x, 0, z);
+            return bldgGroup;
+        }
+
+        function createHovercar(colorHex, startX, y, z, speed, direction = 1) {
+            const car = new THREE.Group();
+            const bodyMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.2, metalness: 0.9 });
+            const glowMat = new THREE.MeshBasicMaterial({ color: colorHex });
+            const lightMat = new THREE.MeshBasicMaterial({ color: 0xfef08a });
+            const tailMat = new THREE.MeshBasicMaterial({ color: 0xef4444 });
+
+            const body = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.45, 1.1), bodyMat);
+            const cabin = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.4, 0.9), glowMat);
+            cabin.position.set(-0.2 * direction, 0.35, 0);
+            car.add(body, cabin);
+
+            const fLight = new THREE.Mesh(new THREE.SphereGeometry(0.15, 6, 6), lightMat);
+            fLight.position.set(1.3 * direction, 0.05, 0.35);
+            const fLight2 = fLight.clone();
+            fLight2.position.z = -0.35;
+            car.add(fLight, fLight2);
+
+            const tLight = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.12, 0.9), tailMat);
+            tLight.position.set(-1.3 * direction, 0.05, 0);
+            car.add(tLight);
+
+            const thrust = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.1, 8), glowMat);
+            thrust.rotation.x = Math.PI / 2;
+            thrust.position.y = -0.22;
+            car.add(thrust);
+
+            car.position.set(startX, y, z);
+            return { mesh: car, speed: speed * direction, startX, y, z, direction };
+        }
+
+        function createFluffyCloudMesh(scale = 1.0) {
+            const cloud = new THREE.Group();
+            const cloudMat = new THREE.MeshStandardMaterial({
+                color: 0xffffff,
+                roughness: 0.85,
+                metalness: 0.02,
+                emissive: 0xf0f9ff,
+                emissiveIntensity: 0.15
+            });
+
+            const spheres = [
+                [0, 0, 0, 1.8],
+                [1.5, -0.2, 0.2, 1.4],
+                [-1.5, -0.25, -0.1, 1.35],
+                [0.7, 0.75, 0, 1.5],
+                [-0.6, 0.65, 0.3, 1.3],
+                [0.2, -0.3, 0.8, 1.2],
+                [-0.4, -0.2, -0.8, 1.1]
+            ];
+
+            spheres.forEach(s => {
+                const m = new THREE.Mesh(new THREE.SphereGeometry(s[3] * scale, 12, 12), cloudMat);
+                m.position.set(s[0] * scale, s[1] * scale, s[2] * scale);
+                m.castShadow = true;
+                cloud.add(m);
+            });
+
+            return cloud;
         }
 
         function createSakuraTree(x, z, scale = 1.0, rotationY = 0) {
             const treeGroup = new THREE.Group();
-
-            // Tronco y ramas principales con material madera oscura
-            const woodMat = new THREE.MeshStandardMaterial({
-                color: 0x3d2314,
-                roughness: 0.85,
-                metalness: 0.05
-            });
-
+            const woodMat = new THREE.MeshStandardMaterial({ color: 0x3d2314, roughness: 0.85, metalness: 0.05 });
             const trunkGeom = new THREE.CylinderGeometry(0.35 * scale, 0.55 * scale, 3.8 * scale, 8);
             const trunk = new THREE.Mesh(trunkGeom, woodMat);
             trunk.position.y = (1.9 * scale) - 0.2;
-            trunk.rotation.z = (Math.random() - 0.5) * 0.15;
             trunk.castShadow = true;
             treeGroup.add(trunk);
 
-            // Ramas secundarias
             const branchGeom = new THREE.CylinderGeometry(0.18 * scale, 0.28 * scale, 2.2 * scale, 6);
             const b1 = new THREE.Mesh(branchGeom, woodMat);
             b1.position.set(0.6 * scale, 2.6 * scale, 0);
@@ -1366,13 +1530,6 @@
             b1.castShadow = true;
             treeGroup.add(b1);
 
-            const b2 = new THREE.Mesh(branchGeom, woodMat);
-            b2.position.set(-0.6 * scale, 2.8 * scale, 0.3 * scale);
-            b2.rotation.z = Math.PI / 3.8;
-            b2.castShadow = true;
-            treeGroup.add(b2);
-
-            // Copas de flores de cerezo esponjosas (Sakura)
             const foliageMat = new THREE.MeshStandardMaterial({
                 color: 0xf472b6,
                 roughness: 0.6,
@@ -1385,14 +1542,11 @@
                 [0, 3.8 * scale, 0, 1.4 * scale],
                 [1.3 * scale, 3.4 * scale, 0.2 * scale, 1.1 * scale],
                 [-1.2 * scale, 3.6 * scale, 0.4 * scale, 1.2 * scale],
-                [0.4 * scale, 4.4 * scale, -0.6 * scale, 1.15 * scale],
-                [-0.5 * scale, 3.2 * scale, -0.8 * scale, 1.0 * scale],
-                [0.8 * scale, 4.1 * scale, 0.7 * scale, 0.95 * scale]
+                [0.4 * scale, 4.4 * scale, -0.6 * scale, 1.15 * scale]
             ];
 
             clusterOffsets.forEach(c => {
-                const sphereGeom = new THREE.DodecahedronGeometry(c[3], 1);
-                const foliage = new THREE.Mesh(sphereGeom, foliageMat);
+                const foliage = new THREE.Mesh(new THREE.DodecahedronGeometry(c[3], 1), foliageMat);
                 foliage.position.set(c[0], c[1], c[2]);
                 foliage.castShadow = true;
                 treeGroup.add(foliage);
@@ -1408,22 +1562,18 @@
             const stoneMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.85, metalness: 0.1 });
             const glowMat = new THREE.MeshBasicMaterial({ color: 0xfef08a });
 
-            // Base
             const base = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.5, 0.3, 6), stoneMat);
             base.position.y = 0.15;
             lanternGroup.add(base);
 
-            // Pilar
             const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.22, 1.0, 6), stoneMat);
             pillar.position.y = 0.8;
             lanternGroup.add(pillar);
 
-            // Caja de luz
             const lightBox = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.45, 0.5), glowMat);
             lightBox.position.y = 1.45;
             lanternGroup.add(lightBox);
 
-            // Tejado
             const roof = new THREE.Mesh(new THREE.ConeGeometry(0.7, 0.4, 6), stoneMat);
             roof.position.y = 1.85;
             lanternGroup.add(roof);
@@ -1433,7 +1583,6 @@
         }
 
         function buildEnvironmentScenery(envId) {
-            // Limpiar props anteriores
             while (sceneryGroup.children.length > 0) {
                 const child = sceneryGroup.children[0];
                 sceneryGroup.remove(child);
@@ -1442,29 +1591,288 @@
             }
             animatedSceneryObjects = [];
 
-            if (envId === 'sakura_garden') {
-                // 1. Árboles de Sakura en esquinas y fondos
+            if (envId === 'tropical_beach_sunset') {
+                const oceanGeom = new THREE.PlaneGeometry(100, 60, 32, 32);
+                const oceanMat = new THREE.MeshStandardMaterial({
+                    color: 0x0369a1,
+                    roughness: 0.1,
+                    metalness: 0.85,
+                    emissive: 0x0c4a6e,
+                    emissiveIntensity: 0.3,
+                    side: THREE.DoubleSide
+                });
+                const ocean = new THREE.Mesh(oceanGeom, oceanMat);
+                ocean.rotation.x = -Math.PI / 2;
+                ocean.position.set(0, -0.45, -36);
+                sceneryGroup.add(ocean);
+                animatedSceneryObjects.push({ type: 'calm_ocean', mesh: ocean });
+
+                const sandMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.95, metalness: 0.05 });
+                const sand = new THREE.Mesh(new THREE.CircleGeometry(36, 36), sandMat);
+                sand.rotation.x = -Math.PI / 2;
+                sand.position.set(0, -0.28, 4);
+                sand.receiveShadow = true;
+                sceneryGroup.add(sand);
+
+                const sunGroup = new THREE.Group();
+                const sunCore = new THREE.Mesh(
+                    new THREE.SphereGeometry(7.5, 32, 32), 
+                    new THREE.MeshBasicMaterial({ color: 0xfef08a })
+                );
+                sunGroup.add(sunCore);
+
+                const coronaMat = new THREE.MeshBasicMaterial({
+                    color: 0xf97316,
+                    transparent: true,
+                    opacity: 0.45,
+                    blending: THREE.AdditiveBlending,
+                    side: THREE.DoubleSide
+                });
+                const corona = new THREE.Mesh(new THREE.RingGeometry(7.5, 14.5, 36), coronaMat);
+                sunGroup.add(corona);
+
+                sunGroup.position.set(0, 7.0, -48);
+                sceneryGroup.add(sunGroup);
+                animatedSceneryObjects.push({ type: 'sun_glow', object: sunGroup, corona });
+
+                sceneryGroup.add(createPalmTree(-13, -9, 1.45, 0.35));
+                sceneryGroup.add(createPalmTree(-15, 3, 1.25, 0.2));
+                sceneryGroup.add(createPalmTree(14, -8, 1.4, -0.3));
+                sceneryGroup.add(createPalmTree(15, 5, 1.2, -0.18));
+
+                sceneryGroup.add(createTikiTorch(-8.5, -8.5));
+                sceneryGroup.add(createTikiTorch(8.5, -8.5));
+                sceneryGroup.add(createTikiTorch(-8.5, 8.5));
+                sceneryGroup.add(createTikiTorch(8.5, 8.5));
+
+            } else if (envId === 'volcano_magma') {
+                const rockMat = new THREE.MeshStandardMaterial({ color: 0x1c1917, roughness: 0.95 });
+                const ground = new THREE.Mesh(new THREE.CircleGeometry(32, 32), rockMat);
+                ground.rotation.x = -Math.PI / 2;
+                ground.position.y = -0.3;
+                sceneryGroup.add(ground);
+
+                const magmaRingMat = new THREE.MeshBasicMaterial({ color: 0xff3b00, side: THREE.DoubleSide });
+                const magmaRing = new THREE.Mesh(new THREE.RingGeometry(9.0, 26.0, 36), magmaRingMat);
+                magmaRing.rotation.x = -Math.PI / 2;
+                magmaRing.position.y = -0.28;
+                sceneryGroup.add(magmaRing);
+                animatedSceneryObjects.push({ type: 'magma_pulse', mesh: magmaRing });
+
+                const v1 = new THREE.Mesh(new THREE.ConeGeometry(22, 17, 7), rockMat);
+                v1.position.set(-22, 5, -34);
+                sceneryGroup.add(v1);
+
+                const v2 = new THREE.Mesh(new THREE.ConeGeometry(28, 22, 8), rockMat);
+                v2.position.set(22, 7, -36);
+                sceneryGroup.add(v2);
+
+                sceneryGroup.add(createBurntTree(-12, -10, 1.3, 0.4));
+                sceneryGroup.add(createBurntTree(-14, 5, 1.15, -0.8));
+                sceneryGroup.add(createBurntTree(13, -9, 1.35, 1.2));
+                sceneryGroup.add(createBurntTree(14, 7, 1.2, -1.5));
+                sceneryGroup.add(createBurntTree(0, -16, 1.4, 0.2));
+
+            } else if (envId === 'cyber_city') {
+                sceneryGroup.add(createCyberBuilding(-22, -16, 11, 28, 11, 0x06b6d4));
+                sceneryGroup.add(createCyberBuilding(-16, -32, 14, 38, 14, 0xf43f5e));
+                sceneryGroup.add(createCyberBuilding(20, -18, 12, 30, 12, 0xa855f7));
+                sceneryGroup.add(createCyberBuilding(24, -34, 15, 42, 15, 0x06b6d4));
+                sceneryGroup.add(createCyberBuilding(-28, 10, 10, 24, 10, 0xf43f5e));
+                sceneryGroup.add(createCyberBuilding(28, 12, 11, 26, 11, 0xa855f7));
+
+                const gridMat = new THREE.MeshBasicMaterial({ color: 0x0891b2, wireframe: true });
+                const gridFloor = new THREE.Mesh(new THREE.PlaneGeometry(60, 60, 24, 24), gridMat);
+                gridFloor.rotation.x = -Math.PI / 2;
+                gridFloor.position.y = -0.32;
+                sceneryGroup.add(gridFloor);
+
+                const hovercars = [
+                    createHovercar(0x22d3ee, -35, 7.5, -12, 0.18, 1),
+                    createHovercar(0xf43f5e, 35, 10.5, -18, 0.22, -1),
+                    createHovercar(0xa855f7, -35, 14.0, -25, 0.16, 1),
+                    createHovercar(0xfacc15, 35, 6.0, 14, 0.2, -1),
+                    createHovercar(0x06b6d4, -35, 12.0, 18, 0.19, 1)
+                ];
+
+                hovercars.forEach(hc => {
+                    sceneryGroup.add(hc.mesh);
+                    animatedSceneryObjects.push({ type: 'hovercar_traffic', car: hc });
+                });
+
+            } else if (envId === 'crystal_cavern') {
+                const crystalMat = new THREE.MeshPhysicalMaterial({
+                    color: 0xc084fc,
+                    roughness: 0.1,
+                    metalness: 0.2,
+                    transmission: 0.65,
+                    emissive: 0x7e22ce,
+                    emissiveIntensity: 0.45
+                });
+
+                function createCrystalSpike(x, z, scale = 1.0, tilt = 0.2) {
+                    const spike = new THREE.Mesh(new THREE.ConeGeometry(0.85 * scale, 5.2 * scale, 6), crystalMat);
+                    spike.position.set(x, (2.6 * scale) - 0.4, z);
+                    spike.rotation.z = tilt;
+                    spike.castShadow = true;
+                    return spike;
+                }
+
+                sceneryGroup.add(createCrystalSpike(-11, -9, 1.3, 0.25));
+                sceneryGroup.add(createCrystalSpike(-13, 5, 1.1, -0.2));
+                sceneryGroup.add(createCrystalSpike(12, -8, 1.4, -0.3));
+                sceneryGroup.add(createCrystalSpike(14, 6, 1.2, 0.18));
+
+                const smallCrystalsGroup = new THREE.Group();
+                const smallGeom1 = new THREE.OctahedronGeometry(0.35, 0);
+                const smallGeom2 = new THREE.DodecahedronGeometry(0.3, 0);
+
+                const smallPositions = [
+                    [-7.5, -7.0], [-6.8, -8.2], [7.2, -7.4], [8.0, -6.5],
+                    [-7.8, 6.8], [-6.5, 7.5], [7.5, 7.2], [6.8, 8.0],
+                    [-9.2, -2.5], [-9.5, 2.0], [9.2, -3.0], [9.6, 2.5],
+                    [-4.5, -8.5], [4.5, -8.5], [-4.5, 8.5], [4.5, 8.5],
+                    [-11.5, -4.0], [11.5, -4.0], [-11.0, 4.0], [11.0, 4.0]
+                ];
+
+                smallPositions.forEach((pos, idx) => {
+                    const isOcta = idx % 2 === 0;
+                    const cMesh = new THREE.Mesh(isOcta ? smallGeom1 : smallGeom2, crystalMat);
+                    const sc = 0.6 + Math.random() * 0.7;
+                    cMesh.scale.set(sc, sc * 1.5, sc);
+                    cMesh.position.set(pos[0] + (Math.random() - 0.5) * 0.6, 0.05, pos[1] + (Math.random() - 0.5) * 0.6);
+                    cMesh.rotation.set(Math.random() * 0.5, Math.random() * Math.PI, Math.random() * 0.5);
+                    cMesh.castShadow = true;
+                    smallCrystalsGroup.add(cMesh);
+                });
+
+                sceneryGroup.add(smallCrystalsGroup);
+
+            } else if (envId === 'sky_clouds') {
+                const sunMesh = new THREE.Mesh(new THREE.SphereGeometry(6.5, 24, 24), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+                sunMesh.position.set(20, 26, -34);
+                sceneryGroup.add(sunMesh);
+
+                const cloudsList = [
+                    { x: -10, y: 6.5, z: -16, scale: 1.5 },
+                    { x: 11, y: 7.2, z: -17, scale: 1.6 },
+                    { x: 0, y: 9.0, z: -20, scale: 1.8 },
+                    { x: -18, y: 8.5, z: -10, scale: 1.4 },
+                    { x: 18, y: 8.0, z: -9, scale: 1.45 },
+                    { x: -7, y: 5.5, z: 15, scale: 1.3 },
+                    { x: 8, y: 5.8, z: 16, scale: 1.35 }
+                ];
+
+                cloudsList.forEach((c, i) => {
+                    const cloudMesh = createFluffyCloudMesh(c.scale);
+                    cloudMesh.position.set(c.x, c.y, c.z);
+                    sceneryGroup.add(cloudMesh);
+                    animatedSceneryObjects.push({ type: 'cloud_drift', object: cloudMesh, baseX: c.x, phase: i * 0.9 });
+                });
+
+            } else if (envId === 'aurora_borealis') {
+                const snowGroundMat = new THREE.MeshStandardMaterial({ color: 0xf1f5f9, roughness: 0.45, metalness: 0.08 });
+                const snowGround = new THREE.Mesh(new THREE.CircleGeometry(36, 36), snowGroundMat);
+                snowGround.rotation.x = -Math.PI / 2;
+                snowGround.position.y = -0.3;
+                snowGround.receiveShadow = true;
+                sceneryGroup.add(snowGround);
+
+                const moundMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.5 });
+                const mounds = [
+                    [-10, -7, 2.5], [11, -8, 2.8], [-12, 6, 2.4], [12, 7, 2.6]
+                ];
+                mounds.forEach(m => {
+                    const mound = new THREE.Mesh(new THREE.SphereGeometry(m[2], 12, 8), moundMat);
+                    mound.scale.set(1.6, 0.35, 1.6);
+                    mound.position.set(m[0], -0.2, m[1]);
+                    sceneryGroup.add(mound);
+                });
+
+                sceneryGroup.add(createSnowyPineTree(-12, -9, 1.4));
+                sceneryGroup.add(createSnowyPineTree(-14, 4, 1.25));
+                sceneryGroup.add(createSnowyPineTree(13, -8, 1.35));
+                sceneryGroup.add(createSnowyPineTree(14, 6, 1.2));
+                sceneryGroup.add(createSnowyPineTree(0, -18, 1.5));
+
+                const auroraGroup = new THREE.Group();
+                const auroraConfigs = [
+                    { color: 0x10b981, y: 16, z: -26, opacity: 0.45 },
+                    { color: 0x06b6d4, y: 20, z: -30, opacity: 0.4 },
+                    { color: 0x8b5cf6, y: 24, z: -34, opacity: 0.35 }
+                ];
+
+                const ribbonMeshes = [];
+                auroraConfigs.forEach(ac => {
+                    const ribbonGeom = new THREE.PlaneGeometry(65, 16, 40, 8);
+                    const ribbonMat = new THREE.MeshBasicMaterial({
+                        color: ac.color,
+                        transparent: true,
+                        opacity: ac.opacity,
+                        blending: THREE.AdditiveBlending,
+                        side: THREE.DoubleSide,
+                        depthWrite: false
+                    });
+                    const ribbon = new THREE.Mesh(ribbonGeom, ribbonMat);
+                    ribbon.position.set(0, ac.y, ac.z);
+                    auroraGroup.add(ribbon);
+                    ribbonMeshes.push(ribbon);
+                });
+
+                sceneryGroup.add(auroraGroup);
+                animatedSceneryObjects.push({ type: 'aurora_wave', ribbons: ribbonMeshes });
+
+            } else if (envId === 'sakura_garden') {
                 sceneryGroup.add(createSakuraTree(-12, -10, 1.4, 0.4));
                 sceneryGroup.add(createSakuraTree(13, -11, 1.3, -0.6));
                 sceneryGroup.add(createSakuraTree(-13, 8, 1.25, 1.1));
                 sceneryGroup.add(createSakuraTree(14, 9, 1.35, -1.3));
 
-                // 2. Linternas japonesas de piedra
                 sceneryGroup.add(createJapaneseLantern(-8.5, -8.5));
                 sceneryGroup.add(createJapaneseLantern(8.5, -8.5));
                 sceneryGroup.add(createJapaneseLantern(-8.5, 8.5));
                 sceneryGroup.add(createJapaneseLantern(8.5, 8.5));
 
-                // 3. Suelo de jardín zen circular
                 const groundMat = new THREE.MeshStandardMaterial({ color: 0x1f1218, roughness: 0.9 });
                 const ground = new THREE.Mesh(new THREE.CircleGeometry(32, 32), groundMat);
                 ground.rotation.x = -Math.PI / 2;
                 ground.position.y = -0.3;
-                ground.receiveShadow = true;
                 sceneryGroup.add(ground);
 
+            } else if (envId === 'fairy_forest') {
+                const stalkMat = new THREE.MeshStandardMaterial({ color: 0xf1f5f9, roughness: 0.7 });
+                const capMat1 = new THREE.MeshStandardMaterial({ color: 0xec4899, emissive: 0xbe185d, emissiveIntensity: 0.6, roughness: 0.3 });
+                const capMat2 = new THREE.MeshStandardMaterial({ color: 0x06b6d4, emissive: 0x0e7490, emissiveIntensity: 0.6, roughness: 0.3 });
+
+                function createMushroom(x, z, scale = 1.0, isPink = true) {
+                    const m = new THREE.Group();
+                    const stalk = new THREE.Mesh(new THREE.CylinderGeometry(0.3 * scale, 0.45 * scale, 3.2 * scale, 8), stalkMat);
+                    stalk.position.y = 1.6 * scale;
+                    m.add(stalk);
+
+                    const cap = new THREE.Mesh(new THREE.ConeGeometry(1.4 * scale, 1.2 * scale, 12), isPink ? capMat1 : capMat2);
+                    cap.position.y = 3.5 * scale;
+                    m.add(cap);
+
+                    m.position.set(x, -0.2, z);
+                    return m;
+                }
+
+                sceneryGroup.add(createMushroom(-12, -9, 1.4, true));
+                sceneryGroup.add(createMushroom(-14, 4, 1.1, false));
+                sceneryGroup.add(createMushroom(13, -8, 1.3, false));
+                sceneryGroup.add(createMushroom(14, 6, 1.2, true));
+
+                for (let i = 0; i < 12; i++) {
+                    const orbMat = new THREE.MeshBasicMaterial({ color: i % 2 === 0 ? 0x67e8f9 : 0xf472b6 });
+                    const orb = new THREE.Mesh(new THREE.SphereGeometry(0.25, 8, 8), orbMat);
+                    const angle = (i / 12) * Math.PI * 2;
+                    orb.position.set(Math.cos(angle) * 16, 2 + Math.random() * 4, Math.sin(angle) * 16);
+                    sceneryGroup.add(orb);
+                    animatedSceneryObjects.push({ type: 'fairy_wisp', object: orb, phase: i * 0.8, baseR: 16 });
+                }
+
             } else if (envId === 'deep_cosmos') {
-                // 1. Planeta Gigante Anillado (Estilo Saturno cósmico)
                 const planetGroup = new THREE.Group();
                 const planetMat = new THREE.MeshStandardMaterial({
                     color: 0x7c3aed,
@@ -1476,13 +1884,7 @@
                 const planet = new THREE.Mesh(new THREE.SphereGeometry(7, 32, 32), planetMat);
                 planetGroup.add(planet);
 
-                // Anillo exterior
-                const ringMat = new THREE.MeshBasicMaterial({
-                    color: 0xc084fc,
-                    side: THREE.DoubleSide,
-                    transparent: true,
-                    opacity: 0.7
-                });
+                const ringMat = new THREE.MeshBasicMaterial({ color: 0xc084fc, side: THREE.DoubleSide, transparent: true, opacity: 0.7 });
                 const ring = new THREE.Mesh(new THREE.RingGeometry(9, 14, 48), ringMat);
                 ring.rotation.x = Math.PI / 2.3;
                 ring.rotation.y = Math.PI / 7;
@@ -1492,24 +1894,6 @@
                 sceneryGroup.add(planetGroup);
                 animatedSceneryObjects.push({ type: 'rotate', object: planetGroup, speed: 0.002 });
 
-                // 2. Nubes de Nebulosa Volumétricas
-                const nebulaColors = [0xd946ef, 0x8b5cf6, 0x06b6d4, 0xec4899];
-                for (let i = 0; i < 7; i++) {
-                    const nebMat = new THREE.MeshBasicMaterial({
-                        color: nebulaColors[i % nebulaColors.length],
-                        transparent: true,
-                        opacity: 0.18,
-                        blending: THREE.AdditiveBlending,
-                        depthWrite: false
-                    });
-                    const neb = new THREE.Mesh(new THREE.DodecahedronGeometry(6 + Math.random() * 4, 1), nebMat);
-                    const angle = (i / 7) * Math.PI * 2;
-                    neb.position.set(Math.cos(angle) * 32, 8 + Math.random() * 12, Math.sin(angle) * 32);
-                    sceneryGroup.add(neb);
-                    animatedSceneryObjects.push({ type: 'nebula_pulse', object: neb, phase: i * 1.2 });
-                }
-
-                // 3. Asteroides flotantes en órbita
                 const asteroidMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.8 });
                 for (let i = 0; i < 14; i++) {
                     const ast = new THREE.Mesh(new THREE.DodecahedronGeometry(0.5 + Math.random() * 0.9, 0), asteroidMat);
@@ -1520,247 +1904,72 @@
                     animatedSceneryObjects.push({ type: 'orbit', object: ast, radius: r, angle: a, speed: 0.003 + Math.random() * 0.004 });
                 }
 
-            } else if (envId === 'sky_clouds') {
-                // 1. Gran Sol Radiante
-                const sunGroup = new THREE.Group();
-                const sunMat = new THREE.MeshBasicMaterial({ color: 0xfffbeb });
-                const sunMesh = new THREE.Mesh(new THREE.SphereGeometry(6, 24, 24), sunMat);
-                sunGroup.add(sunMesh);
-
-                const haloMat = new THREE.MeshBasicMaterial({
-                    color: 0xfef08a,
-                    transparent: true,
-                    opacity: 0.35,
-                    blending: THREE.AdditiveBlending,
-                    side: THREE.BackSide
-                });
-                const halo = new THREE.Mesh(new THREE.SphereGeometry(8.5, 24, 24), haloMat);
-                sunGroup.add(halo);
-
-                sunGroup.position.set(22, 28, -38);
-                sceneryGroup.add(sunGroup);
-
-                // 2. Nubes Volumétricas Flotantes en 3D
-                const cloudMat = new THREE.MeshStandardMaterial({
-                    color: 0xffffff,
-                    roughness: 0.4,
-                    metalness: 0.05,
-                    emissive: 0xdbeafe,
-                    emissiveIntensity: 0.15
-                });
-
-                function createFluffyCloud(x, y, z, scale = 1.0) {
-                    const cloud = new THREE.Group();
-                    const spheres = [
-                        [0, 0, 0, 2.0],
-                        [1.6, -0.2, 0, 1.5],
-                        [-1.6, -0.3, 0.2, 1.4],
-                        [0.8, 0.8, 0, 1.6],
-                        [-0.7, 0.7, -0.2, 1.45],
-                        [0, 0, 1.2, 1.4],
-                        [0, 0, -1.2, 1.3]
-                    ];
-                    spheres.forEach(s => {
-                        const m = new THREE.Mesh(new THREE.SphereGeometry(s[3] * scale, 12, 12), cloudMat);
-                        m.position.set(s[0] * scale, s[1] * scale, s[2] * scale);
-                        cloud.add(m);
-                    });
-                    cloud.position.set(x, y, z);
-                    return cloud;
-                }
-
-                const cloudPositions = [
-                    [-22, 14, -20, 1.4],
-                    [18, 16, -26, 1.6],
-                    [-18, 10, 22, 1.3],
-                    [24, 12, 18, 1.5],
-                    [0, 18, -32, 2.0]
-                ];
-
-                cloudPositions.forEach(cp => {
-                    const cloud = createFluffyCloud(cp[0], cp[1], cp[2], cp[3]);
-                    sceneryGroup.add(cloud);
-                    animatedSceneryObjects.push({ type: 'cloud_drift', object: cloud, speed: 0.01 + Math.random() * 0.015 });
-                });
-
-            } else if (envId === 'aurora_borealis') {
-                // 1. Cortinas de Aurora Boreal Ondulantes
-                const auroraGroup = new THREE.Group();
-                const ribbonGeom = new THREE.PlaneGeometry(55, 14, 32, 6);
-                const ribbonMat = new THREE.MeshBasicMaterial({
-                    color: 0x34d399,
-                    transparent: true,
-                    opacity: 0.45,
-                    blending: THREE.AdditiveBlending,
-                    side: THREE.DoubleSide,
-                    depthWrite: false
-                });
-
-                const ribbon1 = new THREE.Mesh(ribbonGeom, ribbonMat);
-                ribbon1.position.set(0, 18, -25);
-                ribbon1.rotation.y = 0.15;
-                auroraGroup.add(ribbon1);
-
-                const ribbonMat2 = new THREE.MeshBasicMaterial({
-                    color: 0x22d3ee,
-                    transparent: true,
-                    opacity: 0.35,
-                    blending: THREE.AdditiveBlending,
-                    side: THREE.DoubleSide,
-                    depthWrite: false
-                });
-                const ribbon2 = new THREE.Mesh(ribbonGeom, ribbonMat2);
-                ribbon2.position.set(-6, 22, -30);
-                ribbon2.rotation.y = -0.2;
-                auroraGroup.add(ribbon2);
-
-                sceneryGroup.add(auroraGroup);
-                animatedSceneryObjects.push({ type: 'aurora_wave', ribbons: [ribbon1, ribbon2] });
-
-                // 2. Montañas e Iglús/Pinos Nevados
-                const snowPineMat = new THREE.MeshStandardMaterial({ color: 0x064e3b, roughness: 0.8 });
-                const snowTopMat = new THREE.MeshStandardMaterial({ color: 0xf0fdf4, roughness: 0.5 });
-
-                function createSnowPine(x, z, scale = 1.0) {
-                    const pine = new THREE.Group();
-                    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.2 * scale, 0.3 * scale, 1.2 * scale, 6), snowPineMat);
-                    trunk.position.y = 0.6 * scale;
-                    pine.add(trunk);
-
-                    const cones = [
-                        [2.0 * scale, 1.8 * scale, 1.5 * scale],
-                        [1.5 * scale, 1.4 * scale, 2.5 * scale],
-                        [1.0 * scale, 1.0 * scale, 3.3 * scale]
-                    ];
-                    cones.forEach(cn => {
-                        const cone = new THREE.Mesh(new THREE.ConeGeometry(cn[1], cn[0], 7), snowPineMat);
-                        cone.position.y = cn[2];
-                        cone.castShadow = true;
-                        pine.add(cone);
-
-                        const snowCap = new THREE.Mesh(new THREE.ConeGeometry(cn[1] * 0.6, cn[0] * 0.4, 7), snowTopMat);
-                        snowCap.position.y = cn[2] + cn[0] * 0.35;
-                        pine.add(snowCap);
-                    });
-                    pine.position.set(x, 0, z);
-                    return pine;
-                }
-
-                sceneryGroup.add(createSnowPine(-11, -9, 1.2));
-                sceneryGroup.add(createSnowPine(-13, -7, 1.4));
-                sceneryGroup.add(createSnowPine(12, -9, 1.3));
-                sceneryGroup.add(createSnowPine(14, -6, 1.1));
-                sceneryGroup.add(createSnowPine(-12, 10, 1.3));
-                sceneryGroup.add(createSnowPine(13, 9, 1.25));
-
-            } else if (envId === 'golden_sunset') {
-                // 1. Sol Crepuscular Poniente
-                const sunMesh = new THREE.Mesh(
-                    new THREE.SphereGeometry(9, 32, 32),
-                    new THREE.MeshBasicMaterial({ color: 0xfef08a })
-                );
-                sunMesh.position.set(0, 4, -42);
-                sceneryGroup.add(sunMesh);
-
-                // 2. Siluetas de Montañas y Dunas
-                const mountainMat = new THREE.MeshStandardMaterial({ color: 0x270f06, roughness: 0.95 });
-                const m1 = new THREE.Mesh(new THREE.ConeGeometry(18, 14, 5), mountainMat);
-                m1.position.set(-22, 4, -36);
-                sceneryGroup.add(m1);
-
-                const m2 = new THREE.Mesh(new THREE.ConeGeometry(24, 18, 5), mountainMat);
-                m2.position.set(16, 6, -40);
-                sceneryGroup.add(m2);
-
-                const m3 = new THREE.Mesh(new THREE.ConeGeometry(14, 10, 5), mountainMat);
-                m3.position.set(0, 2, -35);
-                sceneryGroup.add(m3);
-
             } else if (envId === 'royal_hall') {
-                // 1. Columnas de Mármol Imperial con Capiteles Dorados
                 const marbleMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.2, metalness: 0.1 });
                 const goldCapMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.15, metalness: 0.85 });
 
                 function createPalaceColumn(x, z) {
                     const col = new THREE.Group();
-                    // Base dorada
-                    const b = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.4, 1.4), goldCapMat);
-                    b.position.y = 0.2;
-                    col.add(b);
-
-                    // Fuste
                     const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.55, 8.5, 16), marbleMat);
                     shaft.position.y = 4.65;
-                    shaft.castShadow = true;
                     col.add(shaft);
 
-                    // Capitel dorado corintio
                     const cap = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.6, 1.3), goldCapMat);
                     cap.position.y = 9.2;
                     col.add(cap);
-
-                    // Candelabro con luz
-                    const torch = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.08, 0.8, 8), goldCapMat);
-                    torch.position.set(0.65, 5.0, 0);
-                    torch.rotation.z = -Math.PI / 4;
-                    col.add(torch);
-
-                    const flame = new THREE.Mesh(new THREE.SphereGeometry(0.2, 8, 8), new THREE.MeshBasicMaterial({ color: 0xf59e0b }));
-                    flame.position.set(1.0, 5.4, 0);
-                    col.add(flame);
 
                     col.position.set(x, -0.2, z);
                     return col;
                 }
 
-                // Disponer columnas majestuosas a los lados
                 sceneryGroup.add(createPalaceColumn(-10, -9));
-                sceneryGroup.add(createPalaceColumn(-10, 0));
                 sceneryGroup.add(createPalaceColumn(-10, 9));
                 sceneryGroup.add(createPalaceColumn(10, -9));
-                sceneryGroup.add(createPalaceColumn(10, 0));
                 sceneryGroup.add(createPalaceColumn(10, 9));
             }
         }
 
-        function initBackgroundEnvironment() {
-            const env = BACKGROUND_ENVIRONMENTS[currentEnvIndex];
+        function createPetalCanvas() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 32;
+            canvas.height = 32;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#f472b6';
+            ctx.beginPath();
+            ctx.ellipse(16, 16, 12, 6, Math.PI / 4, 0, Math.PI * 2);
+            ctx.fill();
+            return canvas;
+        }
 
-            // 1. Actualizar Niebla y Renderer
-            if (scene.fog) {
-                scene.fog.color.setHex(env.fogColor);
-            }
-            renderer.setClearColor(env.fogColor);
+        function createSparkleCanvas() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 64;
+            canvas.height = 64;
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, 64, 64);
 
-            // 2. Actualizar Luces de la Escena
-            const amb = scene.getObjectByName('ambientLight');
-            if (amb) {
-                amb.color.setHex(env.ambientColor);
-                amb.intensity = env.ambientIntensity || 0.95;
-            }
-            const dir = scene.getObjectByName('dirLight');
-            if (dir) {
-                dir.color.setHex(env.dirLightColor);
-            }
+            const gradient = ctx.createRadialGradient(32, 32, 0, 32, 32, 30);
+            gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
+            gradient.addColorStop(0.3, 'rgba(254, 240, 138, 0.8)');
+            gradient.addColorStop(0.6, 'rgba(245, 158, 11, 0.4)');
+            gradient.addColorStop(1, 'rgba(245, 158, 11, 0)');
 
-            // 3. Crear o Actualizar Bóveda Celeste 3D (SkyDome)
-            if (skyDomeMesh) {
-                scene.remove(skyDomeMesh);
-                if (skyDomeMesh.geometry) skyDomeMesh.geometry.dispose();
-                if (skyDomeMesh.material) skyDomeMesh.material.dispose();
-            }
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 64, 64);
 
-            const skyGeo = new THREE.SphereGeometry(75, 32, 24);
-            const skyTex = createSkyTexture(env.skyTop, env.skyBottom);
-            const skyMat = new THREE.MeshBasicMaterial({
-                map: skyTex,
-                side: THREE.BackSide,
-                depthWrite: false
-            });
-            skyDomeMesh = new THREE.Mesh(skyGeo, skyMat);
-            scene.add(skyDomeMesh);
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(32, 4);
+            ctx.lineTo(32, 60);
+            ctx.moveTo(4, 32);
+            ctx.lineTo(60, 32);
+            ctx.stroke();
 
-            // 4. Limpiar Sistemas de Partículas Previos
+            return canvas;
+        }
+
+        function initEnvironmentParticles(env) {
             if (particleSystem) {
                 scene.remove(particleSystem);
                 if (particleSystem.geometry) particleSystem.geometry.dispose();
@@ -1768,84 +1977,120 @@
                 particleSystem = null;
             }
 
-            sakuraPetalSprites.forEach(p => {
-                scene.remove(p.sprite);
-                if (p.sprite.material) p.sprite.material.dispose();
-            });
+            sakuraPetalSprites.forEach(p => scene.remove(p.sprite));
             sakuraPetalSprites = [];
 
-            // 5. Instanciar Efecto de Partículas según el Entorno
             if (env.particleType === 'sakura') {
-                if (!sakuraPetalTexture) sakuraPetalTexture = createSakuraPetalTexture();
-
-                const count = env.particleCount || 180;
+                const petalTex = new THREE.CanvasTexture(createPetalCanvas());
+                const count = env.particleCount || 200;
                 for (let i = 0; i < count; i++) {
-                    const mat = new THREE.SpriteMaterial({
-                        map: sakuraPetalTexture,
+                    const pMat = new THREE.SpriteMaterial({
+                        map: petalTex,
                         transparent: true,
-                        opacity: 0.75 + Math.random() * 0.25,
-                        blending: THREE.NormalBlending,
-                        depthWrite: false
+                        opacity: 0.85,
+                        rotation: Math.random() * Math.PI
                     });
-                    const sprite = new THREE.Sprite(mat);
-                    const scale = 0.2 + Math.random() * 0.28;
-                    sprite.scale.set(scale, scale, 1);
-
-                    const x = (Math.random() - 0.5) * 28;
-                    const y = 0.5 + Math.random() * 14;
-                    const z = (Math.random() - 0.5) * 28;
-                    sprite.position.set(x, y, z);
-
+                    const sprite = new THREE.Sprite(pMat);
+                    sprite.scale.set(0.4, 0.25, 1);
+                    sprite.position.set(
+                        (Math.random() - 0.5) * 26,
+                        Math.random() * 14,
+                        (Math.random() - 0.5) * 26
+                    );
                     scene.add(sprite);
                     sakuraPetalSprites.push({
                         sprite,
-                        speedY: 0.015 + Math.random() * 0.025,
-                        speedX: 0.008 + Math.random() * 0.015,
+                        speedY: 0.018 + Math.random() * 0.022,
+                        speedX: (Math.random() - 0.5) * 0.015,
+                        swaySpeed: 1.2 + Math.random() * 1.5,
                         swayPhase: Math.random() * Math.PI * 2,
-                        swaySpeed: 1.5 + Math.random() * 2,
-                        rotSpeed: (Math.random() - 0.5) * 2
+                        rotSpeed: (Math.random() - 0.5) * 0.05
                     });
                 }
             } else {
-                const count = env.particleCount || 200;
+                const particleCount = env.particleCount || 180;
                 const geometry = new THREE.BufferGeometry();
-                const positions = new Float32Array(count * 3);
+                const positions = new Float32Array(particleCount * 3);
 
-                for (let i = 0; i < count * 3; i += 3) {
-                    positions[i] = (Math.random() - 0.5) * 32;
-                    positions[i + 1] = Math.random() * 16;
-                    positions[i + 2] = (Math.random() - 0.5) * 32;
+                for (let i = 0; i < particleCount * 3; i += 3) {
+                    positions[i] = (Math.random() - 0.5) * 28;
+                    positions[i + 1] = Math.random() * 14;
+                    positions[i + 2] = (Math.random() - 0.5) * 28;
                 }
 
                 geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
 
                 const material = new THREE.PointsMaterial({
-                    color: env.particleColor,
-                    size: env.particleType === 'stars' ? 0.18 : 0.24,
+                    color: env.particleColor || 0xffffff,
+                    size: env.particleType === 'stars' ? 0.25 : 0.18,
                     transparent: true,
                     opacity: 0.75,
-                    blending: THREE.AdditiveBlending,
-                    depthWrite: false
+                    blending: THREE.AdditiveBlending
                 });
 
                 particleSystem = new THREE.Points(geometry, material);
                 scene.add(particleSystem);
             }
+        }
 
-            // 6. Construir los Objetos y Escenarios 3D del Entorno
-            buildEnvironmentScenery(env.id);
-
-            // 7. Actualizar Viñeta de Fondo
-            const vignette = document.getElementById('vignette-overlay');
-            if (vignette && env.vignetteGradient) {
-                vignette.className = `absolute inset-0 bg-gradient-to-t ${env.vignetteGradient} pointer-events-none z-10 transition-colors duration-700`;
+        function initMineralSparkles() {
+            while (sparklesGroup.children.length > 0) {
+                const c = sparklesGroup.children[0];
+                sparklesGroup.remove(c);
+                if (c.material) c.material.dispose();
             }
+            sparkleSprites = [];
+
+            const theme = BOARD_THEMES[currentThemeIndex];
+            const sparkleTex = new THREE.CanvasTexture(createSparkleCanvas());
+
+            piecesGroup.children.forEach(piece => {
+                if (piece.userData && piece.userData.isPiece) {
+                    const sparkleMat = new THREE.SpriteMaterial({
+                        map: sparkleTex,
+                        transparent: true,
+                        opacity: 0,
+                        color: theme.sparkleColor || 0xffffff,
+                        blending: THREE.AdditiveBlending
+                    });
+                    const sprite = new THREE.Sprite(sparkleMat);
+                    sprite.scale.set(0.65, 0.65, 1);
+                    sprite.position.set(
+                        piece.position.x + (Math.random() - 0.5) * 0.4,
+                        piece.position.y + 1.2 + Math.random() * 0.4,
+                        piece.position.z + (Math.random() - 0.5) * 0.4
+                    );
+
+                    sparklesGroup.add(sprite);
+                    sparkleSprites.push({
+                        sprite,
+                        parentPiece: piece,
+                        offset: new THREE.Vector3((Math.random() - 0.5) * 0.4, 0.9 + Math.random() * 0.6, (Math.random() - 0.5) * 0.4),
+                        speed: 1.5 + Math.random() * 2.5,
+                        phase: Math.random() * Math.PI * 2,
+                        baseScale: 0.5 + Math.random() * 0.4
+                    });
+                }
+            });
+        }
+
+        function updateMineralSparkles(time) {
+            const t = (time || performance.now()) * 0.001;
+            sparkleSprites.forEach(item => {
+                if (item.parentPiece) {
+                    item.sprite.position.copy(item.parentPiece.position).add(item.offset);
+                }
+                const wave = Math.sin(t * item.speed + item.phase);
+                const opacity = Math.max(0, wave);
+                item.sprite.material.opacity = Math.pow(opacity, 3);
+                const s = item.baseScale * (0.8 + 0.4 * opacity);
+                item.sprite.scale.set(s, s, 1);
+            });
         }
 
         function updateEnvironmentParticles(time) {
             const t = (time || performance.now()) * 0.001;
 
-            // Animación de Pétalos de Sakura
             if (sakuraPetalSprites.length > 0) {
                 sakuraPetalSprites.forEach(p => {
                     p.sprite.position.y -= p.speedY;
@@ -1861,7 +2106,6 @@
                 });
             }
 
-            // Animación de Partículas Estándar
             if (particleSystem) {
                 const positions = particleSystem.geometry.attributes.position.array;
                 for (let i = 1; i < positions.length; i += 3) {
@@ -1873,7 +2117,6 @@
                 particleSystem.geometry.attributes.position.needsUpdate = true;
             }
 
-            // Animación de los Objetos Escénicos 3D del Fondo
             animatedSceneryObjects.forEach(item => {
                 if (item.type === 'rotate') {
                     item.object.rotation.y += item.speed;
@@ -1883,18 +2126,45 @@
                     item.object.position.z = Math.sin(item.angle) * item.radius;
                     item.object.rotation.x += 0.01;
                     item.object.rotation.y += 0.015;
-                } else if (item.type === 'nebula_pulse') {
-                    const s = 1.0 + Math.sin(t * 1.5 + item.phase) * 0.12;
-                    item.object.scale.set(s, s, s);
+                } else if (item.type === 'calm_ocean') {
+                    const pos = item.mesh.geometry.attributes.position;
+                    for (let i = 0; i < pos.count; i++) {
+                        const u = pos.getX(i);
+                        const v = pos.getY(i);
+                        const z = Math.sin(u * 0.08 + t * 1.4) * 0.2 + Math.cos(v * 0.06 + t * 1.1) * 0.15;
+                        pos.setZ(i, z);
+                    }
+                    pos.needsUpdate = true;
+                } else if (item.type === 'sun_glow') {
+                    const pulse = 1.0 + Math.sin(t * 1.8) * 0.06;
+                    if (item.corona) {
+                        item.corona.scale.set(pulse, pulse, 1);
+                        item.corona.material.opacity = 0.4 + Math.sin(t * 1.8) * 0.1;
+                    }
+                } else if (item.type === 'magma_pulse') {
+                    const intensity = 0.8 + Math.sin(t * 3.0) * 0.25;
+                    item.mesh.material.color.setRGB(1.0 * intensity, 0.22 * intensity, 0.0);
+                } else if (item.type === 'fairy_wisp') {
+                    item.object.position.y += Math.sin(t * 2.5 + item.phase) * 0.02;
+                    item.object.position.x = Math.cos(t * 0.6 + item.phase) * item.baseR;
+                    item.object.position.z = Math.sin(t * 0.6 + item.phase) * item.baseR;
+                } else if (item.type === 'hovercar_traffic') {
+                    const c = item.car;
+                    c.mesh.position.x += c.speed;
+                    if (c.direction > 0 && c.mesh.position.x > 38) {
+                        c.mesh.position.x = -38;
+                    } else if (c.direction < 0 && c.mesh.position.x < -38) {
+                        c.mesh.position.x = 38;
+                    }
                 } else if (item.type === 'cloud_drift') {
-                    item.object.position.x += item.speed;
-                    if (item.object.position.x > 36) item.object.position.x = -36;
+                    item.object.position.x = item.baseX + Math.sin(t * 0.35 + item.phase) * 2.4;
+                    item.object.position.y += Math.sin(t * 0.6 + item.phase) * 0.004;
                 } else if (item.type === 'aurora_wave') {
                     item.ribbons.forEach((rib, idx) => {
                         const pos = rib.geometry.attributes.position;
                         for (let i = 0; i < pos.count; i++) {
                             const u = pos.getX(i);
-                            const wave = Math.sin(u * 0.15 + t * 1.2 + idx) * 1.6;
+                            const wave = Math.sin(u * 0.12 + t * 1.5 + idx * 1.2) * 2.2 + Math.cos(u * 0.05 + t * 0.8) * 1.2;
                             pos.setZ(i, wave);
                         }
                         pos.needsUpdate = true;
@@ -1902,7 +2172,6 @@
                 }
             });
 
-            // Rotación Lenta del Domo Celeste
             if (skyDomeMesh) {
                 skyDomeMesh.rotation.y += 0.0003;
             }
@@ -1915,7 +2184,6 @@
 
             const theme = BOARD_THEMES[currentThemeIndex];
 
-            // Marco Físico del Tablero
             const frameGeom = new THREE.BoxGeometry(SQUARE_SIZE * 8 + 0.9, 0.35, SQUARE_SIZE * 8 + 0.9);
             const frameMat = new THREE.MeshStandardMaterial({
                 color: theme.frameColor,
@@ -2053,6 +2321,7 @@
                     kCrossHM.position.y = 1.55;
                     kStemM.castShadow = true;
                     kCrossVM.castShadow = true;
+                    kCrossHM.castShadow = true;
                     pieceGroup.add(kStemM, kCrossVM, kCrossHM);
                     break;
             }
@@ -3175,7 +3444,6 @@
             });
             document.getElementById('close-bot-modal').addEventListener('click', () => toggleModal('modal-bots', false));
 
-            // Selector de Fondos / Entornos y Escenarios 3D
             document.getElementById('btn-environments').addEventListener('click', () => {
                 renderEnvironmentList();
                 toggleModal('modal-environments', true);
