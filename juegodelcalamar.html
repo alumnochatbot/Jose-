@@ -1,9 +1,10 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>El Juego del Calamar - 6 Desafíos Completos</title>
+  <title>El Juego del Calamar - Suite 3D en Primera Persona</title>
   
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -11,20 +12,22 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Montserrat:wght@400;600;800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Montserrat:wght@400;600;800&display=swap');
 
     :root {
       --sq-pink: #ff2a70;
       --sq-pink-glow: rgba(255, 42, 112, 0.6);
       --sq-green: #037a4b;
       --sq-gold: #f6c83b;
-      --sq-dark: #090a0f;
+      --sq-cyan: #06b6d4;
+      --sq-dark: #07080c;
     }
 
     * {
       user-select: none;
       -webkit-user-select: none;
       -webkit-touch-callout: none;
+      box-sizing: border-box;
     }
 
     body {
@@ -38,7 +41,7 @@
       font-family: 'Orbitron', monospace;
     }
 
-    /* Efectos de neón y estilo Squid Game */
+    /* Glows y Luces de Neón */
     .pink-glow {
       box-shadow: 0 0 25px var(--sq-pink-glow), inset 0 0 10px var(--sq-pink-glow);
     }
@@ -49,7 +52,7 @@
       text-shadow: 0 0 15px rgba(246, 200, 59, 0.8);
     }
     .cyan-glow {
-      box-shadow: 0 0 20px rgba(6, 182, 212, 0.4);
+      box-shadow: 0 0 25px rgba(6, 182, 212, 0.5), inset 0 0 10px rgba(6, 182, 212, 0.3);
     }
 
     /* Animación de escaneo láser */
@@ -62,7 +65,7 @@
       animation: scanner-laser 2s infinite ease-in-out;
     }
 
-    /* Shaking de eliminación */
+    /* Shaking de impacto y eliminación */
     @keyframes shakeScreen {
       0% { transform: translate(1px, 1px) rotate(0deg); }
       20% { transform: translate(-4px, 0px) rotate(1deg); }
@@ -75,56 +78,74 @@
       animation: shakeScreen 0.45s ease-in-out;
     }
 
+    /* Canvas 3D Viewports */
+    .three-canvas-container canvas {
+      display: block;
+      width: 100% !important;
+      height: 100% !important;
+      outline: none;
+    }
+
     /* Barra de progreso fluida */
     .progress-bar-fill {
       transition: width 0.15s ease-out;
     }
 
-    /* Canilleras / Bot Tokens */
-    .bot-token {
-      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    /* Primer plano / Manos en 1ra Persona */
+    @keyframes punchAnimation {
+      0% { transform: translate(0, 0) scale(1); }
+      50% { transform: translate(20px, -25px) scale(1.15); }
+      100% { transform: translate(0, 0) scale(1); }
+    }
+    .punch-active {
+      animation: punchAnimation 0.25s ease-out;
     }
 
-    /* Lienzo Dalgona y Calamar */
-    canvas {
-      touch-action: none;
+    /* Efecto de dinero cayendo en la hucha */
+    @keyframes moneyDrop {
+      0% { transform: translateY(-20px) scale(0.9); opacity: 0; }
+      50% { opacity: 1; }
+      100% { transform: translateY(0) scale(1); opacity: 1; }
+    }
+    .money-anim {
+      animation: moneyDrop 0.8s ease-out;
     }
   </style>
 </head>
 <body class="min-h-screen bg-slate-950 flex flex-col justify-between selection:bg-pink-600 selection:text-white">
 
   <!-- ==================== HEADER & TOP STATS BAR ==================== -->
-  <header class="w-full bg-slate-900/90 backdrop-blur border-b border-pink-900/40 sticky top-0 z-50 px-4 py-3">
+  <header class="w-full bg-slate-900/90 backdrop-blur border-b border-pink-900/40 sticky top-0 z-50 px-4 py-2.5">
     <div class="max-w-6xl mx-auto flex items-center justify-between">
       
-      <!-- Logo de Figuras Geométricas -->
-      <div class="flex items-center space-x-3 cursor-pointer" onclick="app.showScreen('menu')">
-        <div class="flex items-center space-x-1.5 text-pink-500 text-xl font-bold">
-          <span class="w-5 h-5 sm:w-6 sm:h-6 border-2 border-pink-500 rounded-full inline-block"></span>
-          <span class="w-0 h-0 border-l-[8px] sm:border-l-[10px] border-l-transparent border-r-[8px] sm:border-r-[10px] border-r-transparent border-b-[16px] sm:border-b-[18px] border-b-pink-500 inline-block"></span>
-          <span class="w-4 h-4 sm:w-5 sm:h-5 border-2 border-pink-500 inline-block"></span>
+      <!-- Logo Geométrico -->
+      <div class="flex items-center space-x-2.5 cursor-pointer" onclick="app.showScreen('menu')">
+        <div class="flex items-center space-x-1.5 text-pink-500 text-lg font-bold">
+          <span class="w-5 h-5 border-2 border-pink-500 rounded-full inline-block"></span>
+          <span class="w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-b-[16px] border-b-pink-500 inline-block"></span>
+          <span class="w-4 h-4 border-2 border-pink-500 inline-block"></span>
         </div>
-        <span class="font-squid font-black tracking-widest text-sm sm:text-lg text-white">
-          SQUID <span class="text-pink-500">SUITE</span>
+        <span class="font-squid font-black tracking-widest text-sm sm:text-base text-white">
+          SQUID <span class="text-pink-500">SERIES 3D</span>
         </span>
       </div>
 
       <!-- Marcador de Premio y Estado -->
-      <div class="flex items-center space-x-2 sm:space-x-6">
+      <div class="flex items-center space-x-2.5 sm:space-x-5">
         <div class="text-right">
-          <div class="text-[9px] sm:text-xs text-slate-400 font-squid uppercase tracking-wider">Bote Acumulado</div>
-          <div id="topPrizeDisplay" class="text-yellow-400 font-squid font-bold text-xs sm:text-lg gold-glow">
+          <div class="text-[9px] sm:text-[10px] text-slate-400 font-squid uppercase tracking-wider">Gran Bote Actual</div>
+          <div id="topPrizeDisplay" class="text-yellow-400 font-squid font-bold text-xs sm:text-base gold-glow">
             ₩ 45,600,000,000
           </div>
         </div>
 
-        <div class="bg-slate-800/80 border border-slate-700 rounded-lg px-2.5 py-1 flex items-center space-x-2">
+        <div class="bg-slate-800/80 border border-slate-700 rounded-lg px-2.5 py-1 flex items-center space-x-1.5">
           <div class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></div>
           <span id="playerBadge" class="font-squid text-[11px] sm:text-xs text-emerald-400 font-bold">JUGADOR 456</span>
         </div>
 
-        <button onclick="sound.toggleMute()" id="muteBtn" class="p-2 text-slate-300 hover:text-pink-400 transition" title="Alternar Sonido">
-          <svg id="muteIcon" class="w-5 h-5 sm:w-6 sm:h-6" fill="currentColor" viewBox="0 0 24 24">
+        <button onclick="sound.toggleMute()" id="muteBtn" class="p-1.5 text-slate-300 hover:text-pink-400 transition" title="Alternar Sonido">
+          <svg id="muteIcon" class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
             <path d="M14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77zm-2.5 9.77l-4.5-4H3v6h4l4.5 4V4.5l-4.5 4z"/>
           </svg>
         </button>
@@ -134,136 +155,138 @@
   </header>
 
   <!-- ==================== MAIN SCREEN CONTAINER ==================== -->
-  <main id="appContainer" class="flex-1 max-w-6xl w-full mx-auto p-3 sm:p-6 flex flex-col justify-center items-center">
+  <main id="appContainer" class="flex-1 max-w-6xl w-full mx-auto p-2.5 sm:p-5 flex flex-col justify-center items-center">
 
-    <!-- 1. MENÚ PRINCIPAL: CATÁLOGO DE 6 JUEGOS -->
-    <section id="screenMenu" class="w-full max-w-5xl flex flex-col items-center text-center space-y-6 py-2">
+    <!-- 1. MENÚ PRINCIPAL: CATÁLOGO DE LOS 6 JUEGOS -->
+    <section id="screenMenu" class="w-full max-w-5xl flex flex-col items-center text-center space-y-5 py-2">
       
       <!-- Hucha Gigante (Piggy Bank) -->
-      <div class="relative w-full max-w-md py-4 flex flex-col items-center">
-        <div class="w-28 h-28 sm:w-36 sm:h-36 rounded-full bg-gradient-to-tr from-yellow-600 via-yellow-400 to-amber-200 border-4 border-yellow-300 shadow-[0_0_50px_rgba(245,158,11,0.5)] flex items-center justify-center animate-bounce duration-1000">
+      <div class="relative w-full max-w-md py-2 flex flex-col items-center">
+        <div class="w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-gradient-to-tr from-yellow-600 via-yellow-400 to-amber-200 border-4 border-yellow-300 shadow-[0_0_40px_rgba(245,158,11,0.5)] flex items-center justify-center animate-bounce duration-1000">
           <span class="text-4xl sm:text-5xl">🐷</span>
         </div>
-        <div class="mt-3 text-[11px] font-squid text-pink-400 tracking-widest uppercase">Gran Premio de Supervivencia</div>
-        <h1 class="text-2xl sm:text-4xl font-black font-squid text-yellow-400 gold-glow tracking-tight mt-1">
+        <div class="mt-2 text-[10px] font-squid text-pink-400 tracking-widest uppercase">Premio Final de Supervivencia</div>
+        <h1 class="text-2xl sm:text-3xl font-black font-squid text-yellow-400 gold-glow tracking-tight mt-0.5">
           ₩ 45.6 MIL MILLONES
         </h1>
       </div>
 
-      <!-- Botón de Modo Torneo Completo -->
-      <button onclick="app.startTournament()" class="w-full max-w-xl py-4 bg-gradient-to-r from-pink-600 via-rose-600 to-pink-700 hover:from-pink-500 hover:to-pink-600 text-white font-squid font-bold text-base sm:text-lg rounded-2xl shadow-xl pink-glow transition-all duration-300 transform active:scale-95 flex items-center justify-center space-x-3">
-        <span>🏆</span>
-        <span>INICIAR TORNEO COMPLETO (6 DESAFÍOS)</span>
+      <!-- BOTÓN PRINCIPAL: VIVIR LA SERIE COMPLETA Y CONTINUA -->
+      <button onclick="app.startSeriesStoryMode()" class="w-full max-w-xl py-4 bg-gradient-to-r from-pink-600 via-rose-600 to-pink-700 hover:from-pink-500 hover:to-pink-600 text-white font-squid font-black text-sm sm:text-base rounded-2xl shadow-2xl pink-glow transition-all duration-300 transform active:scale-95 flex items-center justify-center space-x-3 border-2 border-pink-400/50">
+        <span>🎬</span>
+        <span>JUGAR LA SERIE COMPLETA (6 CAPÍTULOS SEGUIDOS)</span>
         <span>→</span>
       </button>
 
+      <div class="text-xs text-slate-400 font-squid tracking-wider">O SELECCIONA UN CAPÍTULO INDIVIDUAL:</div>
+
       <!-- Rejilla de los 6 Juegos Oficiales -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full text-left">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 w-full text-left">
         
-        <!-- Tarjeta 01: Luz Roja, Luz Verde -->
-        <div onclick="app.startRedLight()" class="group bg-slate-900/90 border-2 border-slate-800 hover:border-pink-500 rounded-2xl p-5 transition duration-300 hover:scale-[1.02] cursor-pointer flex flex-col justify-between hover:shadow-[0_0_25px_rgba(255,42,112,0.3)]">
+        <!-- Tarjeta 01: Luz Roja, Luz Verde (3D) -->
+        <div onclick="app.startRedLight()" class="group bg-slate-900/90 border-2 border-slate-800 hover:border-pink-500 rounded-2xl p-4 transition duration-300 hover:scale-[1.02] cursor-pointer flex flex-col justify-between hover:shadow-[0_0_20px_rgba(255,42,112,0.3)]">
           <div>
-            <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center justify-between mb-2">
               <span class="text-[10px] font-squid text-emerald-400 bg-emerald-950/80 border border-emerald-800 px-2 py-0.5 rounded">JUEGO 01</span>
               <span class="text-2xl">👧</span>
             </div>
-            <h3 class="text-lg font-bold font-squid text-white group-hover:text-pink-400 transition">Luz Roja, Luz Verde</h3>
-            <p class="text-xs text-slate-400 mt-2">
-              Avanza hacia la meta 3D mientras la muñeca canta. Un solo paso en Luz Roja y los soldados dispararán.
+            <h3 class="text-base font-bold font-squid text-white group-hover:text-pink-400 transition">Luz Roja, Luz Verde</h3>
+            <p class="text-xs text-slate-400 mt-1.5 leading-relaxed">
+              Corre hacia la meta 3D mientras la muñeca canta. Inmóvilate antes de que gire o los soldados dispararán.
             </p>
           </div>
-          <div class="mt-4 flex items-center justify-between text-pink-500 font-squid text-xs font-bold">
+          <div class="mt-3 flex items-center justify-between text-pink-500 font-squid text-xs font-bold">
             <span>MOTOR 3D THREE.JS</span>
             <span>JUGAR →</span>
           </div>
         </div>
 
         <!-- Tarjeta 02: Galleta Dalgona -->
-        <div onclick="app.showDalgonaSelector()" class="group bg-slate-900/90 border-2 border-slate-800 hover:border-yellow-500 rounded-2xl p-5 transition duration-300 hover:scale-[1.02] cursor-pointer flex flex-col justify-between hover:shadow-[0_0_25px_rgba(234,179,8,0.3)]">
+        <div onclick="app.showDalgonaSelector()" class="group bg-slate-900/90 border-2 border-slate-800 hover:border-yellow-500 rounded-2xl p-4 transition duration-300 hover:scale-[1.02] cursor-pointer flex flex-col justify-between hover:shadow-[0_0_20px_rgba(234,179,8,0.3)]">
           <div>
-            <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center justify-between mb-2">
               <span class="text-[10px] font-squid text-yellow-400 bg-yellow-950/80 border border-yellow-800 px-2 py-0.5 rounded">JUEGO 02</span>
               <span class="text-2xl">🍪</span>
             </div>
-            <h3 class="text-lg font-bold font-squid text-white group-hover:text-yellow-400 transition">Galleta Dalgona</h3>
-            <p class="text-xs text-slate-400 mt-2">
-              Recorta la figura de azúcar con tu aguja con precisión pixelada. No quiebres el panal de abeja.
+            <h3 class="text-base font-bold font-squid text-white group-hover:text-yellow-400 transition">Galleta Dalgona</h3>
+            <p class="text-xs text-slate-400 mt-1.5 leading-relaxed">
+              Recorta la figura de azúcar con la aguja. No raspes en zonas vacías ni quiebres la galleta.
             </p>
           </div>
-          <div class="mt-4 flex items-center justify-between text-yellow-400 font-squid text-xs font-bold">
-            <span>CANVAS PIXEL ACCURACY</span>
+          <div class="mt-3 flex items-center justify-between text-yellow-400 font-squid text-xs font-bold">
+            <span>PIXEL ACCURACY</span>
             <span>JUGAR →</span>
           </div>
         </div>
 
-        <!-- Tarjeta 03: Tira y Afloja (Tug of War) -->
-        <div onclick="app.startTugOfWar()" class="group bg-slate-900/90 border-2 border-slate-800 hover:border-emerald-500 rounded-2xl p-5 transition duration-300 hover:scale-[1.02] cursor-pointer flex flex-col justify-between hover:shadow-[0_0_25px_rgba(16,185,129,0.3)]">
+        <!-- Tarjeta 03: Tira y Afloja -->
+        <div onclick="app.startTugOfWar()" class="group bg-slate-900/90 border-2 border-slate-800 hover:border-emerald-500 rounded-2xl p-4 transition duration-300 hover:scale-[1.02] cursor-pointer flex flex-col justify-between hover:shadow-[0_0_20px_rgba(16,185,129,0.3)]">
           <div>
-            <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center justify-between mb-2">
               <span class="text-[10px] font-squid text-emerald-400 bg-emerald-950/80 border border-emerald-800 px-2 py-0.5 rounded">JUEGO 03</span>
               <span class="text-2xl">🪢</span>
             </div>
-            <h3 class="text-lg font-bold font-squid text-white group-hover:text-emerald-400 transition">Tira y Afloja</h3>
-            <p class="text-xs text-slate-400 mt-2">
-              Duelo por equipos sobre torres elevadas. Coordina el ritmo y aplica la estrategia del anciano para no caer.
+            <h3 class="text-base font-bold font-squid text-white group-hover:text-emerald-400 transition">Tira y Afloja</h3>
+            <p class="text-xs text-slate-400 mt-1.5 leading-relaxed">
+              Duelo sobre las torres elevadas. Sincroniza la fuerza en la zona óptima y usa el truco del anciano.
             </p>
           </div>
-          <div class="mt-4 flex items-center justify-between text-emerald-400 font-squid text-xs font-bold">
+          <div class="mt-3 flex items-center justify-between text-emerald-400 font-squid text-xs font-bold">
             <span>RITMO & ESTAMINA</span>
             <span>JUGAR →</span>
           </div>
         </div>
 
-        <!-- Tarjeta 04: Las Canicas (Marbles) -->
-        <div onclick="app.startMarbles()" class="group bg-slate-900/90 border-2 border-slate-800 hover:border-purple-500 rounded-2xl p-5 transition duration-300 hover:scale-[1.02] cursor-pointer flex flex-col justify-between hover:shadow-[0_0_25px_rgba(168,85,247,0.3)]">
+        <!-- Tarjeta 04: Las Canicas -->
+        <div onclick="app.startMarbles()" class="group bg-slate-900/90 border-2 border-slate-800 hover:border-purple-500 rounded-2xl p-4 transition duration-300 hover:scale-[1.02] cursor-pointer flex flex-col justify-between hover:shadow-[0_0_20px_rgba(168,85,247,0.3)]">
           <div>
-            <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center justify-between mb-2">
               <span class="text-[10px] font-squid text-purple-400 bg-purple-950/80 border border-purple-800 px-2 py-0.5 rounded">JUEGO 04</span>
               <span class="text-2xl">🔮</span>
             </div>
-            <h3 class="text-lg font-bold font-squid text-white group-hover:text-purple-400 transition">Juego de Canicas</h3>
-            <p class="text-xs text-slate-400 mt-2">
-              Gana las 10 canicas de tu rival con apuestas de Par o Impar y lanzamientos de precisión hacia el hoyo.
+            <h3 class="text-base font-bold font-squid text-white group-hover:text-purple-400 transition">Las Canicas (Ggambu)</h3>
+            <p class="text-xs text-slate-400 mt-1.5 leading-relaxed">
+              Apuesta tus canicas en el duelo de Par o Impar contra tu compañero antes de que se agote el tiempo.
             </p>
           </div>
-          <div class="mt-4 flex items-center justify-between text-purple-400 font-squid text-xs font-bold">
-            <span>PSICOLOGÍA & TIRO</span>
+          <div class="mt-3 flex items-center justify-between text-purple-400 font-squid text-xs font-bold">
+            <span>PSICOLOGÍA & APUESTA</span>
             <span>JUGAR →</span>
           </div>
         </div>
 
-        <!-- Tarjeta 05: Puente de Cristal con Bots -->
-        <div onclick="app.startGlassBridge()" class="group bg-slate-900/90 border-2 border-slate-800 hover:border-cyan-500 rounded-2xl p-5 transition duration-300 hover:scale-[1.02] cursor-pointer flex flex-col justify-between hover:shadow-[0_0_25px_rgba(6,182,212,0.3)]">
+        <!-- Tarjeta 05: Puente de Cristal 3D en Primera Persona -->
+        <div onclick="app.startGlassBridge()" class="group bg-slate-900/90 border-2 border-cyan-700/60 hover:border-cyan-400 rounded-2xl p-4 transition duration-300 hover:scale-[1.02] cursor-pointer flex flex-col justify-between hover:shadow-[0_0_25px_rgba(6,182,212,0.4)]">
           <div>
-            <div class="flex items-center justify-between mb-3">
-              <span class="text-[10px] font-squid text-cyan-400 bg-cyan-950/80 border border-cyan-800 px-2 py-0.5 rounded">JUEGO 05</span>
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-[10px] font-squid text-cyan-400 bg-cyan-950/80 border border-cyan-800 px-2 py-0.5 rounded">JUEGO 05 (3D FPS)</span>
               <span class="text-2xl">🌉</span>
             </div>
-            <h3 class="text-lg font-bold font-squid text-white group-hover:text-cyan-400 transition">Puente de Cristal (Multijugador)</h3>
-            <p class="text-xs text-slate-400 mt-2">
-              Eres el #10 en la fila. Observa a los bots saltar y morir o sobrevivir para memorizar el camino seguro.
+            <h3 class="text-base font-bold font-squid text-cyan-300 group-hover:text-cyan-200 transition">Puente de Cristal 3D (1ª Persona)</h3>
+            <p class="text-xs text-slate-400 mt-1.5 leading-relaxed">
+              Perspectiva en primera persona. Eres el Jugador #04: observa a los 3 bots saltar frente a ti y cruza al abismo.
             </p>
           </div>
-          <div class="mt-4 flex items-center justify-between text-cyan-400 font-squid text-xs font-bold">
-            <span>COLA DE JUGADORES IA</span>
+          <div class="mt-3 flex items-center justify-between text-cyan-400 font-squid text-xs font-bold">
+            <span>3D THREE.JS POV</span>
             <span>JUGAR →</span>
           </div>
         </div>
 
-        <!-- Tarjeta 06: El Juego del Calamar Final -->
-        <div onclick="app.startSquidFinal()" class="group bg-slate-900/90 border-2 border-slate-800 hover:border-rose-500 rounded-2xl p-5 transition duration-300 hover:scale-[1.02] cursor-pointer flex flex-col justify-between hover:shadow-[0_0_25px_rgba(244,63,94,0.3)]">
+        <!-- Tarjeta 06: Duelo Final 3D en Primera Persona -->
+        <div onclick="app.startSquidFinal()" class="group bg-slate-900/90 border-2 border-rose-700/60 hover:border-rose-400 rounded-2xl p-4 transition duration-300 hover:scale-[1.02] cursor-pointer flex flex-col justify-between hover:shadow-[0_0_25px_rgba(244,63,94,0.4)]">
           <div>
-            <div class="flex items-center justify-between mb-3">
-              <span class="text-[10px] font-squid text-rose-400 bg-rose-950/80 border border-rose-800 px-2 py-0.5 rounded">JUEGO 06</span>
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-[10px] font-squid text-rose-400 bg-rose-950/80 border border-rose-800 px-2 py-0.5 rounded">JUEGO 06 (3D FPS)</span>
               <span class="text-2xl">🦑</span>
             </div>
-            <h3 class="text-lg font-bold font-squid text-white group-hover:text-rose-400 transition">El Duelo del Calamar</h3>
-            <p class="text-xs text-slate-400 mt-2">
-              La batalla final en el campo geométrico del calamar. Empuja a tu adversario y conquista la cabeza.
+            <h3 class="text-base font-bold font-squid text-rose-300 group-hover:text-rose-200 transition">Duelo del Calamar 3D (1ª Persona)</h3>
+            <p class="text-xs text-slate-400 mt-1.5 leading-relaxed">
+              Combate en primera persona en la arena bajo la lluvia. Esquiva, golpea a tu rival y conquista la cabeza del calamar.
             </p>
           </div>
-          <div class="mt-4 flex items-center justify-between text-rose-400 font-squid text-xs font-bold">
-            <span>DUELO FINAL</span>
+          <div class="mt-3 flex items-center justify-between text-rose-400 font-squid text-xs font-bold">
+            <span>3D COMBATE FPS</span>
             <span>JUGAR →</span>
           </div>
         </div>
@@ -272,50 +295,104 @@
 
     </section>
 
-    <!-- 2. JUEGO 1: LUZ ROJA, LUZ VERDE (THREE.JS 3D) -->
-    <section id="screenRedLight" class="hidden w-full flex-col items-center">
-      <div class="w-full flex flex-wrap items-center justify-between bg-slate-900/90 border border-slate-800 p-3 rounded-xl mb-3 gap-2">
-        <div class="flex items-center space-x-3">
-          <div id="trafficLightIndicator" class="px-4 py-1.5 rounded-full font-squid font-black text-xs sm:text-sm tracking-wider bg-emerald-600 text-white shadow-[0_0_15px_#10b981]">
-            🟢 LUZ VERDE - ¡CORRE!
+    <!-- ==================== CINEMÁTICA / INTERLUDIO DEL DORMITORIO ==================== -->
+    <section id="screenIntermission" class="hidden w-full max-w-2xl flex-col items-center text-center py-4 space-y-4">
+      <div class="w-full bg-slate-900/95 border-2 border-pink-500/80 rounded-3xl p-6 sm:p-8 shadow-[0_0_45px_rgba(255,42,112,0.35)] relative overflow-hidden">
+        
+        <!-- Icono de la Hucha / Dormitorio -->
+        <div class="relative w-24 h-24 mx-auto rounded-full bg-gradient-to-tr from-yellow-600 to-amber-300 border-4 border-yellow-300 shadow-[0_0_30px_rgba(245,158,11,0.6)] flex items-center justify-center mb-3">
+          <span class="text-4xl animate-pulse">🐷</span>
+          <div class="absolute -top-1 -right-1 bg-pink-600 text-white font-squid text-[10px] font-bold px-2 py-0.5 rounded-full">
+            + ₩ <span id="intermissionCashAdd">100M</span>
           </div>
-          <span id="redLightTimer" class="font-squid text-lg font-bold text-yellow-400">60s</span>
         </div>
 
-        <div class="flex items-center space-x-4">
-          <div class="text-xs text-slate-400">
+        <!-- Título del Episodio / Notificación del Front Man -->
+        <div id="intermissionEpisodeBadge" class="text-xs font-squid text-pink-400 uppercase tracking-widest mb-1">
+          CAPÍTULO COMPLETADO
+        </div>
+        <h2 id="intermissionTitle" class="text-2xl sm:text-3xl font-black font-squid text-white mb-2">
+          DESCANSO EN EL DORMITORIO
+        </h2>
+
+        <!-- Cifra de Dinero Acumulada -->
+        <div class="my-3 bg-slate-950/80 border border-yellow-500/40 rounded-2xl py-3 px-4 max-w-md mx-auto">
+          <div class="text-[10px] font-squid text-slate-400 uppercase tracking-wider">Dinero Total en la Hucha de Cristal</div>
+          <div id="intermissionPrizeMoney" class="text-xl sm:text-2xl font-black font-squid text-yellow-400 gold-glow mt-0.5">
+            ₩ 26,900,000,000
+          </div>
+        </div>
+
+        <!-- Estado de Supervivientes -->
+        <div class="grid grid-cols-2 gap-3 max-w-md mx-auto my-3 text-left font-squid">
+          <div class="bg-slate-800/80 border border-slate-700 p-2.5 rounded-xl">
+            <div class="text-[10px] text-slate-400">JUGADORES VIVOS</div>
+            <div id="intermissionSurvivors" class="text-sm sm:text-base font-bold text-emerald-400">187 / 456</div>
+          </div>
+          <div class="bg-slate-800/80 border border-slate-700 p-2.5 rounded-xl">
+            <div class="text-[10px] text-slate-400">ELIMINADOS HOY</div>
+            <div id="intermissionEliminated" class="text-sm sm:text-base font-bold text-rose-500">269 caídos</div>
+          </div>
+        </div>
+
+        <!-- Mensaje Narrativo del Líder / Historia -->
+        <p id="intermissionNarrative" class="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-lg mx-auto italic my-4">
+          "El dinero ha caído en la gran hucha. Los soldados escoltan a los sobrevivientes hacia el siguiente desafío..."
+        </p>
+
+        <!-- Botón de Siguiente Desafío -->
+        <button id="btnIntermissionNext" onclick="app.proceedToNextStage()" class="w-full max-w-md py-3.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-squid font-black text-sm sm:text-base rounded-2xl shadow-xl border border-emerald-400 transition transform active:scale-95 flex items-center justify-center space-x-2 mx-auto">
+          <span id="intermissionNextBtnText">ENTRAR AL JUEGO 02: LA GALLETA DALGONA</span>
+          <span>→</span>
+        </button>
+
+      </div>
+    </section>
+
+    <!-- 2. JUEGO 1: LUZ ROJA, LUZ VERDE (THREE.JS 3D) -->
+    <section id="screenRedLight" class="hidden w-full flex-col items-center">
+      <div class="w-full flex flex-wrap items-center justify-between bg-slate-900/90 border border-slate-800 p-2.5 rounded-xl mb-2.5 gap-2">
+        <div class="flex items-center space-x-2.5">
+          <div id="trafficLightIndicator" class="px-3.5 py-1 rounded-full font-squid font-black text-xs sm:text-sm tracking-wider bg-emerald-600 text-white shadow-[0_0_15px_#10b981]">
+            🟢 LUZ VERDE - ¡CORRE!
+          </div>
+          <span id="redLightTimer" class="font-squid text-base sm:text-lg font-bold text-yellow-400">60s</span>
+        </div>
+
+        <div class="flex items-center space-x-3 text-xs">
+          <div class="text-slate-400">
             Distancia: <span id="playerDistance" class="font-squid text-white font-bold">0%</span>
           </div>
-          <div class="text-xs text-slate-400">
-            Sobrevivientes: <span id="aliveBotsCount" class="font-squid text-pink-400 font-bold">12 / 12</span>
+          <div class="text-slate-400">
+            Vivos: <span id="aliveBotsCount" class="font-squid text-pink-400 font-bold">12 / 12</span>
           </div>
-          <button onclick="app.quitToMenu()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded font-squid">
+          <button onclick="app.quitToMenu()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 py-1 rounded font-squid text-xs">
             SALIR
           </button>
         </div>
       </div>
 
-      <!-- Contenedor Three.js -->
-      <div class="relative w-full h-[52vh] min-h-[360px] max-h-[540px] bg-slate-950 rounded-2xl overflow-hidden border-2 border-slate-800 shadow-2xl">
+      <!-- Viewport 3D -->
+      <div class="relative w-full h-[52vh] min-h-[350px] max-h-[500px] bg-slate-950 rounded-2xl overflow-hidden border-2 border-slate-800 shadow-2xl three-canvas-container">
         <div id="threeJsContainer" class="w-full h-full"></div>
         
         <div id="scannerOverlay" class="absolute inset-0 pointer-events-none opacity-0 transition-opacity duration-300 bg-red-950/20 flex flex-col justify-center items-center">
           <div class="w-full h-1 bg-red-500 shadow-[0_0_20px_#ef4444] animate-scan"></div>
-          <div class="absolute bottom-4 left-1/2 -translate-x-1/2 bg-red-600/90 text-white px-4 py-1 rounded-full font-squid text-xs font-black tracking-widest animate-pulse">
+          <div class="absolute bottom-3 left-1/2 -translate-x-1/2 bg-red-600/90 text-white px-3.5 py-0.5 rounded-full font-squid text-[11px] font-black tracking-widest animate-pulse">
             ⚠️ ESCANEANDO MOVIMIENTO - ¡QUÉDATE INMÓVIL!
           </div>
         </div>
 
-        <div id="dollSongBanner" class="absolute top-4 left-1/2 -translate-x-1/2 bg-black/70 backdrop-blur border border-pink-500/40 text-pink-300 px-5 py-1.5 rounded-full font-squid text-xs tracking-wider transition-all duration-200">
+        <div id="dollSongBanner" class="absolute top-3 left-1/2 -translate-x-1/2 bg-black/70 backdrop-blur border border-pink-500/40 text-pink-300 px-4 py-1 rounded-full font-squid text-[11px] tracking-wider">
           🎵 "Mugunghwa kkoci pieot seumnida..."
         </div>
       </div>
 
-      <div class="w-full max-w-md mt-4 flex flex-col items-center space-y-2">
-        <p class="text-xs text-slate-400 hidden sm:block">
-          Usa <kbd class="px-2 py-0.5 bg-slate-800 rounded border border-slate-700 text-white">W</kbd> o <kbd class="px-2 py-0.5 bg-slate-800 rounded border border-slate-700 text-white">↑</kbd> para correr.
+      <div class="w-full max-w-md mt-3 flex flex-col items-center space-y-1.5">
+        <p class="text-[11px] text-slate-400 hidden sm:block">
+          Usa <kbd class="px-1.5 py-0.5 bg-slate-800 rounded border border-slate-700 text-white">W</kbd> o <kbd class="px-1.5 py-0.5 bg-slate-800 rounded border border-slate-700 text-white">↑</kbd> para correr.
         </p>
-        <button id="btnHoldRun" class="w-full py-4 sm:py-5 bg-gradient-to-r from-emerald-600 to-teal-700 active:from-emerald-500 active:to-teal-600 text-white font-squid font-black text-lg sm:text-xl rounded-2xl shadow-lg border-2 border-emerald-400/40 flex items-center justify-center space-x-3">
+        <button id="btnHoldRun" class="w-full py-4 bg-gradient-to-r from-emerald-600 to-teal-700 active:from-emerald-500 active:to-teal-600 text-white font-squid font-black text-base sm:text-lg rounded-xl shadow-lg border border-emerald-400/40 flex items-center justify-center space-x-2">
           <span>🏃‍♂️</span>
           <span>MANTÉN PRESIONADO PARA AVANZAR</span>
         </button>
@@ -324,47 +401,47 @@
 
     <!-- 3. JUEGO 2: LA GALLETA DALGONA (HTML5 CANVAS) -->
     <section id="screenDalgona" class="hidden w-full max-w-2xl flex-col items-center">
-      <div id="dalgonaShapePicker" class="w-full bg-slate-900 border-2 border-yellow-600/40 rounded-2xl p-6 text-center">
+      <div id="dalgonaShapePicker" class="w-full bg-slate-900 border-2 border-yellow-600/40 rounded-2xl p-5 text-center">
         <div class="text-xs font-squid text-yellow-400 tracking-wider uppercase mb-1">Desafío de la Galleta de Azúcar</div>
-        <h2 class="text-2xl sm:text-3xl font-black font-squid text-white mb-6">ELIGE TU FIGURA</h2>
+        <h2 class="text-xl sm:text-2xl font-black font-squid text-white mb-5">ELIGE TU FIGURA</h2>
         
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <button onclick="dalgonaGame.selectShape('circle')" class="group p-4 bg-slate-800 hover:bg-yellow-950/50 border-2 border-slate-700 hover:border-yellow-400 rounded-xl flex flex-col items-center transition">
-            <div class="w-14 h-14 rounded-full border-4 border-yellow-400 mb-3 group-hover:scale-110 transition-transform"></div>
-            <span class="font-squid text-xs sm:text-sm font-bold text-white">CÍRCULO</span>
-            <span class="text-[10px] text-emerald-400 mt-1 font-squid">FÁCIL</span>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <button onclick="dalgonaGame.selectShape('circle')" class="p-3.5 bg-slate-800 hover:bg-yellow-950/50 border-2 border-slate-700 hover:border-yellow-400 rounded-xl flex flex-col items-center transition">
+            <div class="w-12 h-12 rounded-full border-4 border-yellow-400 mb-2"></div>
+            <span class="font-squid text-xs font-bold text-white">CÍRCULO</span>
+            <span class="text-[9px] text-emerald-400 mt-0.5 font-squid">FÁCIL</span>
           </button>
-          <button onclick="dalgonaGame.selectShape('triangle')" class="group p-4 bg-slate-800 hover:bg-yellow-950/50 border-2 border-slate-700 hover:border-yellow-400 rounded-xl flex flex-col items-center transition">
-            <div class="w-0 h-0 border-l-[28px] border-l-transparent border-r-[28px] border-r-transparent border-b-[50px] border-b-yellow-400 mb-3 group-hover:scale-110 transition-transform"></div>
-            <span class="font-squid text-xs sm:text-sm font-bold text-white">TRIÁNGULO</span>
-            <span class="text-[10px] text-yellow-400 mt-1 font-squid">MEDIO</span>
+          <button onclick="dalgonaGame.selectShape('triangle')" class="p-3.5 bg-slate-800 hover:bg-yellow-950/50 border-2 border-slate-700 hover:border-yellow-400 rounded-xl flex flex-col items-center transition">
+            <div class="w-0 h-0 border-l-[24px] border-l-transparent border-r-[24px] border-r-transparent border-b-[42px] border-b-yellow-400 mb-2"></div>
+            <span class="font-squid text-xs font-bold text-white">TRIÁNGULO</span>
+            <span class="text-[9px] text-yellow-400 mt-0.5 font-squid">MEDIO</span>
           </button>
-          <button onclick="dalgonaGame.selectShape('star')" class="group p-4 bg-slate-800 hover:bg-yellow-950/50 border-2 border-slate-700 hover:border-yellow-400 rounded-xl flex flex-col items-center transition">
-            <span class="text-5xl text-yellow-400 mb-2 group-hover:scale-110 transition-transform inline-block">★</span>
-            <span class="font-squid text-xs sm:text-sm font-bold text-white">ESTRELLA</span>
-            <span class="text-[10px] text-orange-400 mt-1 font-squid">DIFÍCIL</span>
+          <button onclick="dalgonaGame.selectShape('star')" class="p-3.5 bg-slate-800 hover:bg-yellow-950/50 border-2 border-slate-700 hover:border-yellow-400 rounded-xl flex flex-col items-center transition">
+            <span class="text-4xl text-yellow-400 mb-1 inline-block">★</span>
+            <span class="font-squid text-xs font-bold text-white">ESTRELLA</span>
+            <span class="text-[9px] text-orange-400 mt-0.5 font-squid">DIFÍCIL</span>
           </button>
-          <button onclick="dalgonaGame.selectShape('umbrella')" class="group p-4 bg-slate-800 hover:bg-yellow-950/50 border-2 border-slate-700 hover:border-yellow-400 rounded-xl flex flex-col items-center transition">
-            <span class="text-4xl text-yellow-400 mb-3 group-hover:scale-110 transition-transform inline-block">☂️</span>
-            <span class="font-squid text-xs sm:text-sm font-bold text-white">PARAGUAS</span>
-            <span class="text-[10px] text-red-400 mt-1 font-squid">EXTREMO</span>
+          <button onclick="dalgonaGame.selectShape('umbrella')" class="p-3.5 bg-slate-800 hover:bg-yellow-950/50 border-2 border-slate-700 hover:border-yellow-400 rounded-xl flex flex-col items-center transition">
+            <span class="text-3xl text-yellow-400 mb-2 inline-block">☂️</span>
+            <span class="font-squid text-xs font-bold text-white">PARAGUAS</span>
+            <span class="text-[9px] text-red-400 mt-0.5 font-squid">EXTREMO</span>
           </button>
         </div>
       </div>
 
       <div id="dalgonaGameArea" class="hidden w-full flex-col items-center">
-        <div class="w-full flex items-center justify-between bg-slate-900 border border-slate-800 p-3 rounded-xl mb-3">
-          <div class="flex items-center space-x-3">
-            <span class="text-xs text-slate-400">Figura:</span>
-            <span id="dalgonaCurrentShapeName" class="font-squid font-bold text-yellow-400 uppercase text-xs sm:text-sm">CÍRCULO</span>
+        <div class="w-full flex items-center justify-between bg-slate-900 border border-slate-800 p-2.5 rounded-xl mb-2.5">
+          <div class="flex items-center space-x-2 text-xs">
+            <span class="text-slate-400">Figura:</span>
+            <span id="dalgonaCurrentShapeName" class="font-squid font-bold text-yellow-400 uppercase">CÍRCULO</span>
           </div>
 
-          <div class="flex items-center space-x-4">
-            <div class="text-xs text-slate-300">
+          <div class="flex items-center space-x-3 text-xs">
+            <div class="text-slate-300">
               Tallado: <span id="dalgonaCutPercentage" class="font-squid font-bold text-emerald-400">0%</span> / 75%
             </div>
-            <span id="dalgonaTimer" class="font-squid font-bold text-yellow-400">45s</span>
-            <button onclick="app.quitToMenu()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded font-squid">
+            <span id="dalgonaTimer" class="font-squid font-bold text-yellow-400 text-sm">45s</span>
+            <button onclick="app.quitToMenu()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 py-1 rounded font-squid">
               SALIR
             </button>
           </div>
@@ -373,260 +450,292 @@
         <div class="relative flex flex-col items-center">
           <canvas id="dalgonaCanvas" width="370" height="370" class="border-4 border-amber-900/60 rounded-full shadow-2xl"></canvas>
           <div id="cookieCrackOverlay" class="absolute inset-0 pointer-events-none hidden items-center justify-center">
-            <div class="text-red-500 font-squid font-black text-xl tracking-widest bg-black/85 px-6 py-2 rounded-xl border-2 border-red-500 animate-bounce">
+            <div class="text-red-500 font-squid font-black text-lg tracking-widest bg-black/85 px-5 py-2 rounded-xl border-2 border-red-500 animate-bounce">
               ¡GALLETA QUEBRADA!
             </div>
           </div>
         </div>
 
-        <p class="text-xs text-amber-200/80 mt-3 text-center max-w-sm">
-          💡 Arrastra el cursor o dedo a lo largo de la plantilla oscura. No raspes en zonas vacías.
+        <p class="text-[11px] text-amber-200/80 mt-2.5 text-center max-w-sm">
+          💡 Arrastra a lo largo de la plantilla oscura. No raspes en zonas vacías ni te salgas del trazado.
         </p>
 
-        <div class="w-full max-w-md bg-slate-800 h-2.5 rounded-full mt-3 overflow-hidden border border-slate-700">
+        <div class="w-full max-w-md bg-slate-800 h-2 rounded-full mt-2.5 overflow-hidden border border-slate-700">
           <div id="dalgonaProgressBar" class="h-full bg-emerald-500 progress-bar-fill w-0"></div>
         </div>
       </div>
     </section>
 
     <!-- 4. JUEGO 3: TIRA Y AFLOJA (TUG OF WAR) -->
-    <section id="screenTugOfWar" class="hidden w-full max-w-3xl flex-col items-center">
-      <div class="w-full flex items-center justify-between bg-slate-900 border border-slate-800 p-3 rounded-xl mb-4">
+    <section id="screenTugOfWar" class="hidden w-full max-w-2xl flex-col items-center">
+      <div class="w-full flex items-center justify-between bg-slate-900 border border-slate-800 p-2.5 rounded-xl mb-3">
         <div class="flex items-center space-x-2">
-          <span class="text-xs font-squid text-emerald-400 bg-emerald-950 px-2.5 py-1 rounded border border-emerald-800">DUELO POR EQUIPOS</span>
+          <span class="text-xs font-squid text-emerald-400 bg-emerald-950 px-2 py-0.5 rounded border border-emerald-800">DUELO POR EQUIPOS</span>
         </div>
         <div class="flex items-center space-x-3">
-          <span id="towTimer" class="font-squid font-bold text-yellow-400">40s</span>
-          <button onclick="app.quitToMenu()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded font-squid">
+          <span id="towTimer" class="font-squid font-bold text-yellow-400 text-sm">40s</span>
+          <button onclick="app.quitToMenu()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 py-1 rounded font-squid">
             SALIR
           </button>
         </div>
       </div>
 
-      <!-- Torre y Plataforma de Tira y Afloja -->
-      <div class="w-full bg-slate-950 border-2 border-emerald-900/40 rounded-2xl p-6 relative overflow-hidden shadow-2xl flex flex-col items-center">
+      <div class="w-full bg-slate-950 border-2 border-emerald-900/40 rounded-2xl p-5 relative overflow-hidden shadow-2xl flex flex-col items-center">
         <div class="w-full flex justify-between items-center text-xs font-squid mb-3">
-          <span class="text-emerald-400 font-bold">🟢 EQUIPO 456 (TÚ)</span>
+          <span class="text-emerald-400 font-bold">🟢 EQUIPO 456</span>
           <span class="text-rose-500 font-bold">🔴 EQUIPO RIVAL</span>
         </div>
 
-        <!-- Barra de Posición de la Cuerda -->
-        <div class="w-full relative h-12 bg-slate-900 border-2 border-slate-700 rounded-xl overflow-hidden flex items-center px-2">
-          <!-- Zona de Caída Izquierda -->
-          <div class="absolute left-0 top-0 bottom-0 w-8 bg-red-600/30 border-r border-red-500/50 flex items-center justify-center text-[10px] font-squid text-red-300">
-            ABISMO
-          </div>
-          <!-- Cuerda Principal -->
-          <div class="w-full h-3 bg-amber-800 rounded-full relative">
-            <!-- Pañuelo indicador rojo en el centro -->
-            <div id="towRopeMarker" class="absolute top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2 w-6 h-6 bg-red-600 border-2 border-white rounded-full shadow-[0_0_15px_#ef4444] transition-all duration-75 flex items-center justify-center text-[10px]">
+        <div class="w-full relative h-10 bg-slate-900 border-2 border-slate-700 rounded-xl overflow-hidden flex items-center px-2">
+          <div class="w-full h-2.5 bg-amber-800 rounded-full relative">
+            <div id="towRopeMarker" class="absolute top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2 w-6 h-6 bg-red-600 border-2 border-white rounded-full shadow-[0_0_12px_#ef4444] transition-all duration-75 flex items-center justify-center text-[10px]">
               🚩
             </div>
           </div>
-          <!-- Zona de Caída Derecha -->
-          <div class="absolute right-0 top-0 bottom-0 w-8 bg-red-600/30 border-l border-red-500/50 flex items-center justify-center text-[10px] font-squid text-red-300">
-            ABISMO
-          </div>
         </div>
 
-        <!-- Indicador de Ritmo / Zona de Fuerza -->
-        <div class="w-full max-w-md mt-6 flex flex-col items-center">
-          <div class="text-xs font-squid text-slate-300 mb-1">Medidor de Fuerza al Tirar</div>
-          <div class="w-full h-6 bg-slate-800 border border-slate-700 rounded-full relative overflow-hidden">
-            <!-- Zona de Tiro Perfecto (Verde) -->
-            <div class="absolute left-1/3 right-1/3 top-0 bottom-0 bg-emerald-500/30 border-x-2 border-emerald-400 flex items-center justify-center text-[10px] font-squid text-emerald-300 font-bold">
+        <div class="w-full max-w-md mt-5 flex flex-col items-center">
+          <div class="text-[11px] font-squid text-slate-300 mb-1">Medidor de Fuerza al Tirar</div>
+          <div class="w-full h-5 bg-slate-800 border border-slate-700 rounded-full relative overflow-hidden">
+            <div class="absolute left-1/3 right-1/3 top-0 bottom-0 bg-emerald-500/30 border-x-2 border-emerald-400 flex items-center justify-center text-[9px] font-squid text-emerald-300 font-bold">
               ZONA ÓPTIMA
             </div>
-            <!-- Aguja Oscilante -->
             <div id="towMeterNeedle" class="absolute top-0 bottom-0 w-2.5 bg-yellow-400 shadow-[0_0_10px_#facc15] left-1/2"></div>
           </div>
         </div>
 
-        <!-- Botones de Acción -->
-        <div class="grid grid-cols-2 gap-4 w-full max-w-md mt-6">
-          <button id="btnTowPull" onclick="towGame.pullRope()" class="py-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-squid font-black text-sm rounded-xl shadow-lg border border-emerald-400 active:scale-95 transition">
+        <div class="grid grid-cols-2 gap-3 w-full max-w-md mt-5">
+          <button id="btnTowPull" onclick="towGame.pullRope()" class="py-3.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-squid font-black text-xs sm:text-sm rounded-xl shadow-lg border border-emerald-400 active:scale-95 transition">
             ✊ ¡TIRAR CON FUERZA!
           </button>
-          <button id="btnTowStrategy" onclick="towGame.useOldManTrick()" class="py-4 bg-gradient-to-r from-yellow-600 to-amber-700 hover:from-yellow-500 hover:to-amber-600 text-white font-squid font-black text-sm rounded-xl shadow-lg border border-yellow-400 active:scale-95 transition">
+          <button id="btnTowStrategy" onclick="towGame.useOldManTrick()" class="py-3.5 bg-gradient-to-r from-yellow-600 to-amber-700 hover:from-yellow-500 hover:to-amber-600 text-white font-squid font-black text-xs sm:text-sm rounded-xl shadow-lg border border-yellow-400 active:scale-95 transition">
             👴 ESTRATEGIA ANCIANO
           </button>
         </div>
 
-        <p id="towFeedback" class="text-xs font-squid text-slate-400 mt-4 h-4">
-          Presiona 'TIRAR' cuando la aguja esté en la Zona Óptima para ganar terreno.
+        <p id="towFeedback" class="text-xs font-squid text-slate-400 mt-3 h-4 text-center">
+          Presiona 'TIRAR' cuando la aguja esté en la Zona Óptima.
         </p>
       </div>
     </section>
 
     <!-- 5. JUEGO 4: LAS CANICAS (MARBLES) -->
     <section id="screenMarbles" class="hidden w-full max-w-2xl flex-col items-center">
-      <div class="w-full flex items-center justify-between bg-slate-900 border border-slate-800 p-3 rounded-xl mb-4">
+      <div class="w-full flex items-center justify-between bg-slate-900 border border-slate-800 p-2.5 rounded-xl mb-3">
         <div class="flex items-center space-x-2">
-          <span class="text-xs font-squid text-purple-400 bg-purple-950 px-2.5 py-1 rounded border border-purple-800">DUELO GGAMBU</span>
+          <span class="text-xs font-squid text-purple-400 bg-purple-950 px-2 py-0.5 rounded border border-purple-800">DUELO GGAMBU</span>
         </div>
-        <div class="flex items-center space-x-4">
-          <div class="text-xs text-slate-400">Tus Canicas: <span id="playerMarblesCount" class="font-squid font-bold text-emerald-400 text-sm">10</span></div>
-          <div class="text-xs text-slate-400">Rival: <span id="botMarblesCount" class="font-squid font-bold text-rose-400 text-sm">10</span></div>
-          <button onclick="app.quitToMenu()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded font-squid">
+        <div class="flex items-center space-x-3 text-xs">
+          <div class="text-slate-400">Tus Canicas: <span id="playerMarblesCount" class="font-squid font-bold text-emerald-400">10</span></div>
+          <div class="text-slate-400">Rival: <span id="botMarblesCount" class="font-squid font-bold text-rose-400">10</span></div>
+          <button onclick="app.quitToMenu()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 py-1 rounded font-squid">
             SALIR
           </button>
         </div>
       </div>
 
-      <!-- Selector de Modo de Canicas -->
-      <div class="w-full bg-slate-950 border-2 border-purple-900/40 rounded-2xl p-6 relative overflow-hidden shadow-2xl flex flex-col items-center">
-        
-        <!-- Fase 1: Apuesta de Par o Impar -->
-        <div id="marblesParImparArea" class="w-full flex flex-col items-center text-center">
-          <div class="text-xs font-squid text-purple-300 uppercase tracking-wider mb-2">Desafío: Par o Impar</div>
-          <div class="w-24 h-24 rounded-full bg-purple-900/40 border-2 border-purple-500 flex items-center justify-center text-5xl mb-4 animate-pulse shadow-[0_0_25px_rgba(168,85,247,0.3)]">
-            ✊
-          </div>
-          <p class="text-xs text-slate-300 max-w-sm mb-4">
-            El rival tiene canicas escondidas en su puño. Elige cuántas canicas apostar y adivina si el número es <b class="text-yellow-400">PAR</b> o <b class="text-yellow-400">IMPAR</b>.
-          </p>
+      <div class="w-full bg-slate-950 border-2 border-purple-900/40 rounded-2xl p-5 relative overflow-hidden shadow-2xl flex flex-col items-center">
+        <div class="text-[11px] font-squid text-purple-300 uppercase tracking-wider mb-2">Desafío: Par o Impar</div>
+        <div class="w-20 h-20 rounded-full bg-purple-900/40 border-2 border-purple-500 flex items-center justify-center text-4xl mb-3 animate-pulse shadow-[0_0_20px_rgba(168,85,247,0.3)]">
+          ✊
+        </div>
+        <p class="text-xs text-slate-300 max-w-sm text-center mb-3">
+          Elige cuántas canicas apostar y adivina si el número en el puño del rival es <b class="text-yellow-400">PAR</b> o <b class="text-yellow-400">IMPAR</b>.
+        </p>
 
-          <!-- Cantidad a apostar -->
-          <div class="flex items-center space-x-3 mb-6">
-            <span class="text-xs font-squid text-slate-400">Tu Apuesta:</span>
-            <div class="flex items-center space-x-2">
-              <button onclick="marblesGame.adjustBet(-1)" class="w-8 h-8 rounded-lg bg-slate-800 text-white font-bold">-</button>
-              <span id="marbleBetDisplay" class="font-squid font-bold text-yellow-400 text-lg px-2">2</span>
-              <button onclick="marblesGame.adjustBet(1)" class="w-8 h-8 rounded-lg bg-slate-800 text-white font-bold">+</button>
-            </div>
-          </div>
-
-          <!-- Botones Par o Impar -->
-          <div class="grid grid-cols-2 gap-4 w-full max-w-xs">
-            <button onclick="marblesGame.guess('PAR')" class="py-3.5 bg-gradient-to-r from-purple-700 to-indigo-700 hover:from-purple-600 hover:to-indigo-600 text-white font-squid font-black text-sm rounded-xl shadow-lg border border-purple-400 active:scale-95 transition">
-              PAR (2, 4, 6...)
-            </button>
-            <button onclick="marblesGame.guess('IMPAR')" class="py-3.5 bg-gradient-to-r from-pink-700 to-rose-700 hover:from-pink-600 hover:to-rose-600 text-white font-squid font-black text-sm rounded-xl shadow-lg border border-pink-400 active:scale-95 transition">
-              IMPAR (1, 3, 5...)
-            </button>
+        <div class="flex items-center space-x-3 mb-4">
+          <span class="text-xs font-squid text-slate-400">Apuesta:</span>
+          <div class="flex items-center space-x-2">
+            <button onclick="marblesGame.adjustBet(-1)" class="w-7 h-7 rounded-lg bg-slate-800 text-white font-bold">-</button>
+            <span id="marbleBetDisplay" class="font-squid font-bold text-yellow-400 text-base px-2">2</span>
+            <button onclick="marblesGame.adjustBet(1)" class="w-7 h-7 rounded-lg bg-slate-800 text-white font-bold">+</button>
           </div>
         </div>
 
-        <!-- Feedback de la Ronda -->
-        <div id="marblesResultBanner" class="mt-4 text-xs font-squid text-yellow-400 h-5"></div>
+        <div class="grid grid-cols-2 gap-3 w-full max-w-xs">
+          <button onclick="marblesGame.guess('PAR')" class="py-3 bg-gradient-to-r from-purple-700 to-indigo-700 hover:from-purple-600 text-white font-squid font-bold text-xs rounded-xl shadow-lg border border-purple-400 active:scale-95 transition">
+            PAR (2, 4, 6...)
+          </button>
+          <button onclick="marblesGame.guess('IMPAR')" class="py-3 bg-gradient-to-r from-pink-700 to-rose-700 hover:from-pink-600 text-white font-squid font-bold text-xs rounded-xl shadow-lg border border-pink-400 active:scale-95 transition">
+            IMPAR (1, 3, 5...)
+          </button>
+        </div>
+
+        <div id="marblesResultBanner" class="mt-3 text-xs font-squid text-yellow-400 h-4 text-center"></div>
       </div>
     </section>
 
-    <!-- 6. JUEGO 5: EL PUENTE DE CRISTAL (GLASS BRIDGE CON MULTIPLAYER BOTS) -->
+    <!-- 6. JUEGO 5: EL PUENTE DE CRISTAL 3D EN PRIMERA PERSONA (THREE.JS 3D FPS) -->
     <section id="screenGlassBridge" class="hidden w-full max-w-4xl flex-col items-center">
       
       <!-- Barra superior de estado -->
-      <div class="w-full flex flex-wrap items-center justify-between bg-slate-900 border border-slate-800 p-3 rounded-xl mb-3 gap-2">
-        <div class="flex items-center space-x-3">
-          <span class="text-xs font-squid text-cyan-400 bg-cyan-950 px-2.5 py-1 rounded border border-cyan-800">PASO <span id="currentBridgeStep">1</span> / 8</span>
-          <span id="bridgeTurnStatus" class="font-squid text-xs font-bold text-yellow-400 bg-yellow-950/60 px-3 py-1 rounded border border-yellow-800/60">
+      <div class="w-full flex flex-wrap items-center justify-between bg-slate-900/90 border border-slate-800 p-2.5 rounded-xl mb-2.5 gap-2">
+        <div class="flex items-center space-x-2.5">
+          <span class="text-xs font-squid text-cyan-400 bg-cyan-950 px-2.5 py-0.5 rounded border border-cyan-800">
+            PASO <span id="currentBridgeStep">1</span> / 6
+          </span>
+          <span id="bridgeTurnStatus" class="font-squid text-xs font-bold text-yellow-400 bg-yellow-950/60 px-2.5 py-0.5 rounded border border-yellow-800/60">
             TURNO: BOT #096
           </span>
         </div>
 
-        <div class="flex items-center space-x-3">
-          <div class="text-xs text-slate-400">
+        <div class="flex items-center space-x-3 text-xs">
+          <div class="text-slate-400">
             Tiempo: <span id="bridgeTimer" class="font-squid font-bold text-yellow-400">60s</span>
           </div>
-          <button onclick="app.quitToMenu()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded font-squid">
+          <button onclick="app.quitToMenu()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 py-1 rounded font-squid">
             SALIR
           </button>
         </div>
       </div>
 
-      <!-- Fila de Orden de Jugadores (Cola de saltos) -->
-      <div class="w-full bg-slate-900/80 border border-slate-800 rounded-xl p-2.5 mb-3">
-        <div class="text-[10px] font-squid text-slate-400 uppercase tracking-wider mb-1.5 flex justify-between">
-          <span>Orden de Saltadores (Tú eres el #10)</span>
-          <span id="bridgeQueueStatus" class="text-cyan-400">Bots restantes por delante: 3</span>
+      <!-- Fila de Orden de Jugadores (Solo 3 bots delante: Tú eres el #04) -->
+      <div class="w-full bg-slate-900/80 border border-slate-800 rounded-xl p-2 mb-2.5">
+        <div class="text-[10px] font-squid text-slate-400 uppercase tracking-wider mb-1 flex justify-between">
+          <span>Cola de Saltadores (Tú eres el #04)</span>
+          <span id="bridgeQueueStatus" class="text-cyan-400">3 competidores delante</span>
         </div>
-        <div id="bridgePlayersQueue" class="flex items-center space-x-2 overflow-x-auto py-1">
-          <!-- Se llena dinámicamente con los números de los jugadores -->
+        <div id="bridgePlayersQueue" class="flex items-center space-x-2 overflow-x-auto py-0.5">
+          <!-- Generado dinámicamente -->
         </div>
       </div>
 
-      <!-- Escenario del Puente de Cristal -->
-      <div class="w-full bg-slate-950 border-2 border-cyan-900/40 rounded-2xl p-4 sm:p-6 relative overflow-hidden shadow-2xl flex flex-col items-center">
-        
-        <!-- Rejilla de Pasos del Puente -->
-        <div id="bridgeRowsContainer" class="w-full max-w-lg flex flex-col-reverse gap-3 my-2">
-          <!-- Filas de paneles generadas dinámicamente -->
+      <!-- Canvas 3D First Person Viewport -->
+      <div class="relative w-full h-[50vh] min-h-[350px] max-h-[500px] bg-slate-950 rounded-2xl overflow-hidden border-2 border-cyan-800/60 shadow-[0_0_30px_rgba(6,182,212,0.25)] three-canvas-container">
+        <div id="threeBridgeContainer" class="w-full h-full"></div>
+
+        <!-- Mira / HUD en Primera Persona -->
+        <div class="absolute inset-0 pointer-events-none flex flex-col justify-between p-3.5">
+          <div class="flex justify-between items-center text-[11px] font-squid text-cyan-300 bg-black/60 px-3 py-1 rounded-full border border-cyan-500/30 w-fit mx-auto">
+            <span>👁️ VISTA EN PRIMERA PERSONA - PUENTE A 60M</span>
+          </div>
+
+          <!-- Indicador de Panel Izq / Der en pantalla -->
+          <div class="flex justify-between items-center px-4 sm:px-12 text-xs font-squid font-bold">
+            <div class="bg-cyan-950/80 border border-cyan-400/50 text-cyan-300 px-3 py-1 rounded-lg backdrop-blur">
+              ◀ PANEL IZQUIERDO
+            </div>
+            <div class="bg-cyan-950/80 border border-cyan-400/50 text-cyan-300 px-3 py-1 rounded-lg backdrop-blur">
+              PANEL DERECHO ▶
+            </div>
+          </div>
+
+          <div id="bridgeFeedbackBanner" class="text-center text-xs font-squid text-yellow-400 bg-black/70 py-1 px-4 rounded-full border border-yellow-500/30 mx-auto">
+            Observando el salto del bot...
+          </div>
         </div>
+      </div>
 
-        <!-- Botones de Control de Salto -->
-        <div id="bridgeActionControls" class="w-full max-w-md mt-4 flex flex-col items-center gap-2">
-          <div id="bridgeUserPrompt" class="text-xs font-squid text-cyan-300 tracking-wider uppercase mb-1">
-            Esperando el avance de los competidores...
-          </div>
-          
-          <div id="bridgePlayerChoiceBtns" class="grid grid-cols-2 gap-3 w-full hidden">
-            <button onclick="bridgeGame.playerJump('L')" class="py-4 bg-gradient-to-b from-cyan-500/30 to-cyan-700/50 hover:from-cyan-400/40 hover:to-cyan-600/60 border-2 border-cyan-300 text-cyan-100 font-squid font-black text-sm rounded-xl shadow-lg active:scale-95 transition">
-              👈 SALTAR A LA IZQUIERDA
-            </button>
-            <button onclick="bridgeGame.playerJump('R')" class="py-4 bg-gradient-to-b from-cyan-500/30 to-cyan-700/50 hover:from-cyan-400/40 hover:to-cyan-600/60 border-2 border-cyan-300 text-cyan-100 font-squid font-black text-sm rounded-xl shadow-lg active:scale-95 transition">
-              SALTAR A LA DERECHA 👉
-            </button>
-          </div>
-
-          <button id="btnTriggerBotJump" onclick="bridgeGame.stepBotForward()" class="w-full py-3 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 font-squid font-bold text-xs rounded-xl transition">
-            ⏭️ FORZAR SIGUIENTE SALTO DEL BOT
+      <!-- Controles de Salto en Primera Persona -->
+      <div id="bridgeActionControls" class="w-full max-w-md mt-3 flex flex-col items-center gap-2">
+        <div id="bridgePlayerChoiceBtns" class="grid grid-cols-2 gap-3 w-full hidden">
+          <button onclick="bridge3D.playerJump('L')" class="py-3.5 bg-gradient-to-r from-cyan-600 to-blue-700 hover:from-cyan-500 text-white font-squid font-black text-xs sm:text-sm rounded-xl shadow-lg border border-cyan-400 active:scale-95 transition">
+            👈 SALTAR AL CRISTAL IZQ
+          </button>
+          <button onclick="bridge3D.playerJump('R')" class="py-3.5 bg-gradient-to-r from-cyan-600 to-blue-700 hover:from-cyan-500 text-white font-squid font-black text-xs sm:text-sm rounded-xl shadow-lg border border-cyan-400 active:scale-95 transition">
+            SALTAR AL CRISTAL DER 👉
           </button>
         </div>
 
-        <div class="w-full text-center mt-4 text-[11px] text-slate-500 font-squid">
-          ⚠️ ALTURA: 60 METROS AL VACÍO. LOS PANELES TEMPLADOS SOPORTAN EL PESO.
-        </div>
+        <button id="btnTriggerBotJump" onclick="bridge3D.stepBotForward()" class="w-full py-3 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 font-squid font-bold text-xs rounded-xl transition flex items-center justify-center space-x-2">
+          <span>⏩</span>
+          <span>ORDENAR SIGUIENTE SALTO AL BOT</span>
+        </button>
       </div>
 
     </section>
 
-    <!-- 7. JUEGO 6: EL DUELO FINAL DEL CALAMAR (FINAL SQUID SHOWDOWN) -->
-    <section id="screenSquidFinal" class="hidden w-full max-w-3xl flex-col items-center">
-      <div class="w-full flex items-center justify-between bg-slate-900 border border-slate-800 p-3 rounded-xl mb-3">
-        <div class="flex items-center space-x-2">
-          <span class="text-xs font-squid text-rose-400 bg-rose-950 px-2.5 py-1 rounded border border-rose-800">BATALLA FINAL</span>
+    <!-- 7. JUEGO 6: EL DUELO FINAL DEL CALAMAR 3D EN PRIMERA PERSONA (THREE.JS 3D FPS COMBAT) -->
+    <section id="screenSquidFinal" class="hidden w-full max-w-4xl flex-col items-center">
+      <div class="w-full flex flex-wrap items-center justify-between bg-slate-900/90 border border-slate-800 p-2.5 rounded-xl mb-2.5 gap-2">
+        <div class="flex items-center space-x-2.5">
+          <span class="text-xs font-squid text-rose-400 bg-rose-950 px-2.5 py-0.5 rounded border border-rose-800">DUELO FINAL (1ª PERSONA)</span>
+          <span id="squidArenaZoneBadge" class="text-[11px] font-squid text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-800">DENTRO DEL CUADRADO</span>
         </div>
-        <div class="flex items-center space-x-3">
-          <div class="text-xs text-slate-400">Vida Rival: <span id="squidBossHp" class="font-squid font-bold text-rose-400">100%</span></div>
-          <span id="squidFinalTimer" class="font-squid font-bold text-yellow-400">60s</span>
-          <button onclick="app.quitToMenu()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded font-squid">
+        <div class="flex items-center space-x-3 text-xs">
+          <!-- Vida Jugador -->
+          <div class="flex items-center space-x-1.5">
+            <span class="text-slate-400">Tú:</span>
+            <div class="w-16 bg-slate-800 h-2.5 rounded-full overflow-hidden border border-slate-700">
+              <div id="squidPlayerHpBar" class="h-full bg-gradient-to-r from-emerald-500 to-teal-400 progress-bar-fill w-full"></div>
+            </div>
+            <span id="squidPlayerHp" class="font-squid font-bold text-emerald-400">100 HP</span>
+          </div>
+
+          <!-- Vida Rival -->
+          <div class="flex items-center space-x-1.5">
+            <span class="text-slate-400">Rival:</span>
+            <div class="w-16 bg-slate-800 h-2.5 rounded-full overflow-hidden border border-slate-700">
+              <div id="squidBossHpBar" class="h-full bg-gradient-to-r from-rose-600 to-red-500 progress-bar-fill w-full"></div>
+            </div>
+            <span id="squidBossHp" class="font-squid font-bold text-rose-400">100 HP</span>
+          </div>
+
+          <span id="squidFinalTimer" class="font-squid font-bold text-yellow-400 text-sm">60s</span>
+          <button onclick="app.quitToMenu()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 py-1 rounded font-squid">
             SALIR
           </button>
         </div>
       </div>
 
-      <!-- Campo de Batalla del Calamar (HTML5 Canvas 2D) -->
-      <div class="w-full bg-slate-950 border-2 border-rose-900/40 rounded-2xl p-4 relative overflow-hidden shadow-2xl flex flex-col items-center">
-        <div class="text-[11px] font-squid text-rose-300 mb-2 uppercase tracking-wider text-center">
-          Objetivo: Esquiva al rival y alcanza la <b>Cabeza del Calamar (Círculo Superior)</b> o noquéalo con ataques.
+      <!-- Viewport 3D del Duelo en Primera Persona -->
+      <div class="relative w-full h-[52vh] min-h-[360px] max-h-[500px] bg-slate-950 rounded-2xl overflow-hidden border-2 border-rose-900/60 shadow-[0_0_30px_rgba(244,63,94,0.3)] three-canvas-container">
+        <div id="threeSquidDuelContainer" class="w-full h-full"></div>
+
+        <!-- Destello Rojo al recibir daño -->
+        <div id="squidDamageFlash" class="absolute inset-0 bg-red-600/40 pointer-events-none opacity-0 transition-opacity duration-150"></div>
+
+        <!-- Manos / Guantes en Primera Persona (HUD) -->
+        <div id="fpsArmsOverlay" class="absolute inset-0 pointer-events-none flex justify-between items-end px-10 pb-2">
+          <!-- Mano Izquierda -->
+          <div id="leftFist" class="w-16 h-20 bg-gradient-to-t from-emerald-800 to-emerald-600 rounded-t-2xl border-2 border-emerald-400 shadow-lg transform -rotate-12 opacity-85 transition-transform"></div>
+          <!-- Mano Derecha -->
+          <div id="rightFist" class="w-16 h-20 bg-gradient-to-t from-emerald-800 to-emerald-600 rounded-t-2xl border-2 border-emerald-400 shadow-lg transform rotate-12 opacity-85 transition-transform"></div>
         </div>
 
-        <canvas id="squidFinalCanvas" width="380" height="420" class="border-2 border-slate-700 bg-amber-950/20 rounded-xl shadow-inner"></canvas>
+        <!-- Mira Central & Banner de Objetivo -->
+        <div class="absolute inset-0 pointer-events-none flex flex-col justify-between p-3">
+          <div class="text-center text-[10px] sm:text-xs font-squid text-rose-300 bg-black/70 py-1 px-4 rounded-full border border-rose-500/30 mx-auto">
+            🎯 Golpea a tu rival para noquearlo o empújalo fuera del campo y alcanza la <b>Cabeza del Calamar</b>
+          </div>
 
-        <!-- Controles Móviles / Botones de Combate -->
-        <div class="grid grid-cols-3 gap-2 w-full max-w-sm mt-3">
-          <button onclick="squidGameFinal.movePlayer(-1, 0)" class="py-3 bg-slate-800 text-white font-squid font-bold rounded-lg active:scale-95 border border-slate-700">
-            ⬅️ IZQ
+          <!-- Retícula de Apuntado -->
+          <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-5 h-5 border-2 border-rose-500/60 rounded-full flex items-center justify-center">
+            <div class="w-1 h-1 bg-rose-400 rounded-full"></div>
+          </div>
+
+          <div id="squidDuelFeedback" class="text-center text-xs font-squid text-yellow-400 bg-black/70 py-1 px-3 rounded-full border border-yellow-500/30 mx-auto">
+            ¡Usa WASD / Flechas o botones para moverte y ESPACIO para golpear!
+          </div>
+        </div>
+      </div>
+
+      <!-- Controles Táctiles y Botones de Combate en Primera Persona -->
+      <div class="w-full max-w-md mt-3 flex flex-col items-center gap-2">
+        <div class="grid grid-cols-3 gap-2 w-full">
+          <button onclick="squidDuel3D.moveLeft()" class="py-3 bg-slate-800 hover:bg-slate-700 text-white font-squid font-bold text-xs rounded-xl active:scale-95 border border-slate-700">
+            ⬅️ PASO IZQ
           </button>
-          <button onclick="squidGameFinal.movePlayer(0, -1)" class="py-3 bg-emerald-700 text-white font-squid font-bold rounded-lg active:scale-95 border border-emerald-500">
+          <button onclick="squidDuel3D.moveForward()" class="py-3 bg-emerald-700 hover:bg-emerald-600 text-white font-squid font-bold text-xs rounded-xl active:scale-95 border border-emerald-500">
             ⬆️ AVANZAR
           </button>
-          <button onclick="squidGameFinal.movePlayer(1, 0)" class="py-3 bg-slate-800 text-white font-squid font-bold rounded-lg active:scale-95 border border-slate-700">
-            DER ➡️
+          <button onclick="squidDuel3D.moveRight()" class="py-3 bg-slate-800 hover:bg-slate-700 text-white font-squid font-bold text-xs rounded-xl active:scale-95 border border-slate-700">
+            PASO DER ➡️
           </button>
         </div>
 
-        <button onclick="squidGameFinal.playerAttack()" class="w-full max-w-sm mt-2 py-3 bg-gradient-to-r from-rose-600 to-pink-600 text-white font-squid font-black text-sm rounded-xl shadow-lg border border-rose-400 active:scale-95">
-          💥 EMPUJE / ATAQUE CUERPO A CUERPO
+        <button id="btnPlayerAttack" onclick="squidDuel3D.attack()" class="w-full py-3.5 bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 text-white font-squid font-black text-sm rounded-xl shadow-lg border border-rose-400 active:scale-95 transition flex items-center justify-center space-x-2">
+          <span>🥊</span>
+          <span>¡GOLPE DE PUÑO / EMPUJE FRONTAL! (ESPACIO)</span>
         </button>
       </div>
     </section>
 
     <!-- 8. MODAL DE RESULTADOS / ELIMINACIÓN / VICTORIA -->
     <div id="resultModal" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-md hidden flex-col items-center justify-center p-4">
-      <div class="w-full max-w-md bg-slate-900 border-2 border-pink-500 rounded-3xl p-8 text-center shadow-[0_0_50px_rgba(255,42,112,0.4)] relative">
+      <div class="w-full max-w-md bg-slate-900 border-2 border-pink-500 rounded-3xl p-6 sm:p-8 text-center shadow-[0_0_50px_rgba(255,42,112,0.4)] relative">
         
-        <div id="modalIconContainer" class="w-20 h-20 mx-auto rounded-full flex items-center justify-center text-4xl mb-4 bg-pink-950 border-2 border-pink-500">
+        <div id="modalIconContainer" class="w-16 h-16 mx-auto rounded-full flex items-center justify-center text-3xl mb-3 bg-pink-950 border-2 border-pink-500">
           💀
         </div>
 
@@ -634,19 +743,19 @@
           JUGADOR 456
         </div>
 
-        <h2 id="modalTitle" class="text-2xl sm:text-3xl font-black font-squid text-white mb-3">
+        <h2 id="modalTitle" class="text-2xl sm:text-3xl font-black font-squid text-white mb-2">
           ELIMINADO
         </h2>
 
-        <p id="modalMessage" class="text-slate-300 text-xs sm:text-sm mb-6">
+        <p id="modalMessage" class="text-slate-300 text-xs sm:text-sm mb-5 leading-relaxed">
           Has fallado en el desafío de supervivencia.
         </p>
 
-        <div class="flex flex-col sm:flex-row gap-3 justify-center">
-          <button id="modalActionBtn" onclick="app.retryCurrentGame()" class="flex-1 py-3 px-6 bg-pink-600 hover:bg-pink-500 text-white font-squid font-bold text-sm rounded-xl shadow-lg transition transform active:scale-95">
+        <div class="flex flex-col sm:flex-row gap-2.5 justify-center">
+          <button id="modalActionBtn" onclick="app.retryCurrentGame()" class="flex-1 py-3 px-5 bg-pink-600 hover:bg-pink-500 text-white font-squid font-bold text-xs sm:text-sm rounded-xl shadow-lg transition transform active:scale-95">
             REINTENTAR
           </button>
-          <button onclick="app.quitToMenu()" class="py-3 px-6 bg-slate-800 hover:bg-slate-700 text-slate-300 font-squid font-bold text-sm rounded-xl transition">
+          <button onclick="app.quitToMenu()" class="py-3 px-5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-squid font-bold text-xs sm:text-sm rounded-xl transition">
             MENÚ PRINCIPAL
           </button>
         </div>
@@ -657,18 +766,15 @@
   </main>
 
   <!-- ==================== FOOTER ==================== -->
-  <footer class="w-full bg-slate-950 border-t border-slate-900 py-3 px-4 text-center text-xs text-slate-500 font-squid">
+  <footer class="w-full bg-slate-950 border-t border-slate-900 py-2.5 px-4 text-center text-[11px] text-slate-500 font-squid">
     <div class="flex justify-center items-center space-x-2">
       <span class="text-pink-500">○</span>
       <span>△</span>
       <span class="text-pink-500">▢</span>
-      <span>El Juego del Calamar Complete Edition &copy; 2026</span>
+      <span>El Juego del Calamar 3D Suite &copy; 2026</span>
     </div>
   </footer>
 
-  <!-- ========================================================================= -->
-  <!-- SCRIPTING: AUDIO, THREE.JS, CANVAS, BOT QUEUE & GAME ENGINES              -->
-  <!-- ========================================================================= -->
   <script>
     /* =========================================================================
        1. SISTEMA DE AUDIO SINTETIZADO (Web Audio API)
@@ -702,7 +808,6 @@
       playDollChant(duration = 2.5) {
         if (this.muted) return;
         this.initContext();
-        
         const now = this.ctx.currentTime;
         const notes = [
           { f: 392.00, t: 0.0,  d: 0.3 },
@@ -719,17 +824,13 @@
         notes.forEach(n => {
           const osc = this.ctx.createOscillator();
           const gain = this.ctx.createGain();
-          
           osc.type = 'triangle';
           osc.frequency.setValueAtTime(n.f, now + n.t * speedRatio);
-          
           gain.gain.setValueAtTime(0.001, now + n.t * speedRatio);
           gain.gain.exponentialRampToValueAtTime(0.18, now + n.t * speedRatio + 0.04);
           gain.gain.exponentialRampToValueAtTime(0.0001, now + (n.t + n.d) * speedRatio);
-
           osc.connect(gain);
           gain.connect(this.ctx.destination);
-          
           osc.start(now + n.t * speedRatio);
           osc.stop(now + (n.t + n.d) * speedRatio);
         });
@@ -739,30 +840,25 @@
         if (this.muted) return;
         this.initContext();
         const now = this.ctx.currentTime;
-        
-        const bufferSize = this.ctx.sampleRate * 0.4;
+        const bufferSize = this.ctx.sampleRate * 0.35;
         const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
         const data = buffer.getChannelData(0);
-        for (let i = 0; i < bufferSize; i++) {
-          data[i] = Math.random() * 2 - 1;
-        }
+        for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
 
         const noise = this.ctx.createBufferSource();
         noise.buffer = buffer;
-
         const filter = this.ctx.createBiquadFilter();
         filter.type = 'lowpass';
         filter.frequency.setValueAtTime(1000, now);
-        filter.frequency.exponentialRampToValueAtTime(40, now + 0.35);
+        filter.frequency.exponentialRampToValueAtTime(40, now + 0.3);
 
         const gain = this.ctx.createGain();
         gain.gain.setValueAtTime(0.9, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
 
         noise.connect(filter);
         filter.connect(gain);
         gain.connect(this.ctx.destination);
-
         noise.start(now);
       }
 
@@ -770,22 +866,18 @@
         if (this.muted) return;
         this.initContext();
         const now = this.ctx.currentTime;
-
-        for (let i = 0; i < 4; i++) {
+        for (let i = 0; i < 5; i++) {
           const osc = this.ctx.createOscillator();
           const gain = this.ctx.createGain();
           osc.type = 'sawtooth';
-          osc.frequency.setValueAtTime(1200 + Math.random() * 1800, now + i * 0.04);
-          osc.frequency.exponentialRampToValueAtTime(100, now + i * 0.04 + 0.2);
-
-          gain.gain.setValueAtTime(0.3, now + i * 0.04);
-          gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.04 + 0.2);
-
+          osc.frequency.setValueAtTime(1400 + Math.random() * 2000, now + i * 0.03);
+          osc.frequency.exponentialRampToValueAtTime(80, now + i * 0.03 + 0.2);
+          gain.gain.setValueAtTime(0.3, now + i * 0.03);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.03 + 0.2);
           osc.connect(gain);
           gain.connect(this.ctx.destination);
-
-          osc.start(now + i * 0.04);
-          osc.stop(now + i * 0.04 + 0.25);
+          osc.start(now + i * 0.03);
+          osc.stop(now + i * 0.03 + 0.22);
         }
       }
 
@@ -800,11 +892,11 @@
           osc.type = 'sine';
           osc.frequency.setValueAtTime(f, now + i * 0.12);
           gain.gain.setValueAtTime(0.3, now + i * 0.12);
-          gain.gain.exponentialRampToValueAtTime(0.0001, now + i * 0.12 + 0.6);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + i * 0.12 + 0.55);
           osc.connect(gain);
           gain.connect(this.ctx.destination);
           osc.start(now + i * 0.12);
-          osc.stop(now + i * 0.12 + 0.65);
+          osc.stop(now + i * 0.12 + 0.6);
         });
       }
 
@@ -815,8 +907,8 @@
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.type = 'triangle';
-        osc.frequency.setValueAtTime(800 + Math.random() * 400, now);
-        gain.gain.setValueAtTime(0.03, now);
+        osc.frequency.setValueAtTime(750 + Math.random() * 300, now);
+        gain.gain.setValueAtTime(0.04, now);
         gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.05);
         osc.connect(gain);
         gain.connect(this.ctx.destination);
@@ -831,32 +923,96 @@
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.type = 'square';
-        osc.frequency.setValueAtTime(160, now);
-        osc.frequency.exponentialRampToValueAtTime(40, now + 0.15);
+        osc.frequency.setValueAtTime(180, now);
+        osc.frequency.exponentialRampToValueAtTime(40, now + 0.14);
         gain.gain.setValueAtTime(0.35, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
         osc.connect(gain);
         gain.connect(this.ctx.destination);
         osc.start(now);
-        osc.stop(now + 0.16);
+        osc.stop(now + 0.15);
       }
     }
 
     const sound = new SoundEngine();
 
     /* =========================================================================
-       2. CONTROLADOR PRINCIPAL DE APLICACIÓN Y TORNEO (6 FASES)
+       2. CONTROLADOR PRINCIPAL DE LA APLICACIÓN Y MODO HISTORIA SEGUIDO
        ========================================================================= */
     class SquidApp {
       constructor() {
         this.currentScreen = 'menu';
-        this.isTournament = false;
-        this.tournamentStage = 1; // 1: RedLight, 2: Dalgona, 3: TugOfWar, 4: Marbles, 5: Bridge, 6: SquidFinal
+        this.isStoryMode = true; // Por defecto modo seguido de la serie
+        this.storyStage = 1;
+
+        // Datos narrativos de cada interludio de la serie
+        this.storyChapters = [
+          {
+            stage: 1,
+            name: 'Luz Roja, Luz Verde',
+            survivors: '187 / 456',
+            eliminated: '269 eliminados',
+            money: '₩ 26,900,000,000',
+            cashAdd: '26.9B',
+            narrative: 'Los 456 jugadores entraron a la arena sin saber el destino. Tras el primer disparo, 269 cayeron eliminados. La gran hucha de cristal en el techo del dormitorio comienza a llenarse.',
+            nextBtnText: 'CONTINUAR AL JUEGO 02: LA GALLETA DALGONA'
+          },
+          {
+            stage: 2,
+            name: 'La Galleta Dalgona',
+            survivors: '80 / 456',
+            eliminated: '107 eliminados',
+            money: '₩ 37,600,000,000',
+            cashAdd: '10.7B',
+            narrative: 'Bajo la tensión del metal y la aguja, muchos quebraron el dulce de azúcar. Los sobrevivientes regresan al dormitorio sintiendo el peso de la alianza.',
+            nextBtnText: 'CONTINUAR AL JUEGO 03: TIRA Y AFLOJA'
+          },
+          {
+            stage: 3,
+            name: 'Tira y Afloja',
+            survivors: '40 / 456',
+            eliminated: '40 eliminados',
+            money: '₩ 41,600,000,000',
+            cashAdd: '4.0B',
+            narrative: 'Sobre las torres elevadas, solo los equipos coordinados y la estrategia del anciano lograron evitar la caída al abismo.',
+            nextBtnText: 'CONTINUAR AL JUEGO 04: LAS CANICAS'
+          },
+          {
+            stage: 4,
+            name: 'Las Canicas (Ggambu)',
+            survivors: '16 / 456',
+            eliminated: '24 eliminados',
+            money: '₩ 44,000,000,000',
+            cashAdd: '2.4B',
+            narrative: 'Tuviste que competir contra tu compañero más cercano. El callejón del vecindario se llenó de lágrimas y despedidas amargas.',
+            nextBtnText: 'CONTINUAR AL JUEGO 05: PUENTE DE CRISTAL 3D'
+          },
+          {
+            stage: 5,
+            name: 'El Puente de Cristal (3D FPS)',
+            survivors: '2 / 456',
+            eliminated: '14 eliminados',
+            money: '₩ 45,400,000,000',
+            cashAdd: '1.4B',
+            narrative: 'A 60 metros sobre el vacío, los cristales frágiles hicieron caer a los saltadores. Tras cruzar el puente, los finalistas reciben la cena de gala en smoking.',
+            nextBtnText: 'CONTINUAR AL GRAN DUELO FINAL DEL CALAMAR'
+          },
+          {
+            stage: 6,
+            name: 'El Duelo Final del Calamar',
+            survivors: '1 / 456',
+            eliminated: '1 eliminado',
+            money: '₩ 45,600,000,000',
+            cashAdd: '200M',
+            narrative: 'Bajo una lluvia incesante en la arena del calamar, el Jugador 456 conquista la cabeza del calamar y se proclama único ganador de los ₩ 45.6 Mil Millones.',
+            nextBtnText: 'RECLAMAR EL GRAN PREMIO Y FINALIZAR'
+          }
+        ];
       }
 
       showScreen(screenId) {
         const screens = [
-          'screenMenu', 'screenRedLight', 'screenDalgona', 
+          'screenMenu', 'screenIntermission', 'screenRedLight', 'screenDalgona', 
           'screenTugOfWar', 'screenMarbles', 'screenGlassBridge', 'screenSquidFinal'
         ];
         screens.forEach(id => {
@@ -875,7 +1031,7 @@
           this.currentScreen = 'menu';
           this.stopAllGames();
         } else {
-          const target = document.getElementById(`screen${screenId.charAt(0).toUpperCase() + screenId.slice(1)}`);
+          const target = document.getElementById(screenId.startsWith('screen') ? screenId : `screen${screenId.charAt(0).toUpperCase() + screenId.slice(1)}`);
           if (target) {
             target.classList.remove('hidden');
             target.classList.add('flex');
@@ -889,8 +1045,20 @@
         if (dalgonaGame) dalgonaGame.stopGame();
         if (towGame) towGame.stopGame();
         if (marblesGame) marblesGame.stopGame();
-        if (bridgeGame) bridgeGame.stopGame();
-        if (squidGameFinal) squidGameFinal.stopGame();
+        if (bridge3D) bridge3D.stopGame();
+        if (squidDuel3D) squidDuel3D.stopGame();
+      }
+
+      // Inicia la serie completa desde el Capítulo 1
+      startSeriesStoryMode() {
+        this.isStoryMode = true;
+        this.storyStage = 1;
+        this.startRedLight();
+      }
+
+      // Inicia el torneo normal
+      startTournament() {
+        this.startSeriesStoryMode();
       }
 
       startRedLight() {
@@ -917,40 +1085,78 @@
 
       startGlassBridge() {
         this.showScreen('glassBridge');
-        bridgeGame.init();
+        bridge3D.init();
+        bridge3D.startGame();
       }
 
       startSquidFinal() {
         this.showScreen('squidFinal');
-        squidGameFinal.init();
+        squidDuel3D.init();
+        squidDuel3D.startGame();
       }
 
-      startTournament() {
-        this.isTournament = true;
-        this.tournamentStage = 1;
-        this.startRedLight();
-      }
-
+      // Manejador cuando se gana un juego
       onGameWon() {
         sound.playVictory();
-        if (this.isTournament) {
-          const stageMap = [
-            { stage: 1, title: '¡PRUEBA 1 SUPERADA!', msg: 'Has cruzado la meta. Pasando a la Galleta Dalgona...', nextBtn: 'JUEGO 02 →', action: () => { this.tournamentStage = 2; this.showDalgonaSelector(); } },
-            { stage: 2, title: '¡PRUEBA 2 SUPERADA!', msg: 'Galleta intacta. Pasando a Tira y Afloja...', nextBtn: 'JUEGO 03 →', action: () => { this.tournamentStage = 3; this.startTugOfWar(); } },
-            { stage: 3, title: '¡PRUEBA 3 SUPERADA!', msg: 'El equipo rival ha caído. Pasando a Las Canicas...', nextBtn: 'JUEGO 04 →', action: () => { this.tournamentStage = 4; this.startMarbles(); } },
-            { stage: 4, title: '¡PRUEBA 4 SUPERADA!', msg: 'Has ganado todas las canicas. Pasando al Puente de Cristal...', nextBtn: 'JUEGO 05 →', action: () => { this.tournamentStage = 5; this.startGlassBridge(); } },
-            { stage: 5, title: '¡PRUEBA 5 SUPERADA!', msg: 'Has cruzado el puente con vida. Pasando a la Gran Batalla Final...', nextBtn: 'GRAN FINAL →', action: () => { this.tournamentStage = 6; this.startSquidFinal(); } },
-            { stage: 6, title: '¡CAMPEÓN SUPREMO 456!', msg: '¡Has sobrevivido a todos los 6 juegos! Te llevas los ₩ 45,600,000,000.', nextBtn: 'VOLVER AL MENÚ', action: () => { this.showScreen('menu'); } }
-          ];
-
-          const current = stageMap.find(s => s.stage === this.tournamentStage);
-          if (current) {
-            this.showModal(current.title, current.msg, '🏆', current.nextBtn, current.action);
+        
+        if (this.isStoryMode) {
+          if (this.storyStage >= 6) {
+            // Victoria final absoluta de la serie
+            this.showIntermission(6);
+          } else {
+            // Mostrar interludio del dormitorio y avanzar al siguiente juego
+            this.showIntermission(this.storyStage);
           }
         } else {
           this.showModal('¡DESAFÍO SUPERADO!', 'Has completado esta prueba con vida.', '✨', 'JUGAR DE NUEVO', () => {
             this.retryCurrentGame();
           });
+        }
+      }
+
+      // Muestra la pantalla de transición y progreso de la serie
+      showIntermission(stageCompleted) {
+        const chapter = this.storyChapters.find(c => c.stage === stageCompleted) || this.storyChapters[0];
+        
+        document.getElementById('intermissionEpisodeBadge').textContent = `EPISODIO ${chapter.stage} SUPERADO`;
+        document.getElementById('intermissionTitle').textContent = `DESCANSO TRAS: ${chapter.name.toUpperCase()}`;
+        document.getElementById('intermissionPrizeMoney').textContent = chapter.money;
+        document.getElementById('topPrizeDisplay').textContent = chapter.money;
+        document.getElementById('intermissionCashAdd').textContent = chapter.cashAdd;
+        document.getElementById('intermissionSurvivors').textContent = chapter.survivors;
+        document.getElementById('intermissionEliminated').textContent = chapter.eliminated;
+        document.getElementById('intermissionNarrative').textContent = `"${chapter.narrative}"`;
+        document.getElementById('intermissionNextBtnText').textContent = chapter.nextBtnText;
+
+        this.showScreen('screenIntermission');
+      }
+
+      // Procesa el avance tras el interludio del dormitorio
+      proceedToNextStage() {
+        if (this.storyStage === 1) {
+          this.storyStage = 2;
+          this.showDalgonaSelector();
+        } else if (this.storyStage === 2) {
+          this.storyStage = 3;
+          this.startTugOfWar();
+        } else if (this.storyStage === 3) {
+          this.storyStage = 4;
+          this.startMarbles();
+        } else if (this.storyStage === 4) {
+          this.storyStage = 5;
+          this.startGlassBridge();
+        } else if (this.storyStage === 5) {
+          this.storyStage = 6;
+          this.startSquidFinal();
+        } else if (this.storyStage >= 6) {
+          // Gran Final
+          this.showModal(
+            '¡CAMPEÓN SUPREMO 456!',
+            '¡Has sobrevivido a los 6 juegos seguidos de la serie! Te has llevado los ₩ 45,600,000,000 a casa.',
+            '👑',
+            'VOLVER AL MENÚ PRINCIPAL',
+            () => this.showScreen('menu')
+          );
         }
       }
 
@@ -963,7 +1169,7 @@
           'ELIMINADO',
           reason || 'Has fallado las reglas del juego y has sido liquidado.',
           '💀',
-          'REINTENTAR',
+          'REINTENTAR ESTE EPISODIO',
           () => {
             this.retryCurrentGame();
           }
@@ -997,12 +1203,12 @@
         else if (this.currentScreen === 'dalgona') dalgonaGame.restartShape();
         else if (this.currentScreen === 'tugOfWar') towGame.init();
         else if (this.currentScreen === 'marbles') marblesGame.init();
-        else if (this.currentScreen === 'glassBridge') bridgeGame.init();
-        else if (this.currentScreen === 'squidFinal') squidGameFinal.init();
+        else if (this.currentScreen === 'glassBridge') bridge3D.startGame();
+        else if (this.currentScreen === 'squidFinal') squidDuel3D.startGame();
       }
 
       quitToMenu() {
-        this.isTournament = false;
+        this.isStoryMode = false;
         this.showScreen('menu');
       }
     }
@@ -1290,7 +1496,7 @@
         this.dollState = 'GREEN';
         if (this.dollHead) this.dollHead.rotation.y = THREE.MathUtils.degToRad(180);
         
-        this.trafficEl.className = "px-4 py-1.5 rounded-full font-squid font-black text-xs sm:text-sm tracking-wider bg-emerald-600 text-white shadow-[0_0_15px_#10b981]";
+        this.trafficEl.className = "px-3.5 py-1 rounded-full font-squid font-black text-xs sm:text-sm tracking-wider bg-emerald-600 text-white shadow-[0_0_15px_#10b981]";
         this.trafficEl.textContent = "🟢 LUZ VERDE - ¡AVANZA!";
         this.scannerOverlay.style.opacity = '0';
         this.dollSongBanner.textContent = '🎵 "Mugunghwa kkoci pieot seumnida..."';
@@ -1307,7 +1513,7 @@
           if (!this.isRunning) return;
 
           this.dollState = 'TURNING';
-          this.trafficEl.className = "px-4 py-1.5 rounded-full font-squid font-black text-xs sm:text-sm tracking-wider bg-yellow-500 text-black shadow-[0_0_15px_#eab308]";
+          this.trafficEl.className = "px-3.5 py-1 rounded-full font-squid font-black text-xs sm:text-sm tracking-wider bg-yellow-500 text-black shadow-[0_0_15px_#eab308]";
           this.trafficEl.textContent = "🟡 GIRANDO...";
 
           setTimeout(() => {
@@ -1316,7 +1522,7 @@
             this.dollState = 'RED';
             if (this.dollHead) this.dollHead.rotation.y = 0;
             
-            this.trafficEl.className = "px-4 py-1.5 rounded-full font-squid font-black text-xs sm:text-sm tracking-wider bg-red-600 text-white shadow-[0_0_20px_#ef4444]";
+            this.trafficEl.className = "px-3.5 py-1 rounded-full font-squid font-black text-xs sm:text-sm tracking-wider bg-red-600 text-white shadow-[0_0_20px_#ef4444]";
             this.trafficEl.textContent = "🔴 LUZ ROJA - ¡ALTO!";
             this.scannerOverlay.style.opacity = '1';
             this.dollSongBanner.textContent = '👁️ ESCANEANDO ENEMIGOS...';
@@ -1671,7 +1877,7 @@
        ========================================================================= */
     class TugOfWarGame {
       constructor() {
-        this.ropePosition = 50; // 0 = Player team falls, 100 = Enemy team falls, 50 = Center
+        this.ropePosition = 50;
         this.needlePosition = 0;
         this.needleDirection = 1;
         this.needleSpeed = 2.4;
@@ -1703,7 +1909,6 @@
           this.timer--;
           this.timerEl.textContent = `${this.timer}s`;
           
-          // Fuerza pasiva del equipo rival
           this.ropePosition -= 1.4;
           this.updateRopeUI();
           this.checkConditions();
@@ -1711,7 +1916,7 @@
           if (this.timer <= 0) {
             this.stopGame();
             if (this.ropePosition > 50) app.onGameWon();
-            else app.onPlayerEliminated('Se agotó el tiempo y tu equipo no logró dominar la cuerda.');
+            else app.onPlayerEliminated('Se agotó el tiempo y tu equipo cayó.');
           }
         }, 1000);
 
@@ -1744,16 +1949,15 @@
         if (!this.gameActive) return;
         sound.playHit();
 
-        // Zona óptima: entre 33% y 66%
         const isOptimal = this.needlePosition >= 33 && this.needlePosition <= 66;
         if (isOptimal) {
-          this.ropePosition += 5.5; // Ganancia fuerte
+          this.ropePosition += 5.5;
           this.feedbackEl.textContent = '💥 ¡Tirón perfecto! Ganaste terreno.';
-          this.feedbackEl.className = 'text-xs font-squid text-emerald-400 mt-4 h-4';
+          this.feedbackEl.className = 'text-xs font-squid text-emerald-400 mt-3 h-4 text-center';
         } else {
-          this.ropePosition += 1.2; // Ganancia débil
+          this.ropePosition += 1.2;
           this.feedbackEl.textContent = '⚠️ Tirón a destiempo. Poca fuerza.';
-          this.feedbackEl.className = 'text-xs font-squid text-yellow-400 mt-4 h-4';
+          this.feedbackEl.className = 'text-xs font-squid text-yellow-400 mt-3 h-4 text-center';
         }
 
         this.updateRopeUI();
@@ -1766,9 +1970,8 @@
         sound.playVictory();
 
         this.feedbackEl.textContent = '👴 ¡Estrategia del Viejo: Aguantar con peso muerto!';
-        this.feedbackEl.className = 'text-xs font-squid text-yellow-400 mt-4 h-4';
+        this.feedbackEl.className = 'text-xs font-squid text-yellow-400 mt-3 h-4 text-center';
         
-        // Empujón táctico hacia tu favor
         this.ropePosition += 12;
         this.updateRopeUI();
         this.checkConditions();
@@ -1840,7 +2043,6 @@
         if (!this.gameActive) return;
         sound.playHit();
 
-        // Rival esconde entre 1 y su máximo de canicas
         const botHand = Math.floor(Math.random() * Math.min(this.botMarbles, 6)) + 1;
         const isBotPar = (botHand % 2 === 0);
         const actualType = isBotPar ? 'PAR' : 'IMPAR';
@@ -1852,19 +2054,18 @@
           this.playerMarbles += betAmount;
           this.botMarbles -= betAmount;
           this.resultBannerEl.textContent = `✨ ¡Acertaste! El rival tenía ${botHand} (${actualType}). Ganaste ${betAmount} canicas.`;
-          this.resultBannerEl.className = 'mt-4 text-xs font-squid text-emerald-400 h-5';
+          this.resultBannerEl.className = 'mt-3 text-xs font-squid text-emerald-400 h-4 text-center';
           sound.playScrape();
         } else {
           this.playerMarbles -= betAmount;
           this.botMarbles += betAmount;
           this.resultBannerEl.textContent = `❌ Fallaste. El rival tenía ${botHand} (${actualType}). Perdiste ${betAmount} canicas.`;
-          this.resultBannerEl.className = 'mt-4 text-xs font-squid text-rose-400 h-5';
+          this.resultBannerEl.className = 'mt-3 text-xs font-squid text-rose-400 h-4 text-center';
           sound.playHit();
         }
 
         this.updateUI();
 
-        // Comprobar fin de juego
         if (this.playerMarbles >= 20 || this.botMarbles <= 0) {
           this.gameActive = false;
           setTimeout(() => app.onGameWon(), 600);
@@ -1890,74 +2091,266 @@
     const marblesGame = new MarblesGame();
 
     /* =========================================================================
-       7. JUEGO 5: EL PUENTE DE CRISTAL (CON MULTIJUGADOR BOTS QUE SALTAN)
+       7. JUEGO 5: EL PUENTE DE CRISTAL 3D EN PRIMERA PERSONA (THREE.JS 3D FPS)
        ========================================================================= */
-    class GlassBridgeWithBots {
+    class GlassBridge3DFPS {
       constructor() {
-        this.totalSteps = 8;
+        this.container = document.getElementById('threeBridgeContainer');
+        this.scene = null;
+        this.camera = null;
+        this.renderer = null;
+
+        this.totalSteps = 6;
         this.safePath = []; // 'L' o 'R'
-        this.revealedTiles = []; // { step, choice, isSafe }
-        
-        // Cola de jugadores
-        this.playerOrderIndex = 9; // Índice 9 = Jugador #10 (después de 9 bots)
-        this.currentQueueIndex = 0; // Quién está saltando actualmente
-        this.currentBridgeStep = 0; // Paso actual alcanzado por la vanguardia
-        
+        this.panels3D = []; // [{ step, leftMesh, rightMesh, brokenSide: null }]
+        this.botMeshes = [];
+
+        // Solo 3 bots por delante: Tú eres el #04
+        this.playerQueueIndex = 3;
+        this.currentTurnIndex = 0;
+        this.currentStep = 0; // Paso alcanzado en el puente
+
         this.queue = [];
+        this.isRunning = false;
         this.timer = 60;
         this.timerInterval = null;
-        this.gameActive = false;
         this.autoBotInterval = null;
 
-        this.container = document.getElementById('bridgeRowsContainer');
-        this.queueContainer = document.getElementById('bridgePlayersQueue');
+        // Posición de cámara en 1ra persona
+        this.cameraStartZ = 14;
+        this.cameraTargetZ = 14;
+        this.cameraTargetX = 0;
+        this.cameraTargetY = 2.4;
+
+        this.stepLength = 8.0;
+        this.leftX = -2.6;
+        this.rightX = 2.6;
+
         this.turnStatusEl = document.getElementById('bridgeTurnStatus');
         this.queueStatusEl = document.getElementById('bridgeQueueStatus');
         this.timerEl = document.getElementById('bridgeTimer');
         this.stepDisplay = document.getElementById('currentBridgeStep');
-        this.userPromptEl = document.getElementById('bridgeUserPrompt');
-        this.playerChoiceBtns = document.getElementById('playerChoiceBtns');
+        this.feedbackBanner = document.getElementById('bridgeFeedbackBanner');
+        this.choiceBtns = document.getElementById('bridgePlayerChoiceBtns');
+        this.triggerBotBtn = document.getElementById('btnTriggerBotJump');
+        this.queueContainer = document.getElementById('bridgePlayersQueue');
       }
 
       init() {
-        this.totalSteps = 8;
-        this.currentQueueIndex = 0;
-        this.currentBridgeStep = 0;
-        this.revealedTiles = [];
-        this.gameActive = true;
+        if (this.scene) return;
+
+        const width = this.container.clientWidth || 800;
+        const height = this.container.clientHeight || 450;
+
+        this.scene = new THREE.Scene();
+        this.scene.background = new THREE.Color(0x05070d);
+        this.scene.fog = new THREE.FogExp2(0x05070d, 0.015);
+
+        // Cámara en primera persona a la altura de los ojos
+        this.camera = new THREE.PerspectiveCamera(55, width / height, 0.1, 500);
+        this.camera.position.set(0, 2.4, this.cameraStartZ);
+
+        this.renderer = new THREE.WebGLRenderer({ antialias: true });
+        this.renderer.setSize(width, height);
+        this.renderer.shadowMap.enabled = true;
+        this.container.appendChild(this.renderer.domElement);
+
+        // Luces teatrales de la sala VIP
+        const ambientLight = new THREE.AmbientLight(0x1a2b4c, 1.2);
+        this.scene.add(ambientLight);
+
+        const spotPink = new THREE.SpotLight(0xff2a70, 2.5);
+        spotPink.position.set(0, 30, 0);
+        spotPink.angle = Math.PI / 3;
+        this.scene.add(spotPink);
+
+        const spotCyan = new THREE.SpotLight(0x06b6d4, 2.0);
+        spotCyan.position.set(0, 25, -25);
+        spotCyan.angle = Math.PI / 3;
+        this.scene.add(spotCyan);
+
+        this.buildBridgeEnvironment();
+
+        window.addEventListener('resize', () => {
+          if (this.camera && this.renderer && this.container) {
+            const w = this.container.clientWidth;
+            const h = this.container.clientHeight;
+            this.camera.aspect = w / h;
+            this.camera.updateProjectionMatrix();
+            this.renderer.setSize(w, h);
+          }
+        });
+
+        // Bucle 3D
+        const animate = () => {
+          requestAnimationFrame(animate);
+          this.update();
+          this.renderer.render(this.scene, this.camera);
+        };
+        animate();
+      }
+
+      buildBridgeEnvironment() {
+        // Plataforma de inicio de metal
+        const startPlatGeo = new THREE.BoxGeometry(10, 1, 10);
+        const startPlatMat = new THREE.MeshStandardMaterial({ color: 0x222633, roughness: 0.4, metalness: 0.8 });
+        const startPlat = new THREE.Mesh(startPlatGeo, startPlatMat);
+        startPlat.position.set(0, -0.5, 14);
+        this.scene.add(startPlat);
+
+        // Barandillas decorativas de inicio
+        const railGeo = new THREE.CylinderGeometry(0.08, 0.08, 10, 8);
+        const railMat = new THREE.MeshStandardMaterial({ color: 0x06b6d4, emissive: 0x06b6d4, emissiveIntensity: 0.6 });
+        const railL = new THREE.Mesh(railGeo, railMat);
+        railL.rotation.x = Math.PI / 2;
+        railL.position.set(-4.8, 1.2, 14);
+        this.scene.add(railL);
+
+        const railR = new THREE.Mesh(railGeo, railMat);
+        railR.rotation.x = Math.PI / 2;
+        railR.position.set(4.8, 1.2, 14);
+        this.scene.add(railR);
+
+        // Plataforma de meta
+        const endZ = - (this.totalSteps * this.stepLength) - 4;
+        const endPlat = new THREE.Mesh(startPlatGeo, startPlatMat);
+        endPlat.position.set(0, -0.5, endZ);
+        this.scene.add(endPlat);
+
+        // Vigas de soporte metálicas a lo largo del abismo
+        const beamGeo = new THREE.BoxGeometry(0.3, 0.5, (this.totalSteps * this.stepLength) + 20);
+        const beamMat = new THREE.MeshStandardMaterial({ color: 0x111625, metalness: 0.9 });
+        const beamL = new THREE.Mesh(beamGeo, beamMat);
+        beamL.position.set(-2.6, -0.8, - (this.totalSteps * this.stepLength) / 2);
+        this.scene.add(beamL);
+
+        const beamR = new THREE.Mesh(beamGeo, beamMat);
+        beamR.position.set(2.6, -0.8, - (this.totalSteps * this.stepLength) / 2);
+        this.scene.add(beamR);
+
+        // Fondo del abismo oscuro con niebla
+        const abyssGeo = new THREE.PlaneGeometry(300, 300);
+        const abyssMat = new THREE.MeshBasicMaterial({ color: 0x010204 });
+        const abyss = new THREE.Mesh(abyssGeo, abyssMat);
+        abyss.rotation.x = -Math.PI / 2;
+        abyss.position.y = -60;
+        this.scene.add(abyss);
+      }
+
+      createGlassPanels() {
+        // Limpiar paneles anteriores
+        this.panels3D.forEach(p => {
+          this.scene.remove(p.leftMesh);
+          this.scene.remove(p.rightMesh);
+        });
+        this.panels3D = [];
+
+        for (let i = 0; i < this.totalSteps; i++) {
+          const zPos = - (i * this.stepLength) + 6;
+
+          // Panel Izquierdo
+          const glassGeo = new THREE.BoxGeometry(3.6, 0.18, 4.4);
+          const glassMatL = new THREE.MeshPhysicalMaterial({
+            color: 0x6ee7b7,
+            transmission: 0.75,
+            opacity: 0.85,
+            transparent: true,
+            roughness: 0.1,
+            metalness: 0.1,
+            reflectivity: 0.9,
+            clearcoat: 1.0
+          });
+          const meshL = new THREE.Mesh(glassGeo, glassMatL);
+          meshL.position.set(this.leftX, 0, zPos);
+          this.scene.add(meshL);
+
+          // Panel Derecho
+          const glassMatR = glassMatL.clone();
+          const meshR = new THREE.Mesh(glassGeo, glassMatR);
+          meshR.position.set(this.rightX, 0, zPos);
+          this.scene.add(meshR);
+
+          this.panels3D.push({
+            step: i,
+            leftMesh: meshL,
+            rightMesh: meshR,
+            brokenSide: null
+          });
+        }
+      }
+
+      createBots3D() {
+        this.botMeshes.forEach(b => this.scene.remove(b.group));
+        this.botMeshes = [];
+
+        this.queue.forEach((p, idx) => {
+          if (!p.isPlayer) {
+            const botGroup = new THREE.Group();
+            
+            // Cuerpo y Cabeza
+            const bodyGeo = new THREE.CylinderGeometry(0.7, 0.8, 2.6, 8);
+            const bodyMat = new THREE.MeshLambertMaterial({ color: 0x025e39 });
+            const body = new THREE.Mesh(bodyGeo, bodyMat);
+            body.position.y = 1.3;
+            botGroup.add(body);
+
+            const headGeo = new THREE.SphereGeometry(0.65, 12, 12);
+            const headMat = new THREE.MeshLambertMaterial({ color: 0xffdfc4 });
+            const head = new THREE.Mesh(headGeo, headMat);
+            head.position.y = 3.1;
+            botGroup.add(head);
+
+            // Posición inicial en la cola sobre la plataforma
+            botGroup.position.set(0, 0, 11 - (idx * 2.2));
+            this.scene.add(botGroup);
+
+            this.botMeshes.push({
+              id: p.num,
+              group: botGroup,
+              falling: false,
+              fallSpeed: 0
+            });
+          }
+        });
+      }
+
+      startGame() {
+        this.isRunning = true;
+        this.currentTurnIndex = 0;
+        this.currentStep = 0;
         this.timer = 60;
         this.timerEl.textContent = `${this.timer}s`;
         this.stepDisplay.textContent = '1';
 
-        // Generar ruta segura secreta
+        // Generar ruta segura de 6 pasos
         this.safePath = [];
         for (let i = 0; i < this.totalSteps; i++) {
           this.safePath.push(Math.random() < 0.5 ? 'L' : 'R');
         }
 
-        // Crear lista de 16 jugadores en fila
+        // Cola con SOLO 3 BOTS por delante: Tú eres el #04
         this.queue = [
           { num: '096', isPlayer: false, alive: true },
           { num: '199', isPlayer: false, alive: true },
           { num: '218', isPlayer: false, alive: true },
-          { num: '067', isPlayer: false, alive: true },
-          { num: '001', isPlayer: false, alive: true },
-          { num: '212', isPlayer: false, alive: true },
-          { num: '101', isPlayer: false, alive: true },
-          { num: '240', isPlayer: false, alive: true },
-          { num: '320', isPlayer: false, alive: true },
-          { num: '456', isPlayer: true, alive: true }, // Tú eres el #10
-          { num: '069', isPlayer: false, alive: true },
-          { num: '070', isPlayer: false, alive: true }
+          { num: '456', isPlayer: true, alive: true } // Tú eres el #04
         ];
 
-        this.renderQueue();
-        this.renderBridge();
+        this.createGlassPanels();
+        this.createBots3D();
+
+        // Posicionar cámara al inicio
+        this.cameraTargetZ = this.cameraStartZ;
+        this.cameraTargetX = 0;
+        this.cameraTargetY = 2.4;
+        this.camera.position.set(0, 2.4, this.cameraStartZ);
+
+        this.renderQueueUI();
         this.updateTurnUI();
 
         clearInterval(this.timerInterval);
         this.timerInterval = setInterval(() => {
-          if (!this.gameActive) return;
+          if (!this.isRunning) return;
           this.timer--;
           this.timerEl.textContent = `${this.timer}s`;
           if (this.timer <= 0) {
@@ -1966,26 +2359,26 @@
           }
         }, 1000);
 
-        // Auto-avance de bots cada 3.5 segundos si el usuario no presiona avanzar
+        // Salto automático suave de bots cada 3.5 segundos
         clearInterval(this.autoBotInterval);
         this.autoBotInterval = setInterval(() => {
-          if (this.gameActive && !this.isPlayerTurn()) {
+          if (this.isRunning && !this.isPlayerTurn()) {
             this.stepBotForward();
           }
         }, 3500);
       }
 
       isPlayerTurn() {
-        return (this.currentQueueIndex === this.playerOrderIndex && this.queue[this.playerOrderIndex].alive);
+        return (this.currentTurnIndex === this.playerQueueIndex && this.queue[this.playerQueueIndex].alive);
       }
 
-      renderQueue() {
+      renderQueueUI() {
         this.queueContainer.innerHTML = '';
         this.queue.forEach((p, idx) => {
           const badge = document.createElement('div');
           badge.className = `px-2.5 py-1 rounded-lg text-xs font-squid font-bold flex items-center space-x-1 whitespace-nowrap transition-all ${
             !p.alive ? 'bg-red-950/70 border border-red-800 text-red-400 line-through opacity-50' :
-            idx === this.currentQueueIndex ? 'bg-yellow-500 text-black shadow-[0_0_12px_#eab308] scale-105' :
+            idx === this.currentTurnIndex ? 'bg-yellow-500 text-black shadow-[0_0_12px_#eab308] scale-105' :
             p.isPlayer ? 'bg-emerald-950 border border-emerald-400 text-emerald-300' :
             'bg-slate-800 border border-slate-700 text-slate-300'
           }`;
@@ -1993,323 +2386,693 @@
           this.queueContainer.appendChild(badge);
         });
 
-        const ahead = Math.max(0, this.playerOrderIndex - this.currentQueueIndex);
-        this.queueStatusEl.textContent = this.isPlayerTurn() ? '¡ES TU TURNO DE SALTAR!' : `Competidores delante: ${ahead}`;
-      }
-
-      renderBridge() {
-        this.container.innerHTML = '';
-        
-        for (let i = 0; i < this.totalSteps; i++) {
-          const row = document.createElement('div');
-          row.id = `bridgeStepRow-${i}`;
-          row.className = `w-full flex items-center justify-between gap-3 p-2 rounded-xl transition-all ${
-            i === this.currentBridgeStep ? 'bg-cyan-950/40 border border-cyan-500/50 shadow-[0_0_15px_rgba(6,182,212,0.2)]' : 'opacity-70'
-          }`;
-
-          // Revisar si ya fue revelado
-          const revealedL = this.revealedTiles.find(r => r.step === i && r.choice === 'L');
-          const revealedR = this.revealedTiles.find(r => r.step === i && r.choice === 'R');
-
-          const btnL = document.createElement('div');
-          btnL.id = `glassTile-${i}-L`;
-          btnL.className = `flex-1 py-3 sm:py-4 border-2 rounded-xl font-squid font-black text-xs sm:text-sm text-center transition flex items-center justify-center space-x-2 ${
-            revealedL ? (revealedL.isSafe ? 'bg-emerald-900/60 border-emerald-400 text-emerald-300 shadow-[0_0_10px_#10b981]' : 'bg-red-950/80 border-red-600 text-red-400') :
-            'bg-cyan-950/30 border-cyan-400/30 text-cyan-200'
-          }`;
-          btnL.innerHTML = revealedL ? (revealedL.isSafe ? '<span>💎 TEMPLADO</span>' : '<span>💥 ROTO</span>') : '<span>PANEL IZQ</span>';
-
-          const stepLabel = document.createElement('span');
-          stepLabel.className = "text-xs font-squid text-cyan-400 font-bold px-1";
-          stepLabel.textContent = `#${i + 1}`;
-
-          const btnR = document.createElement('div');
-          btnR.id = `glassTile-${i}-R`;
-          btnR.className = `flex-1 py-3 sm:py-4 border-2 rounded-xl font-squid font-black text-xs sm:text-sm text-center transition flex items-center justify-center space-x-2 ${
-            revealedR ? (revealedR.isSafe ? 'bg-emerald-900/60 border-emerald-400 text-emerald-300 shadow-[0_0_10px_#10b981]' : 'bg-red-950/80 border-red-600 text-red-400') :
-            'bg-cyan-950/30 border-cyan-400/30 text-cyan-200'
-          }`;
-          btnR.innerHTML = revealedR ? (revealedR.isSafe ? '<span>💎 TEMPLADO</span>' : '<span>💥 ROTO</span>') : '<span>PANEL DER</span>';
-
-          row.appendChild(btnL);
-          row.appendChild(stepLabel);
-          row.appendChild(btnR);
-          this.container.appendChild(row);
-        }
+        const ahead = Math.max(0, this.playerQueueIndex - this.currentTurnIndex);
+        this.queueStatusEl.textContent = this.isPlayerTurn() ? '¡ES TU TURNO DE SALTAR!' : `${ahead} competidor(es) delante`;
       }
 
       updateTurnUI() {
-        const currentBot = this.queue[this.currentQueueIndex];
+        const currentBot = this.queue[this.currentTurnIndex];
         if (!currentBot) return;
 
-        this.stepDisplay.textContent = Math.min(this.totalSteps, this.currentBridgeStep + 1);
+        this.stepDisplay.textContent = Math.min(this.totalSteps, this.currentStep + 1);
 
         if (this.isPlayerTurn()) {
           this.turnStatusEl.textContent = 'TU TURNO: ¡JUGADOR 456!';
-          this.turnStatusEl.className = 'font-squid text-xs font-bold text-emerald-400 bg-emerald-950 px-3 py-1 rounded border border-emerald-400 animate-pulse';
-          this.userPromptEl.textContent = '👉 Elige a qué panel saltar (Izquierda o Derecha):';
-          this.playerChoiceBtns.classList.remove('hidden');
-          document.getElementById('btnTriggerBotJump').classList.add('hidden');
+          this.turnStatusEl.className = 'font-squid text-xs font-bold text-emerald-400 bg-emerald-950 px-2.5 py-0.5 rounded border border-emerald-400 animate-pulse';
+          this.feedbackBanner.textContent = '👉 ¡Tu turno en 1ª Persona! Elige si saltas al cristal Izquierdo o Derecho:';
+          this.choiceBtns.classList.remove('hidden');
+          this.triggerBotBtn.classList.add('hidden');
         } else {
           this.turnStatusEl.textContent = `SALTANDO: BOT #${currentBot.num}`;
-          this.turnStatusEl.className = 'font-squid text-xs font-bold text-yellow-400 bg-yellow-950/60 px-3 py-1 rounded border border-yellow-800/60';
-          this.userPromptEl.textContent = `Observando al competidor #${currentBot.num}...`;
-          this.playerChoiceBtns.classList.add('hidden');
-          document.getElementById('btnTriggerBotJump').classList.remove('hidden');
+          this.turnStatusEl.className = 'font-squid text-xs font-bold text-yellow-400 bg-yellow-950/60 px-2.5 py-0.5 rounded border border-yellow-800/60';
+          this.feedbackBanner.textContent = `Observando al competidor #${currentBot.num} en la vanguardia...`;
+          this.choiceBtns.classList.add('hidden');
+          this.triggerBotBtn.classList.remove('hidden');
         }
       }
 
       stepBotForward() {
-        if (!this.gameActive || this.isPlayerTurn()) return;
+        if (!this.isRunning || this.isPlayerTurn()) return;
 
-        const currentBot = this.queue[this.currentQueueIndex];
-        if (!currentBot || !currentBot.alive) return;
+        const currentBot = this.queue[this.currentTurnIndex];
+        const bot3d = this.botMeshes[this.currentTurnIndex];
+        if (!currentBot || !currentBot.alive || !bot3d) return;
 
-        // Si ya hay un panel revelado seguro en este paso, el bot lo aprovecha
-        const knownSafe = this.revealedTiles.find(r => r.step === this.currentBridgeStep && r.isSafe);
-        let chosenChoice = knownSafe ? knownSafe.choice : (Math.random() < 0.5 ? 'L' : 'R');
+        const currentPanel = this.panels3D[this.currentStep];
+        if (!currentPanel) return;
 
-        const isSafe = (chosenChoice === this.safePath[this.currentBridgeStep]);
-        this.revealedTiles.push({ step: this.currentBridgeStep, choice: chosenChoice, isSafe: isSafe });
+        // El bot elige un lado (o aprovecha si ya fue revelado)
+        let chosenSide = (currentPanel.brokenSide ? (currentPanel.brokenSide === 'L' ? 'R' : 'L') : (Math.random() < 0.5 ? 'L' : 'R'));
+        const isSafe = (chosenSide === this.safePath[this.currentStep]);
+
+        const targetZ = - (this.currentStep * this.stepLength) + 6;
+        const targetX = (chosenSide === 'L' ? this.leftX : this.rightX);
+
+        // Mover el bot al panel en 3D
+        bot3d.group.position.set(targetX, 0, targetZ);
 
         if (isSafe) {
+          // Acierto
           sound.playScrape();
-          this.currentBridgeStep++;
-          if (this.currentBridgeStep >= this.totalSteps) {
-            // El bot cruzó todo el puente, pasamos al siguiente
-            this.currentQueueIndex++;
+          const mesh = (chosenSide === 'L' ? currentPanel.leftMesh : currentPanel.rightMesh);
+          mesh.material.color.setHex(0x10b981);
+          mesh.material.emissive = new THREE.Color(0x059669);
+          mesh.material.emissiveIntensity = 0.5;
+
+          this.feedbackBanner.textContent = `✨ Bot #${currentBot.num} saltó al lado ${chosenSide === 'L' ? 'IZQUIERDO' : 'DERECHO'} y sobrevive.`;
+          this.currentStep++;
+
+          if (this.currentStep >= this.totalSteps) {
+            this.currentTurnIndex++;
           }
         } else {
-          // El bot rompe el cristal y cae
+          // Rompe el cristal y cae al vacío
           sound.playGlassShatter();
+          currentPanel.brokenSide = chosenSide;
+          const brokenMesh = (chosenSide === 'L' ? currentPanel.leftMesh : currentPanel.rightMesh);
+          this.scene.remove(brokenMesh);
+
+          // Revelar el lado seguro restante
+          const safeOpposite = (chosenSide === 'L' ? currentPanel.rightMesh : currentPanel.leftMesh);
+          safeOpposite.material.color.setHex(0x10b981);
+          safeOpposite.material.emissive = new THREE.Color(0x059669);
+          safeOpposite.material.emissiveIntensity = 0.5;
+
+          // Animación de caída del bot
+          bot3d.falling = true;
           currentBot.alive = false;
-          // Al morir el bot que cayó, el otro lado queda automáticamente confirmado como el seguro
-          const safeOpposite = (chosenChoice === 'L' ? 'R' : 'L');
-          this.revealedTiles.push({ step: this.currentBridgeStep, choice: safeOpposite, isSafe: true });
-          this.currentBridgeStep++;
-          this.currentQueueIndex++;
+
+          this.feedbackBanner.textContent = `💥 Bot #${currentBot.num} rompió el cristal ${chosenSide === 'L' ? 'IZQUIERDO' : 'DERECHO'} y cayó al vacío.`;
+          this.currentStep++;
+          this.currentTurnIndex++;
         }
 
-        this.renderBridge();
-        this.renderQueue();
+        this.renderQueueUI();
         this.updateTurnUI();
 
-        // Si todos los pasos se completaron mientras aún estás con vida
-        if (this.currentBridgeStep >= this.totalSteps && this.queue[this.playerOrderIndex].alive) {
+        if (this.currentStep >= this.totalSteps && this.queue[this.playerQueueIndex].alive) {
           this.stopGame();
           setTimeout(() => app.onGameWon(), 500);
         }
       }
 
       playerJump(choice) {
-        if (!this.gameActive || !this.isPlayerTurn()) return;
+        if (!this.isRunning || !this.isPlayerTurn()) return;
 
-        const isSafe = (choice === this.safePath[this.currentBridgeStep]);
-        this.revealedTiles.push({ step: this.currentBridgeStep, choice: choice, isSafe: isSafe });
+        const currentPanel = this.panels3D[this.currentStep];
+        if (!currentPanel) return;
+
+        const isSafe = (choice === this.safePath[this.currentStep]);
+        const targetZ = - (this.currentStep * this.stepLength) + 6;
+        const targetX = (choice === 'L' ? this.leftX : this.rightX);
 
         if (isSafe) {
+          // El jugador acierta en primera persona
           sound.playScrape();
-          this.currentBridgeStep++;
-          this.renderBridge();
+          const mesh = (choice === 'L' ? currentPanel.leftMesh : currentPanel.rightMesh);
+          mesh.material.color.setHex(0x10b981);
+          mesh.material.emissive = new THREE.Color(0x059669);
+          mesh.material.emissiveIntensity = 0.6;
 
-          if (this.currentBridgeStep >= this.totalSteps) {
+          // Desplazar cámara al panel en 1ra persona
+          this.cameraTargetX = targetX;
+          this.cameraTargetZ = targetZ + 1.5;
+
+          this.currentStep++;
+          this.feedbackBanner.textContent = `💎 ¡Salto seguro en ${choice === 'L' ? 'IZQUIERDA' : 'DERECHA'}!`;
+
+          if (this.currentStep >= this.totalSteps) {
             this.stopGame();
-            setTimeout(() => app.onGameWon(), 500);
+            // Desplazar a la plataforma final
+            this.cameraTargetZ = - (this.totalSteps * this.stepLength) - 2;
+            this.cameraTargetX = 0;
+            setTimeout(() => app.onGameWon(), 600);
           } else {
             this.updateTurnUI();
           }
         } else {
+          // El jugador rompe el cristal: cae en primera persona
           this.stopGame();
           sound.playGlassShatter();
-          this.renderBridge();
+          const brokenMesh = (choice === 'L' ? currentPanel.leftMesh : currentPanel.rightMesh);
+          this.scene.remove(brokenMesh);
+
+          // Cámara se desploma al abismo
+          this.cameraTargetX = targetX;
+          this.cameraTargetZ = targetZ;
+          this.cameraTargetY = -50;
+
           setTimeout(() => {
-            app.onPlayerEliminated('Pisaste un cristal ordinario. Caíste al abismo.');
-          }, 600);
+            app.onPlayerEliminated('Pisaste cristal frágil. Caíste 60 metros al vacío.');
+          }, 700);
         }
       }
 
+      update() {
+        if (!this.scene) return;
+
+        // Suavizado de cámara en primera persona (Lerp)
+        this.camera.position.x += (this.cameraTargetX - this.camera.position.x) * 0.12;
+        this.camera.position.z += (this.cameraTargetZ - this.camera.position.z) * 0.12;
+        this.camera.position.y += (this.cameraTargetY - this.camera.position.y) * 0.1;
+
+        // Simular caída física de bots eliminados
+        this.botMeshes.forEach(b => {
+          if (b.falling) {
+            b.fallSpeed += 0.08;
+            b.group.position.y -= b.fallSpeed;
+            b.group.rotation.x += 0.08;
+            b.group.rotation.z += 0.05;
+          }
+        });
+      }
+
       stopGame() {
-        this.gameActive = false;
+        this.isRunning = false;
         clearInterval(this.timerInterval);
         clearInterval(this.autoBotInterval);
       }
     }
 
-    const bridgeGame = new GlassBridgeWithBots();
+    const bridge3D = new GlassBridge3DFPS();
 
     /* =========================================================================
-       8. JUEGO 6: EL DUELO FINAL DEL CALAMAR (FINAL SHOWDOWN 2D)
+       8. JUEGO 6: EL DUELO FINAL DEL CALAMAR 3D EN PRIMERA PERSONA (THREE.JS FPS)
        ========================================================================= */
-    class SquidGameFinal {
+    class SquidDuel3DFPS {
       constructor() {
-        this.canvas = document.getElementById('squidFinalCanvas');
-        this.ctx = this.canvas.getContext('2d');
-        this.player = { x: 190, y: 360, r: 14, speed: 18 };
-        this.boss = { x: 190, y: 150, r: 16, hp: 100 };
+        this.container = document.getElementById('threeSquidDuelContainer');
+        this.scene = null;
+        this.camera = null;
+        this.renderer = null;
+
+        // Jugador en Primera Persona
+        this.player = {
+          x: 0,
+          z: 13,
+          y: 2.2,
+          speed: 0.75,
+          hp: 100,
+          maxHp: 100,
+          isInvulnerable: false
+        };
+
+        // Rival Boss (Sang-woo)
+        this.bossMesh = null;
+        this.boss = {
+          x: 0,
+          z: 3,
+          hp: 100,
+          maxHp: 100,
+          isStunned: false,
+          attackCooldown: 1.5,
+          isAttacking: false
+        };
+        
+        this.isRunning = false;
         this.timer = 60;
         this.timerInterval = null;
-        this.gameActive = false;
-        this.loopId = null;
 
+        // Elementos del DOM
+        this.playerHpEl = document.getElementById('squidPlayerHp');
+        this.playerHpBar = document.getElementById('squidPlayerHpBar');
         this.bossHpEl = document.getElementById('squidBossHp');
+        this.bossHpBar = document.getElementById('squidBossHpBar');
         this.timerEl = document.getElementById('squidFinalTimer');
+        this.feedbackEl = document.getElementById('squidDuelFeedback');
+        this.damageFlashEl = document.getElementById('squidDamageFlash');
+        this.zoneBadgeEl = document.getElementById('squidArenaZoneBadge');
+        this.leftFist = document.getElementById('leftFist');
+        this.rightFist = document.getElementById('rightFist');
 
         this.setupKeyboard();
       }
 
       setupKeyboard() {
         window.addEventListener('keydown', (e) => {
-          if (app.currentScreen !== 'squidFinal' || !this.gameActive) return;
-          if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') this.movePlayer(-1, 0);
-          if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') this.movePlayer(1, 0);
-          if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') this.movePlayer(0, -1);
-          if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') this.movePlayer(0, 1);
-          if (e.key === ' ' || e.key === 'Enter') this.playerAttack();
+          if (app.currentScreen !== 'squidFinal' || !this.isRunning) return;
+          if (e.key === 'w' || e.key === 'W' || e.key === 'ArrowUp') this.moveForward();
+          if (e.key === 's' || e.key === 'S' || e.key === 'ArrowDown') this.moveBackward();
+          if (e.key === 'a' || e.key === 'A' || e.key === 'ArrowLeft') this.moveLeft();
+          if (e.key === 'd' || e.key === 'D' || e.key === 'ArrowRight') this.moveRight();
+          if (e.key === ' ' || e.key === 'Enter') this.attack();
         });
       }
 
       init() {
-        this.player = { x: 190, y: 360, r: 14, speed: 18 };
-        this.boss = { x: 190, y: 150, r: 16, hp: 100 };
+        if (this.scene) return;
+
+        const width = this.container.clientWidth || 800;
+        const height = this.container.clientHeight || 450;
+
+        this.scene = new THREE.Scene();
+        this.scene.background = new THREE.Color(0x0a0c16);
+        this.scene.fog = new THREE.FogExp2(0x0a0c16, 0.02);
+
+        this.camera = new THREE.PerspectiveCamera(60, width / height, 0.1, 500);
+        this.camera.position.set(this.player.x, this.player.y, this.player.z);
+
+        this.renderer = new THREE.WebGLRenderer({ antialias: true });
+        this.renderer.setSize(width, height);
+        this.renderer.shadowMap.enabled = true;
+        this.container.appendChild(this.renderer.domElement);
+
+        const ambientLight = new THREE.AmbientLight(0x2d3748, 1.4);
+        this.scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xff2a70, 1.8);
+        dirLight.position.set(20, 30, 20);
+        this.scene.add(dirLight);
+
+        const spotLight = new THREE.SpotLight(0xf59e0b, 2.0);
+        spotLight.position.set(0, 25, 0);
+        this.scene.add(spotLight);
+
+        this.buildSquidArena();
+        this.createBossMesh();
+
+        window.addEventListener('resize', () => {
+          if (this.camera && this.renderer && this.container) {
+            const w = this.container.clientWidth;
+            const h = this.container.clientHeight;
+            this.camera.aspect = w / h;
+            this.camera.updateProjectionMatrix();
+            this.renderer.setSize(w, h);
+          }
+        });
+
+        const animate = () => {
+          requestAnimationFrame(animate);
+          this.update();
+          this.renderer.render(this.scene, this.camera);
+        };
+        animate();
+      }
+
+      buildSquidArena() {
+        // Suelo de arena mojada bajo la lluvia
+        const groundGeo = new THREE.PlaneGeometry(80, 80);
+        const groundMat = new THREE.MeshStandardMaterial({ color: 0x161310, roughness: 0.85, metalness: 0.1 });
+        const ground = new THREE.Mesh(groundGeo, groundMat);
+        ground.rotation.x = -Math.PI / 2;
+        ground.receiveShadow = true;
+        this.scene.add(ground);
+
+        // Suelo interior del Cuadrado del Calamar (Área permitida: X: -8 a +8, Z: -2 a +15)
+        const squareFillGeo = new THREE.PlaneGeometry(16, 17);
+        const squareFillMat = new THREE.MeshStandardMaterial({ color: 0x221c17, roughness: 0.7 });
+        const squareFill = new THREE.Mesh(squareFillGeo, squareFillMat);
+        squareFill.rotation.x = -Math.PI / 2;
+        squareFill.position.set(0, 0.01, 6.5);
+        this.scene.add(squareFill);
+
+        // Líneas de Tiza del Cuadrado del Calamar
+        const squareGeo = new THREE.PlaneGeometry(16, 17);
+        const squareEdges = new THREE.EdgesGeometry(squareGeo);
+        const squareLine = new THREE.LineSegments(squareEdges, new THREE.LineBasicMaterial({ color: 0xff2a70, linewidth: 4 }));
+        squareLine.rotation.x = -Math.PI / 2;
+        squareLine.position.set(0, 0.05, 6.5);
+        this.scene.add(squareLine);
+
+        // Pasillo de conexión hacia la cabeza (X: -3.5 a +3.5, Z: -10 a -2)
+        const corridorGeo = new THREE.PlaneGeometry(7, 8);
+        const corridorFill = new THREE.Mesh(corridorGeo, squareFillMat);
+        corridorFill.rotation.x = -Math.PI / 2;
+        corridorFill.position.set(0, 0.01, -6);
+        this.scene.add(corridorFill);
+
+        const corridorEdges = new THREE.EdgesGeometry(corridorGeo);
+        const corridorLine = new THREE.LineSegments(corridorEdges, new THREE.LineBasicMaterial({ color: 0xff2a70, linewidth: 3 }));
+        corridorLine.rotation.x = -Math.PI / 2;
+        corridorLine.position.set(0, 0.05, -6);
+        this.scene.add(corridorLine);
+
+        // Cabeza: Círculo Superior (Z = -14)
+        const circleGeo = new THREE.RingGeometry(4.8, 5.2, 32);
+        const circleMat = new THREE.MeshBasicMaterial({ color: 0xff2a70, side: THREE.DoubleSide });
+        const circle = new THREE.Mesh(circleGeo, circleMat);
+        circle.rotation.x = -Math.PI / 2;
+        circle.position.set(0, 0.05, -14);
+        this.scene.add(circle);
+
+        // Plataforma dorada dentro de la cabeza (Meta final)
+        const headPadGeo = new THREE.CylinderGeometry(4.5, 4.5, 0.2, 32);
+        const headPadMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, emissive: 0xf59e0b, emissiveIntensity: 0.35 });
+        const headPad = new THREE.Mesh(headPadGeo, headPadMat);
+        headPad.position.set(0, 0.02, -14);
+        this.scene.add(headPad);
+
+        // Balizas de peligro láser en los 4 vértices del cuadrado
+        this.createHazardPost(-8, -2);
+        this.createHazardPost(8, -2);
+        this.createHazardPost(-8, 15);
+        this.createHazardPost(8, 15);
+
+        // Guardias vestidos de rosa observando en el perímetro
+        for (let i = -2; i <= 2; i++) {
+          this.createGuard(-16, i * 7);
+          this.createGuard(16, i * 7);
+        }
+      }
+
+      createHazardPost(x, z) {
+        const post = new THREE.Group();
+        post.position.set(x, 0, z);
+
+        const poleGeo = new THREE.CylinderGeometry(0.15, 0.15, 3, 8);
+        const poleMat = new THREE.MeshStandardMaterial({ color: 0xef4444 });
+        const pole = new THREE.Mesh(poleGeo, poleMat);
+        pole.position.y = 1.5;
+        post.add(pole);
+
+        const beaconGeo = new THREE.SphereGeometry(0.35, 8, 8);
+        const beaconMat = new THREE.MeshBasicMaterial({ color: 0xff0055 });
+        const beacon = new THREE.Mesh(beaconGeo, beaconMat);
+        beacon.position.y = 3;
+        post.add(beacon);
+
+        this.scene.add(post);
+      }
+
+      createGuard(x, z) {
+        const guard = new THREE.Group();
+        guard.position.set(x, 0, z);
+
+        const bodyGeo = new THREE.CylinderGeometry(0.8, 1.0, 3.8, 8);
+        const bodyMat = new THREE.MeshLambertMaterial({ color: 0xff2a70 });
+        const body = new THREE.Mesh(bodyGeo, bodyMat);
+        body.position.y = 1.9;
+        guard.add(body);
+
+        const headGeo = new THREE.SphereGeometry(0.9, 12, 12);
+        const headMat = new THREE.MeshLambertMaterial({ color: 0x111111 });
+        const head = new THREE.Mesh(headGeo, headMat);
+        head.position.y = 4.0;
+        guard.add(head);
+
+        this.scene.add(guard);
+      }
+
+      createBossMesh() {
+        const bossGroup = new THREE.Group();
+        
+        // Abrigo oscuro del rival (Sang-woo)
+        const coatGeo = new THREE.CylinderGeometry(0.9, 1.1, 3.4, 8);
+        const coatMat = new THREE.MeshLambertMaterial({ color: 0x181e2b });
+        const coat = new THREE.Mesh(coatGeo, coatMat);
+        coat.position.y = 1.7;
+        bossGroup.add(coat);
+
+        // Cabeza
+        const headGeo = new THREE.SphereGeometry(0.8, 12, 12);
+        const headMat = new THREE.MeshLambertMaterial({ color: 0xffd1a4 });
+        const head = new THREE.Mesh(headGeo, headMat);
+        head.position.y = 3.6;
+        bossGroup.add(head);
+
+        // Marcador de vida flotante sobre el rival
+        const pinGeo = new THREE.ConeGeometry(0.4, 1.0, 6);
+        const pinMat = new THREE.MeshBasicMaterial({ color: 0xef4444 });
+        const pin = new THREE.Mesh(pinGeo, pinMat);
+        pin.rotation.x = Math.PI;
+        pin.position.y = 5.2;
+        bossGroup.add(pin);
+
+        bossGroup.position.set(this.boss.x, 0, this.boss.z);
+        this.scene.add(bossGroup);
+        this.bossMesh = bossGroup;
+      }
+
+      startGame() {
+        this.isRunning = true;
+        this.player = {
+          x: 0,
+          z: 13,
+          y: 2.2,
+          speed: 0.75,
+          hp: 100,
+          maxHp: 100,
+          isInvulnerable: false
+        };
+
+        this.boss = {
+          x: 0,
+          z: 3,
+          hp: 100,
+          maxHp: 100,
+          isStunned: false,
+          attackCooldown: 1.5,
+          isAttacking: false
+        };
+
         this.timer = 60;
-        this.gameActive = true;
+        this.updateHealthUI();
         this.timerEl.textContent = `${this.timer}s`;
-        this.bossHpEl.textContent = '100%';
+        this.feedbackEl.textContent = '¡Avanza, esquiva los empujes y permanece dentro del cuadrado!';
+
+        if (this.bossMesh) {
+          this.bossMesh.position.set(0, 0, 3);
+          this.bossMesh.rotation.set(0, 0, 0);
+        }
+
+        this.camera.position.set(this.player.x, this.player.y, this.player.z);
 
         clearInterval(this.timerInterval);
         this.timerInterval = setInterval(() => {
-          if (!this.gameActive) return;
+          if (!this.isRunning) return;
           this.timer--;
           this.timerEl.textContent = `${this.timer}s`;
           if (this.timer <= 0) {
             this.stopGame();
-            app.onPlayerEliminated('Se agotó el tiempo de combate en el campo del calamar.');
+            app.onPlayerEliminated('Se agotó el tiempo en el duelo final.');
           }
         }, 1000);
-
-        this.startLoop();
       }
 
-      startLoop() {
-        const loop = () => {
-          if (!this.gameActive) return;
-          this.update();
-          this.draw();
-          this.loopId = requestAnimationFrame(loop);
-        };
-        this.loopId = requestAnimationFrame(loop);
+      updateHealthUI() {
+        // Vida Jugador
+        this.playerHpEl.textContent = `${Math.max(0, this.player.hp)} HP`;
+        const pPct = Math.max(0, Math.min(100, (this.player.hp / this.player.maxHp) * 100));
+        this.playerHpBar.style.width = `${pPct}%`;
+
+        if (pPct <= 30) {
+          this.playerHpBar.className = "h-full bg-gradient-to-r from-red-600 to-rose-600 progress-bar-fill";
+        } else {
+          this.playerHpBar.className = "h-full bg-gradient-to-r from-emerald-500 to-teal-400 progress-bar-fill";
+        }
+
+        // Vida Rival
+        this.bossHpEl.textContent = `${Math.max(0, this.boss.hp)} HP`;
+        const bPct = Math.max(0, Math.min(100, (this.boss.hp / this.boss.maxHp) * 100));
+        this.bossHpBar.style.width = `${bPct}%`;
       }
 
-      movePlayer(dx, dy) {
-        if (!this.gameActive) return;
-        this.player.x = Math.max(30, Math.min(350, this.player.x + dx * this.player.speed));
-        this.player.y = Math.max(30, Math.min(390, this.player.y + dy * this.player.speed));
+      // Comprueba si las coordenadas están estrictamente dentro de los límites del campo
+      isInsideSquidArena(x, z) {
+        // 1. Zona Cuadrado del Calamar (Cuerpo): X: -8.0 a 8.0, Z: -2.0 a 15.0
+        const inSquare = (x >= -8.0 && x <= 8.0 && z >= -2.0 && z <= 15.0);
 
-        // Victoria al llegar a la Cabeza del Calamar (Círculo Superior en Y < 70)
-        if (this.player.y < 70 && Math.abs(this.player.x - 190) < 45) {
+        // 2. Zona Pasillo de conexión: X: -3.5 a 3.5, Z: -10.0 a -2.0
+        const inCorridor = (x >= -3.5 && x <= 3.5 && z >= -10.0 && z < -2.0);
+
+        // 3. Zona Cabeza del Calamar: Centro (0, -14), Radio 4.8
+        const inHeadCircle = (Math.hypot(x, z - (-14.0)) <= 4.8);
+
+        return (inSquare || inCorridor || inHeadCircle);
+      }
+
+      checkArenaBoundaries() {
+        if (!this.isRunning) return;
+
+        const inside = this.isInsideSquidArena(this.player.x, this.player.z);
+
+        if (!inside) {
+          // ¡ELIMINADO POR SALIR DEL CUADRADO DEL CALAMAR!
           this.stopGame();
-          sound.playVictory();
-          setTimeout(() => app.onGameWon(), 300);
+          sound.playHit();
+          document.body.classList.add('shake');
+          this.zoneBadgeEl.className = "text-[11px] font-squid text-red-400 bg-red-950 px-2 py-0.5 rounded border border-red-600 animate-pulse";
+          this.zoneBadgeEl.textContent = "FUERA DEL CAMPO";
+
+          setTimeout(() => {
+            app.onPlayerEliminated('¡Has salido del cuadrado dibujado del calamar! Un guardia te disparó.');
+          }, 450);
+          return;
+        }
+
+        // Indicador de estado de zona
+        if (this.player.z <= -10) {
+          this.zoneBadgeEl.className = "text-[11px] font-squid text-yellow-400 bg-yellow-950/80 px-2 py-0.5 rounded border border-yellow-700";
+          this.zoneBadgeEl.textContent = "ZONA CABEZA (META)";
+        } else {
+          this.zoneBadgeEl.className = "text-[11px] font-squid text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-800";
+          this.zoneBadgeEl.textContent = "DENTRO DEL CUADRADO";
         }
       }
 
-      playerAttack() {
-        if (!this.gameActive) return;
-        const dist = Math.hypot(this.player.x - this.boss.x, this.player.y - this.boss.y);
-        if (dist < 55) {
+      moveForward() {
+        if (!this.isRunning) return;
+        this.player.z -= this.player.speed;
+        this.checkArenaBoundaries();
+        this.checkHeadGoal();
+      }
+
+      moveBackward() {
+        if (!this.isRunning) return;
+        this.player.z += this.player.speed;
+        this.checkArenaBoundaries();
+      }
+
+      moveLeft() {
+        if (!this.isRunning) return;
+        this.player.x -= this.player.speed;
+        this.checkArenaBoundaries();
+      }
+
+      moveRight() {
+        if (!this.isRunning) return;
+        this.player.x += this.player.speed;
+        this.checkArenaBoundaries();
+      }
+
+      attack() {
+        if (!this.isRunning) return;
+
+        // Efecto visual de golpe con los puños HUD
+        if (this.rightFist) {
+          this.rightFist.classList.remove('punch-active');
+          void this.rightFist.offsetWidth;
+          this.rightFist.classList.add('punch-active');
+        }
+
+        const dist = Math.hypot(this.player.x - this.boss.x, this.player.z - this.boss.z);
+
+        if (dist < 4.2) {
           sound.playHit();
           this.boss.hp = Math.max(0, this.boss.hp - 25);
-          this.bossHpEl.textContent = `${this.boss.hp}%`;
+          this.updateHealthUI();
 
-          // Empujar al rival
-          this.boss.y -= 30;
+          // Empujar al rival hacia atrás
+          this.boss.z -= 3.2;
+          this.boss.isStunned = true;
+          this.feedbackEl.textContent = '💥 ¡Impacto directo! Rival empujado.';
+
+          setTimeout(() => {
+            this.boss.isStunned = false;
+          }, 550);
 
           if (this.boss.hp <= 0) {
             this.stopGame();
             sound.playVictory();
-            setTimeout(() => app.onGameWon(), 400);
+            this.feedbackEl.textContent = '👑 ¡Rival noqueado! Has conquistado el calamar.';
+            if (this.bossMesh) this.bossMesh.rotation.x = Math.PI / 2;
+            setTimeout(() => app.onGameWon(), 600);
           }
+        } else {
+          sound.playScrape();
+          this.feedbackEl.textContent = '💨 Golpe al aire. Acércate más a tu rival.';
+        }
+      }
+
+      // Ataque y empuje del enemigo sobre el jugador
+      enemyAttackPlayer() {
+        if (!this.isRunning || this.player.isInvulnerable || this.boss.isStunned) return;
+
+        sound.playHit();
+        this.player.isInvulnerable = true;
+
+        // Infligir 20 de daño al jugador
+        this.player.hp = Math.max(0, this.player.hp - 20);
+        this.updateHealthUI();
+
+        // Empujar al jugador hacia atrás físicamente
+        const pushForceZ = 3.6;
+        const pushForceX = (this.player.x - this.boss.x) * 0.8;
+
+        this.player.z += pushForceZ;
+        this.player.x += pushForceX;
+
+        // Efectos visuales de impacto y sacudida
+        if (this.damageFlashEl) {
+          this.damageFlashEl.style.opacity = '0.7';
+          setTimeout(() => this.damageFlashEl.style.opacity = '0', 200);
+        }
+        document.body.classList.add('shake');
+        setTimeout(() => document.body.classList.remove('shake'), 350);
+
+        this.feedbackEl.textContent = '⚠️ ¡El rival te ha golpeado y empujado hacia atrás!';
+
+        // Comprobar si el empuje mató al jugador o lo sacó del cuadrado
+        if (this.player.hp <= 0) {
+          this.stopGame();
+          setTimeout(() => {
+            app.onPlayerEliminated('Has caído noqueado tras los ataques del rival.');
+          }, 400);
+          return;
+        }
+
+        // Comprobar si el empuje sacó al jugador del cuadrado dibujado
+        this.checkArenaBoundaries();
+
+        setTimeout(() => {
+          this.player.isInvulnerable = false;
+        }, 800);
+      }
+
+      checkHeadGoal() {
+        // Conquistar la Cabeza del Calamar (Z <= -12 y |X| <= 3.5)
+        if (this.player.z <= -12 && Math.abs(this.player.x) <= 3.5) {
+          this.stopGame();
+          sound.playVictory();
+          this.feedbackEl.textContent = '🏆 ¡Has pisado la cabeza del calamar! ¡VICTORIA!';
+          setTimeout(() => app.onGameWon(), 500);
         }
       }
 
       update() {
-        // IA simple del rival
-        if (this.boss.hp > 0) {
-          if (this.boss.x < this.player.x) this.boss.x += 0.8;
-          else this.boss.x -= 0.8;
+        if (!this.isRunning) return;
 
-          if (this.boss.y < this.player.y - 30) this.boss.y += 0.6;
-          else if (this.boss.y > this.player.y + 30) this.boss.y -= 0.6;
+        // Suavizado de cámara en primera persona
+        this.camera.position.x += (this.player.x - this.camera.position.x) * 0.18;
+        this.camera.position.z += (this.player.z - this.camera.position.z) * 0.18;
+
+        // IA de combate y persecución del rival
+        if (this.bossMesh && this.boss.hp > 0 && !this.boss.isStunned) {
+          const distToPlayer = Math.hypot(this.player.x - this.boss.x, this.player.z - this.boss.z);
+
+          // Movimiento lateral para alinearse con el jugador
+          if (this.boss.x < this.player.x - 0.2) this.boss.x += 0.045;
+          else if (this.boss.x > this.player.x + 0.2) this.boss.x -= 0.045;
+
+          // Rival intenta bloquear el paso o acorralar al jugador
+          if (this.boss.z < this.player.z - 2.8) {
+            this.boss.z += 0.055; // Avanza hacia el jugador
+          } else if (this.boss.z > this.player.z - 1.2) {
+            this.boss.z -= 0.03;
+          }
+
+          this.bossMesh.position.set(this.boss.x, 0, this.boss.z);
+
+          // Enfriamiento del ataque del enemigo
+          this.boss.attackCooldown -= 0.016; // ~60fps
+
+          // Si está a corta distancia y el cooldown terminó -> El rival ataca y empuja
+          if (distToPlayer <= 3.5 && this.boss.attackCooldown <= 0) {
+            this.enemyAttackPlayer();
+            this.boss.attackCooldown = 1.4 + Math.random() * 0.8;
+          }
         }
       }
 
-      draw() {
-        const w = this.canvas.width;
-        const h = this.canvas.height;
-        this.ctx.clearRect(0, 0, w, h);
-
-        // Dibujar campo geométrico de Squid Game
-        this.ctx.strokeStyle = '#ff2a70';
-        this.ctx.lineWidth = 4;
-
-        // Cabeza: Círculo Superior (Meta)
-        this.ctx.fillStyle = 'rgba(255, 42, 112, 0.15)';
-        this.ctx.beginPath();
-        this.ctx.arc(190, 60, 45, 0, Math.PI * 2);
-        this.ctx.fill();
-        this.ctx.stroke();
-
-        this.ctx.fillStyle = '#f6c83b';
-        this.ctx.font = 'bold 10px Orbitron';
-        this.ctx.fillText('META CABEZA', 152, 64);
-
-        // Cuadrado Central
-        this.ctx.strokeRect(100, 180, 180, 160);
-
-        // Triángulo Medio
-        this.ctx.beginPath();
-        this.ctx.moveTo(190, 105);
-        this.ctx.lineTo(270, 180);
-        this.ctx.lineTo(110, 180);
-        this.ctx.closePath();
-        this.ctx.stroke();
-
-        // Jugador Principal (Verde)
-        this.ctx.fillStyle = '#037a4b';
-        this.ctx.beginPath();
-        this.ctx.arc(this.player.x, this.player.y, this.player.r, 0, Math.PI * 2);
-        this.ctx.fill();
-        this.ctx.strokeStyle = '#10b981';
-        this.ctx.lineWidth = 2;
-        this.ctx.stroke();
-
-        this.ctx.fillStyle = '#ffffff';
-        this.ctx.font = 'bold 9px Orbitron';
-        this.ctx.fillText('456', this.player.x - 9, this.player.y + 3);
-
-        // Jefe Rival (Negro / Traje)
-        this.ctx.fillStyle = '#1e1b4b';
-        this.ctx.beginPath();
-        this.ctx.arc(this.boss.x, this.boss.y, this.boss.r, 0, Math.PI * 2);
-        this.ctx.fill();
-        this.ctx.strokeStyle = '#ef4444';
-        this.ctx.lineWidth = 2;
-        this.ctx.stroke();
-
-        this.ctx.fillStyle = '#ef4444';
-        this.ctx.fillText('RIVAL', this.boss.x - 14, this.boss.y + 3);
-      }
-
       stopGame() {
-        this.gameActive = false;
-        cancelAnimationFrame(this.loopId);
+        this.isRunning = false;
         clearInterval(this.timerInterval);
       }
     }
 
-    const squidGameFinal = new SquidGameFinal();
+    const squidDuel3D = new SquidDuel3DFPS();
 
-    // Inicialización al cargar la ventana
+    // Warmup del sistema de audio al interactuar
     window.onload = function() {
       document.body.addEventListener('click', () => sound.initContext(), { once: true });
       document.body.addEventListener('touchstart', () => sound.initContext(), { once: true });
